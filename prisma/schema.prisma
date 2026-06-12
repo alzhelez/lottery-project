@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Analysis snapshot of a lottery game (cached from Python analyzer)
+model GameAnalysis {
+  id            String   @id @default(cuid())
+  gameKey       String   @unique
+  gameName      String
+  score         Float
+  verdict       String
+  verdictColor  String   @default("green")
+  draws         Int      @default(0)
+  chi2P         Float?
+  autocorr      Float?
+  hotNumbers    String   @default("[]")  // JSON array of numbers
+  coldNumbers   String   @default("[]")
+  redirectTarget String?
+  analyzedAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// Log of prediction requests (for tracking model performance)
+model PredictionLog {
+  id            String   @id @default(cuid())
+  gameKey       String
+  totalDraws    Int
+  modelsUsed    Int
+  consensusB1   Float?
+  consensusB2   Float?
+  backtestAvg50 Float?
+  createdAt     DateTime @default(now())
+
+  @@index([gameKey])
+}

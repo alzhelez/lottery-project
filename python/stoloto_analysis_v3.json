@@ -1,0 +1,624 @@
+[
+  {
+    "name": "nards-pro",
+    "draws": 6099,
+    "unique_nums": 20,
+    "top10": [
+      [
+        1,
+        4029
+      ],
+      [
+        3,
+        3909
+      ],
+      [
+        2,
+        3902
+      ],
+      [
+        4,
+        3892
+      ],
+      [
+        17,
+        2500
+      ],
+      [
+        10,
+        2492
+      ],
+      [
+        14,
+        2478
+      ],
+      [
+        12,
+        2471
+      ],
+      [
+        15,
+        2470
+      ],
+      [
+        6,
+        2453
+      ]
+    ],
+    "cold10": [
+      [
+        8,
+        2386
+      ],
+      [
+        18,
+        2401
+      ],
+      [
+        9,
+        2429
+      ],
+      [
+        11,
+        2430
+      ],
+      [
+        19,
+        2433
+      ],
+      [
+        7,
+        2434
+      ],
+      [
+        20,
+        2437
+      ],
+      [
+        5,
+        2442
+      ],
+      [
+        13,
+        2451
+      ],
+      [
+        16,
+        2452
+      ]
+    ],
+    "top_pairs": [
+      [
+        [
+          1,
+          4
+        ],
+        1707
+      ],
+      [
+        [
+          1,
+          2
+        ],
+        1686
+      ],
+      [
+        [
+          2,
+          3
+        ],
+        1645
+      ],
+      [
+        [
+          1,
+          3
+        ],
+        1637
+      ],
+      [
+        [
+          2,
+          4
+        ],
+        1630
+      ]
+    ],
+    "chi2_p": 0.0,
+    "chi2_info": "⚠️  Неравномерное! p=0.0000",
+    "autocorr": -0.0183,
+    "score": 40.0,
+    "verdict": "🟡 Умеренная аномальность",
+    "redirect_target": null
+  },
+  {
+    "name": "football-gold",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "gzhl",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "5x36lite",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "dvazhdydva",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "nards-start",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "4x20mini",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "oxota-vyzov",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "spec",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "crazycombo",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "6x45",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "4x20",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "fzp",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "5x36plus",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "ruslotto",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "nards-drive",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "football-bronze",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "5x2",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "1224",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "ostatki-sladki",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "football-silver",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "oxota",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "luckycard",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "top3",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "6x45plus",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "rapido",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "keno2",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "zabava",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "udachanasdachu",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "nards-ultra",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "rapido-drive",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "rapido2",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "rocketbingo",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "7x49",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "football-brilliant",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  },
+  {
+    "name": "rapido-ultra",
+    "draws": 0,
+    "unique_nums": 0,
+    "top10": [],
+    "cold10": [],
+    "top_pairs": [],
+    "chi2_p": null,
+    "chi2_info": "—",
+    "autocorr": null,
+    "score": 0.0,
+    "verdict": "❓ Мало данных",
+    "redirect_target": null
+  }
+]
