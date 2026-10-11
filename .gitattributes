@@ -1,0 +1,27 @@
+# =============================================================================
+# .gitattributes — управление атрибутами файлов в git
+# =============================================================================
+
+# Файлы данных лотерей (большие, бинарные для git — не diffable как текст)
+data/draws/*.txt     binary
+
+# Нормализация переводов строк для исходного кода
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.css   text eol=lf
+*.bat   text eol=crlf
+
+# Не трогаем бинарники
+*.node  binary
+*.db    binary
+*.pyc   binary
+*.go    text eol=lf
+*.java  text eol=lf
+*.xml   text eol=lf
+*.yml   text eol=lf
+*.mjs   text eol=lf
+*.sh    text eol=lf

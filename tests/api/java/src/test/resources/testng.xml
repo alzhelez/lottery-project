@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Порядок классов совпадает с нумерацией сценариев API-01…API-14 -->
+<suite name="Лотерейный анализатор: API (Java)" verbose="1">
+    <test name="API">
+        <classes>
+            <class name="ru.lottery.api.GamesApiTest"/>
+            <class name="ru.lottery.api.JobsApiTest"/>
+            <class name="ru.lottery.api.JournalApiTest"/>
+            <class name="ru.lottery.api.OddsApiTest"/>
+            <class name="ru.lottery.api.TicketsApiTest"/>
+            <class name="ru.lottery.api.ExportApiTest"/>
+            <class name="ru.lottery.api.ServiceApiTest"/>
+        </classes>
+    </test>
+</suite>

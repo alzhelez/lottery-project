@@ -1,0 +1,6 @@
+# Движок анализа (Python 3.10+). Для тестов — requirements-dev.txt
+requests>=2.31
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.4   # градиентный бустинг в «режиме Бога»
+openpyxl>=3.1       # экспорт в Excel

@@ -1,0 +1,4 @@
+# Для тестов и Allure-отчёта
+-r requirements.txt
+pytest>=8.0
+allure-pytest>=2.13

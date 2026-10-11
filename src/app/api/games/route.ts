@@ -1,53 +1,18 @@
 import { NextResponse } from 'next/server'
-import { runPythonScript } from '@/lib/python-runner'
+import { listGames, readScan } from '@/lib/games'
+import { APP_VERSION } from '@/lib/version'
 
-/** Helper to create a JSON response with proper headers. */
-function json(data: unknown, status = 200) {
-  return NextResponse.json(data, {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  })
-}
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  try {
-    const { stdout, stderr, code } = await runPythonScript('api_wrapper.py', ['games'], {
-      timeout: 20000,
-    })
-
-    if (code !== 0) {
-      return json(
-        {
-          status: 'error',
-          error: `Script failed with code ${code}`,
-          stderr: stderr?.slice(-500) || '',
-          stdout: stdout?.slice(-200) || '',
-        },
-        500,
-      )
+  const scan = readScan()
+  const verdicts = new Map((scan?.games ?? []).map((g) => [String(g.slug), g]))
+  const games = listGames().map((g) => {
+    const v = verdicts.get(g.slug)
+    return {
+      ...g,
+      scan: v ? { level: v.level, verdict: v.verdict, q: v.q_value ?? null, draws: v.draws } : null,
     }
-
-    try {
-      const data = JSON.parse(stdout)
-      if (data.status === 'error') {
-        return json(data, 500)
-      }
-      return json(data)
-    } catch {
-      return json(
-        {
-          status: 'error',
-          error: 'Failed to parse script output',
-          stdout: stdout?.slice(-500) || '',
-          stderr: stderr?.slice(-500) || '',
-        },
-        500,
-      )
-    }
-  } catch (error) {
-    return json(
-      { status: 'error', error: error instanceof Error ? error.message : 'Unknown error' },
-      500,
-    )
-  }
+  })
+  return NextResponse.json({ version: APP_VERSION, scanAt: scan?.generated_at ?? null, games })
 }

@@ -1,48 +1,32 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "next-themes";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { APP_VERSION } from '@/lib/version'
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: "Локальный предсказатель",
-  description: "Анализатор и предсказатель лотерей — 133 модели, DualBayesRing, k-fold CV, Monte Carlo",
-  keywords: ["lottery", "prediction", "анализ", "лотерея", "предсказание"],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
-};
+  title: 'Лотерейный анализатор',
+  description: 'Анализ тиражей Столото: тесты случайности и честная проверка методов прогноза',
+  icons: { icon: '/favicon.svg' },
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased theme-body`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
-        <Toaster />
+    <html lang="ru">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" />
+      </head>
+      <body>
+        <header className="topbar">
+          <Link href="/" className="brand"><span className="brand-ball" aria-hidden>7</span>Лотерейный анализатор</Link>
+          <nav className="topnav">
+            <Link href="/">Игры</Link>
+            <Link href="/odds">Шансы игр</Link>
+            <span className="version">версия {APP_VERSION}</span>
+          </nav>
+        </header>
+        {children}
       </body>
     </html>
-  );
+  )
 }

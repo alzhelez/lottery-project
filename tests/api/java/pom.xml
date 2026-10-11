@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- API-автотесты на Java: TestNG + REST Assured + AssertJ + Allure.
+     Запуск: python tests/api/env.py start, затем в этой папке: mvn test
+     Отчёт Allure: результаты пишутся в ../../../allure-results/api-java -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ru.lottery</groupId>
+    <artifactId>lottery-api-tests</artifactId>
+    <version>40.3.1</version>
+    <name>Лотерейный анализатор — API-тесты (Java)</name>
+
+    <properties>
+        <!-- Java 17 и новее -->
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <testng.version>7.10.2</testng.version>
+        <rest-assured.version>5.5.0</rest-assured.version>
+        <assertj.version>3.26.3</assertj.version>
+        <allure.version>2.29.0</allure.version>
+        <aspectj.version>1.9.22.1</aspectj.version>
+        <!-- адрес приложения: mvn test -Dapi.baseUrl=http://... или переменная окружения API_BASE_URL
+             (её подхватывает профиль env-base-url ниже); по умолчанию — тестовое окружение env.py -->
+        <api.baseUrl>http://127.0.0.1:3100</api.baseUrl>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- запросы и ответы прикладываются к шагам отчёта Allure -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-rest-assured</artifactId>
+            <version>${allure.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <!-- агент AspectJ нужен Allure для шагов и вложений -->
+                    <argLine>
+                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                        -Dfile.encoding=UTF-8
+                    </argLine>
+                    <systemPropertyVariables>
+                        <api.baseUrl>${api.baseUrl}</api.baseUrl>
+                        <allure.results.directory>${project.basedir}/../../../allure-results/api-java</allure.results.directory>
+                    </systemPropertyVariables>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.aspectj</groupId>
+                        <artifactId>aspectjweaver</artifactId>
+                        <version>${aspectj.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Профиль включается сам, если задана переменная окружения API_BASE_URL -->
+        <profile>
+            <id>env-base-url</id>
+            <activation>
+                <property>
+                    <name>env.API_BASE_URL</name>
+                </property>
+            </activation>
+            <properties>
+                <api.baseUrl>${env.API_BASE_URL}</api.baseUrl>
+            </properties>
+        </profile>
+    </profiles>
+</project>
