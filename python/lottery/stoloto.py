@@ -363,23 +363,66 @@ class DrawStore:
         self._last_flush = time.time()
 
 
+MAX_PAGES = 300           # страниц в одном окне дат: API Столото листает не дальше ~500-й
+                          # страницы, а дальше отдаёт одну и ту же — окно надо делить раньше
+
+
+def _span_days(raw_draws: list[dict], game: Game) -> float | None:
+    """Сколько дней покрывает страница тиражей (по датам)."""
+    dts = [d.dt for d in (api_draw_to_draw(r, game) for r in raw_draws if isinstance(r, dict)) if d and d.dt]
+    if len(dts) < 2:
+        return None
+    return max((max(dts) - min(dts)).total_seconds() / 86400, 1 / 1440)
+
+
+def _fetch_window(game: Game, store: DrawStore, start: datetime, end: datetime, log, on_page) -> tuple[bool, float]:
+    """Все страницы одного окна дат. Возвращает (окно загружено целиком, тиражей в день).
+    False — тиражей в окне больше, чем API отдаёт постранично: окно нужно уменьшить."""
+    days = (end - start).days + 1
+    seen: set[int] = set()
+    page = 1
+    while True:
+        draws, has_more = archive_page(game, start, end, page, log=log)
+        nos = {int(r["number"]) for r in draws if isinstance(r, dict) and str(r.get("number", "")).isdigit()}
+        if draws and nos and nos <= seen:
+            # API вернул уже виденную страницу: дальше он не листает
+            return False, len(seen) / days
+        if draws:
+            store.add(draws)
+        seen |= nos
+        if on_page:
+            on_page(start, end, page, len(draws))
+        if not draws or not has_more or len(draws) < PAGE_SIZE:
+            return True, len(seen) / days
+        if page == 1 and days > 1:
+            span = _span_days(draws, game)
+            if span and days / span > MAX_PAGES:     # окно заведомо не пролистать — делим сразу
+                return False, PAGE_SIZE / span
+        if page >= MAX_PAGES:
+            return False, len(seen) / days
+        page += 1
+        time.sleep(REQUEST_DELAY)
+
+
 def fetch_range(game: Game, store: DrawStore, date_from: datetime, date_to: datetime, log=print,
                 on_page=None) -> None:
-    """Все тиражи за период: окна по году, внутри окна — по страницам."""
+    """Все тиражи за период. Период режется на окна (до года); окно, в которое тиражей
+    больше, чем API отдаёт постранично (игры с тиражами каждые несколько минут), делится
+    на меньшие — размер следующих окон подстраивается под частоту тиражей."""
     start = date_from
+    window = WINDOW_DAYS
     while start <= date_to:
-        end = min(start + timedelta(days=WINDOW_DAYS - 1), date_to)
-        page = 1
-        while True:
-            draws, has_more = archive_page(game, start, end, page, log=log)
-            if draws:
-                store.add(draws)
-            if on_page:
-                on_page(start, end, page, len(draws))
-            if not draws or not has_more or len(draws) < PAGE_SIZE:
-                break
-            page += 1
-            time.sleep(REQUEST_DELAY)
+        end = min(start + timedelta(days=window - 1), date_to)
+        complete, per_day = _fetch_window(game, store, start, end, log, on_page)
+        span = (end - start).days + 1
+        fit = max(1, int(MAX_PAGES * PAGE_SIZE * 0.7 / per_day)) if per_day > 0 else WINDOW_DAYS
+        if not complete and span > 1:
+            window = max(1, min(fit, span // 2))      # то же начало, окно меньше
+            log(f"Тиражей много ({per_day:.0f} в день) — загружаю окнами по {window} дн.")
+            continue
+        if not complete:
+            log(f"{fmt_date(start)}: тиражей за день больше, чем отдаёт API, часть пропущена")
+        window = min(WINDOW_DAYS, fit)
         start = end + timedelta(days=1)
         time.sleep(REQUEST_DELAY)
 
@@ -457,17 +500,34 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
         if first is None:
             write_meta(game.slug, checked_at=datetime.now().isoformat(timespec="seconds"))
             return {"status": "no_data", "draws": 0, "added": 0, "message": "В архиве нет тиражей этой игры"}
-        _write_meta(game, {"first_date": fmt_date(first), "repaired_v2": True})
+        _write_meta(game, {"first_date": fmt_date(first), "repaired_v2": True, "prizes_v": prizes_mod.VERSION})
         status(f"Первый тираж: {fmt_date(first)}. Загружаю архив…")
         fetch_range(game, store, first, today, log=log, on_page=page_note)
     else:
         last = max(existing, key=lambda d: d.no)
         last_dt = last.dt or today
-        status(f"В файле {len(existing)} тиражей, докачиваю с {fmt_date(last_dt)}…")
-        fetch_range(game, store, datetime(last_dt.year, last_dt.month, last_dt.day), today, log=log, on_page=page_note)
-
         first = min(existing, key=lambda d: d.no)
         meta = _read_meta(game)
+        if meta.get("prizes_v") != prizes_mod.VERSION:
+            # Выплаты по всему архиву: в 40.3.0 их не было у старых тиражей, а разбор выбирал
+            # не тот список из ответа API. Один раз перечитываем архив целиком (заодно докачка).
+            first_dt = first.dt or today
+            if meta.get("first_date"):
+                try:
+                    first_dt = min(first_dt, datetime.strptime(meta["first_date"], "%d.%m.%Y"))
+                except ValueError:
+                    pass
+            status(f"В файле {len(existing)} тиражей. Перечитываю архив с {fmt_date(first_dt)} ради выплат — "
+                   "один раз после обновления программы…")
+            fetch_range(game, store, datetime(first_dt.year, first_dt.month, first_dt.day), today,
+                        log=log, on_page=page_note)
+            store.flush()
+            _write_meta(game, {**_read_meta(game), "prizes_v": prizes_mod.VERSION})
+            meta = _read_meta(game)
+        else:
+            status(f"В файле {len(existing)} тиражей, докачиваю с {fmt_date(last_dt)}…")
+            fetch_range(game, store, datetime(last_dt.year, last_dt.month, last_dt.day), today,
+                        log=log, on_page=page_note)
         if first.no > 1 and first.dt and not meta.get("first_date"):
             real_first = detect_first_draw_date(game, log=log)
             if real_first:

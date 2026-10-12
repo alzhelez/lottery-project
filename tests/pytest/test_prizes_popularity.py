@@ -139,3 +139,47 @@ def test_generator_uses_popularity_model(data_dir):
     low = [sum(v <= 20 for v in t["blocks"][0]) for t in res["tickets"]]
     assert np.mean(low) < 6 * 20 / 45            # «популярные» числа встречаются реже обычного
     assert "наименее популярных" in res["tickets"][0]["notes"][-1]
+
+
+def test_extract_real_api_shape():
+    """Форма настоящего ответа API (тираж «Дважды два»): winners — одни нули с номерами
+    категорий, winningCategories — строка JSON с суммами в копейках, а настоящие категории —
+    winCategories с подписями {"ru": "2 + 2"} и суммами в рублях."""
+    from lottery import prizes
+    raw = {
+        "number": 258313, "ticketPrice": 15, "betsCount": 1758,
+        "winningCategories": '{"main":[{"winCat":2,"amount":75000,"countWins":1}]}',
+        "winners": [{"participants": 0, "amount": 0, "totalAmount": 0, "category": i} for i in range(1, 10)],
+        "winCategories": [
+            {"number": 1, "participants": 0, "amount": 0, "title": {"ru": "2 + 2", "en": "2 + 2"}},
+            {"number": 2, "participants": 1, "amount": 750, "title": {"ru": "1 + 2", "en": "1 + 2"}},
+            {"number": 6, "participants": 36, "amount": 30, "title": {"ru": "1 + 1", "en": "1 + 1"}},
+            {"number": 7, "participants": 285, "amount": 15, "title": {"ru": "1 + 0", "en": "1 + 0"}},
+        ],
+    }
+    rec = prizes.extract(raw)
+    assert rec["source"] == "winCategories" and rec["price"] == 15
+    keys = {prizes.category_key(c["label"], 2, [2, 2]): (c["winners"], c["prize"]) for c in rec["categories"]}
+    assert keys == {"2+2": (0, 0), "1+2": (1, 750), "1+1": (36, 30), "1+0": (285, 15)}
+    # 5 из 36 лайт: подпись «4 из 5»
+    one = prizes.extract({"winCategories": [
+        {"participants": 0, "amount": 0, "title": {"ru": "5 из 5"}},
+        {"participants": 32, "amount": 50000, "title": {"ru": "4 из 5"}}]})
+    assert [prizes.category_key(c["label"], 1, [5]) for c in one["categories"]] == ["5", "4"]
+    # одни нули — выплат нет
+    assert prizes.extract({"winners": [{"participants": 0, "amount": 0, "category": i} for i in range(3)]}) is None
+
+
+def test_equal_fields_detected_from_data():
+    """Игра не в реестре, числа одним списком с повторами: 2+2 из 26 и 4+4 из 20 делятся на поля."""
+    import random
+    from lottery.drawfile import Draw, split_bonus
+    from lottery.games import Game
+    rng = random.Random(1)
+    for k, n in ((4, 26), (8, 20)):
+        draws = [Draw(i, "01.01.2026 10:00", (tuple(rng.sample(range(1, n + 1), k // 2) + rng.sample(range(1, n + 1), k // 2)),))
+                 for i in range(1, 400)]
+        out, split = split_bonus(draws, Game(slug="new-game", title="x"))
+        assert split and all(len(d.blocks) == 2 and len(d.blocks[0]) == k // 2 for d in out)
+    digits = [Draw(i, "01.01.2026 10:00", (tuple(rng.randrange(10) for _ in range(4)),)) for i in range(1, 400)]
+    assert split_bonus(digits, Game(slug="digits", title="x"))[1] is False

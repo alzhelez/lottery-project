@@ -628,6 +628,14 @@ def cmd_diagnose(args) -> None:
                 api_lines.append(f"!! {slug}: выплаты не найдены; поля тиража: {keys}")
         save_json(data_dir() / "api_samples.json", samples)
     out = [f"Диагностика {__version__}, {datetime.now():%d.%m.%Y %H:%M}", ""]
+    # разные имена в API, а тиражи одни и те же (например, «Дважды два» и «Охота: вызов»)
+    by_tail: dict[tuple, list[str]] = {}
+    for r in report:
+        tail = tuple(r["lines"][-2:])
+        if r["draws"] and tail:
+            by_tail.setdefault(tail, []).append(r["slug"])
+    for same in (v for v in by_tail.values() if len(v) > 1):
+        out += [f"Одинаковые тиражи у игр {', '.join(same)}: API отдаёт один розыгрыш под разными именами.", ""]
     if not report:
         out += ["Тиражи ещё не загружены (в data\\draws нет файлов). Сначала выполните: lp.bat fetch", ""]
     if api_lines:

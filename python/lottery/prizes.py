@@ -18,6 +18,8 @@ from pathlib import Path
 from .fsutil import write_text
 from .games import data_dir, draws_path
 
+VERSION = 2   # версия разбора: записи старых версий перечитываются из API один раз
+
 WINNER_KEYS = ("winners", "winnersCount", "winnerCount", "winnersAmount", "participants", "count",
                "quantity", "ticketsCount", "winTickets")
 PRIZE_KEYS = ("prize", "amount", "winAmount", "prizeAmount", "sum", "money", "value", "prizeValue", "win")
@@ -67,9 +69,22 @@ def _label(item: dict) -> str | None:
     if isinstance(v, list):
         return "+".join(str(x) for x in v)
     if isinstance(v, dict):
+        # {"ru": "2 + 2", "en": "2 + 2"} — переводы одной подписи
+        for lang in ("ru", "en"):
+            if isinstance(v.get(lang), str):
+                return v[lang]
         nums = [x for x in v.values() if isinstance(x, (int, str))]
         return "+".join(str(x) for x in nums) if nums else None
     return None
+
+
+def _score(cats: list[dict]) -> tuple:
+    """Какой из найденных списков — настоящие категории выигрышей. В ответе API их
+    несколько: winCategories (подписи «2 + 2», суммы в рублях), winners (часто одни
+    нули, категории только номерами), winningCategories (строка JSON, суммы в копейках)."""
+    informative = sum(1 for c in cats if (c["winners"] or 0) > 0 or (c["prize"] or 0) > 0)
+    labeled = sum(1 for c in cats if not c["label"].startswith("#") and not c["label"].strip().isdigit())
+    return informative > 0, labeled / len(cats), informative, len(cats)
 
 
 def _categories(items: list) -> list[dict] | None:
@@ -104,11 +119,11 @@ def extract(raw: dict) -> dict | None:
     for key, value in _walk({k: v for k, v in raw.items() if k not in ("combination", "winningCombination")}):
         if isinstance(value, list) and len(value) >= 2:
             cats = _categories(value)
-            if cats and (best is None or len(cats) > len(best[1])):
+            if cats and (best is None or _score(cats) > _score(best[1])):
                 best = (key, cats)
-    if best is None:
+    if best is None or not _score(best[1])[0]:
         return None
-    out = {"no": raw.get("number"), "source": best[0], "categories": best[1]}
+    out = {"no": raw.get("number"), "source": best[0], "categories": best[1], "v": VERSION}
     for name, keys in (("sales", SALES_KEYS), ("price", PRICE_KEYS), ("super", SUPER_KEYS)):
         _, v = _first(raw, keys)
         if _num(v) is not None:

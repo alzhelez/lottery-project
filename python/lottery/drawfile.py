@@ -286,6 +286,15 @@ def split_bonus(draws: list[Draw], game: Game) -> tuple[list[Draw], bool]:
     share = lambda ok: sum(ok) / len(rows)  # noqa: E731
     if share(len(set(r)) == k for r in rows) >= 0.995:
         return draws, False                   # обычное «k из N»
+    # равные поля без повторов внутри («Дважды два»: 2+2, «4 из 20 мини»: 4+4)
+    for p in range(k // 2, 1, -1):
+        if k % p:
+            continue
+        parts = [(j, j + p) for j in range(0, k, p)]
+        if all(share(len(set(r[a:b])) == p for r in rows) >= 0.995 for a, b in parts):
+            out = [Draw(d.no, d.date, tuple(d.blocks[0][a:b] for a, b in parts))
+                   if len(d.blocks) == 1 and len(d.blocks[0]) == k else d for d in draws]
+            return out, True
     for m in range(k - 1, 1, -1):
         if share(len(set(r[:m])) == m for r in rows) < 0.995:
             continue

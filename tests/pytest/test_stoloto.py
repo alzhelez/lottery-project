@@ -116,3 +116,46 @@ def test_no_network_fails_fast(monkeypatch, data_dir):
     assert all(r["status"] == "error" for r in res.values())
     assert sum("Пропущено" in r["message"] for r in res.values()) >= 2
     assert len(calls) <= 6
+
+
+class DenseCappedApi:
+    """Тиражи каждые 15 минут; как настоящий API — новые первыми, а дальше page_cap
+    отдаёт одну и ту же последнюю страницу с hasMore=true (из-за этого загрузка
+    «Дважды два» крутилась часами)."""
+
+    def __init__(self, start: datetime, days: int, page_cap: int):
+        self.draws = []
+        for i in range(days * 96):
+            dt = start + timedelta(minutes=15 * i)
+            a, b = i % 26 + 1, (i * 7) % 26 + 1
+            self.draws.append({"number": 1000 + i, "date": dt.strftime("%Y-%m-%dT%H:%M:%S"),
+                               "combination": {"structured": [a, b % 26 + 1 if b == a else b, (i * 3) % 26 + 1,
+                                                              (i * 11) % 26 + 1]}})
+        self.page_cap = page_cap
+        self.requests = 0
+
+    def archive_page(self, game, date_from, date_to, page, count=50, log=print):
+        self.requests += 1
+        assert self.requests < 5000, "загрузка зациклилась"
+        items = [d for d in self.draws
+                 if date_from.date() <= datetime.strptime(d["date"][:10], "%Y-%m-%d").date() <= date_to.date()]
+        items.sort(key=lambda d: -d["number"])
+        page = min(page, self.page_cap)
+        chunk = items[(page - 1) * count: page * count]
+        return chunk, page * count < len(items) or page == self.page_cap
+
+    def has_draws(self, game, date_from, date_to, log=print):
+        return any(date_from.date() <= datetime.strptime(d["date"][:10], "%Y-%m-%d").date() <= date_to.date()
+                   for d in self.draws)
+
+
+def test_dense_game_with_page_cap_is_fully_loaded(monkeypatch, data_dir):
+    start = (datetime.today() - timedelta(days=39)).replace(hour=0, minute=0, second=0, microsecond=0)
+    api = DenseCappedApi(start, 40, page_cap=6)
+    monkeypatch.setattr(stoloto, "archive_page", api.archive_page)
+    monkeypatch.setattr(stoloto, "has_draws", api.has_draws)
+    monkeypatch.setattr(stoloto, "REQUEST_DELAY", 0)
+    monkeypatch.setattr(stoloto, "MAX_PAGES", 5)
+    res = stoloto.update_game(get_game("dvazhdydva"), log=lambda m: None)
+    assert res["draws"] == len(api.draws) and res["missing"] == 0
+    assert api.requests < 400
