@@ -21,7 +21,7 @@ def test_replace_retries_while_file_is_locked(tmp_path, monkeypatch):
         if len(calls) < 4:
             raise PermissionError(5, "Отказано в доступе")
         real(src, dst)
-    monkeypatch.setattr(fsutil.os, "replace", flaky)
+    monkeypatch.setattr(fsutil, "_replace", flaky)
     monkeypatch.setattr(fsutil.time, "sleep", lambda s: None)
     fsutil.write_text(target, "new")
     assert target.read_text(encoding="utf-8") == "new" and len(calls) == 4
@@ -34,7 +34,7 @@ def test_permanent_lock_falls_back_to_direct_write(tmp_path, monkeypatch):
 
     def locked(src, dst):
         raise PermissionError(32, "Процесс не может получить доступ к файлу")
-    monkeypatch.setattr(fsutil.os, "replace", locked)
+    monkeypatch.setattr(fsutil, "_replace", locked)
     monkeypatch.setattr(fsutil.time, "sleep", lambda s: None)
     fsutil.write_text(target, "new")
     assert target.read_text(encoding="utf-8") == "new"

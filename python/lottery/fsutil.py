@@ -17,6 +17,9 @@ from pathlib import Path
 ATTEMPTS = 12          # ≈ 10 секунд ожидания в сумме
 
 
+# через переменную модуля — тесты подменяют только запись этого модуля, не os.replace целиком
+_replace = os.replace
+
 def _pause(attempt: int) -> None:
     time.sleep(min(0.05 * 2 ** attempt, 2.0))
 
@@ -29,7 +32,7 @@ def _tmp_name(path: Path) -> Path:
 def replace_with_retry(src: Path, dst: Path, attempts: int = ATTEMPTS) -> None:
     for attempt in range(attempts):
         try:
-            os.replace(src, dst)
+            _replace(src, dst)
             return
         except PermissionError:
             if attempt == attempts - 1:
