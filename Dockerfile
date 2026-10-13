@@ -30,7 +30,6 @@ COPY package.json next.config.ts tsconfig.json ./
 COPY public public
 COPY config config
 COPY python python
-COPY data/draws /app/data-seed/draws
 COPY data/tirazh*.txt /app/data-seed/
 COPY docker/entrypoint.sh /entrypoint.sh
 VOLUME ["/data"]

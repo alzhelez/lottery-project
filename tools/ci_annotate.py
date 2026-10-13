@@ -19,6 +19,9 @@ def esc(s: str) -> str:
 
 
 def main(patterns: list[str]) -> int:
+    # на Windows консоль CI не в UTF-8 — без этого кириллица в сообщениях роняет скрипт
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     shown = 0
     for pattern in patterns:
         for path in sorted(glob.glob(pattern)):
