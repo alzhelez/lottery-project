@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import os
+import stat
 import threading
 import time
 from pathlib import Path
@@ -84,7 +85,12 @@ def cleanup_stale_tmp(folder: Path, older_than_s: float = 3600) -> int:
     for p in folder.glob("*.tmp"):
         try:
             if now - p.stat().st_mtime > older_than_s:
-                p.unlink()
+                try:
+                    p.unlink()
+                except PermissionError:
+                    # на Windows файл «только для чтения» не удаляется — снимаем атрибут
+                    os.chmod(p, stat.S_IWRITE | stat.S_IREAD)
+                    p.unlink()
                 removed += 1
         except OSError:
             pass
