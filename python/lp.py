@@ -302,12 +302,19 @@ def auto_once(args) -> dict:
             if r.get("status") == "error":
                 log(f"{slug}: ошибка загрузки — {r.get('message')}")
         slugs = args.game or sorted(p.stem[len("draws_"):] for p in draws_path("x").parent.glob("draws_*.txt"))
+        from lottery.drawfile import same_draws
+        seen: dict[str, list] = {}
         for slug in slugs:
             try:
                 data = load_game_data(get_game(slug))
             except ValueError:
                 continue
             g = status["games"].setdefault(slug, {})
+            twin = next((s for s, d in seen.items() if same_draws(d, data.draws)), None)
+            seen[slug] = data.draws
+            if twin:
+                g["skipped"] = f"те же тиражи, что у {twin}"
+                continue
             if not data.fmt.supported or not data.draws:
                 g["skipped"] = "формат не поддерживается" if data.draws else "нет тиражей"
                 continue
@@ -558,7 +565,7 @@ def diagnose_game(slug: str) -> dict:
     prize_recs = prizes_mod.load(slug)
     last_prize = prize_recs[max(prize_recs)] if prize_recs else None
     counts = [s.count for s in data.fmt.blocks] if data.fmt.supported else []
-    mapped = ([f"{c['label']}→{prizes_mod.category_key(c['label'], len(counts), counts) or '?'}"
+    mapped = ([f"{c['label']}→{prizes_mod.describe_keys(c['label'], len(counts), counts)}"
                for c in last_prize["categories"]] if last_prize and counts else [])
     sample_keys = []
     try:
@@ -629,13 +636,19 @@ def cmd_diagnose(args) -> None:
         save_json(data_dir() / "api_samples.json", samples)
     out = [f"Диагностика {__version__}, {datetime.now():%d.%m.%Y %H:%M}", ""]
     # разные имена в API, а тиражи одни и те же (например, «Дважды два» и «Охота: вызов»)
-    by_tail: dict[tuple, list[str]] = {}
-    for r in report:
-        tail = tuple(r["lines"][-2:])
-        if r["draws"] and tail:
-            by_tail.setdefault(tail, []).append(r["slug"])
-    for same in (v for v in by_tail.values() if len(v) > 1):
-        out += [f"Одинаковые тиражи у игр {', '.join(same)}: API отдаёт один розыгрыш под разными именами.", ""]
+    from lottery.drawfile import load_game_draws, same_draws
+    loaded = {r["slug"]: load_game_draws(get_game(r["slug"])) for r in report if r["draws"]}
+    groups: list[list[str]] = []
+    for slug, draws in loaded.items():
+        for grp in groups:
+            if same_draws(loaded[grp[0]], draws):
+                grp.append(slug)
+                break
+        else:
+            groups.append([slug])
+    for same in (g for g in groups if len(g) > 1):
+        out += [f"Одинаковые тиражи у игр {', '.join(same)}: API отдаёт один розыгрыш под разными именами "
+                f"(автозапуск анализирует только {same[0]}).", ""]
     if not report:
         out += ["Тиражи ещё не загружены (в data\\draws нет файлов). Сначала выполните: lp.bat fetch", ""]
     if api_lines:

@@ -111,7 +111,7 @@ def test_bonus_is_split_for_unknown_game():
     rng = random.Random(1)
     draws = [Draw(i + 1, "01.01.2026 10:00", (tuple(rng.sample(range(1, 21), 8) + [rng.randint(1, 4)]),))
              for i in range(400)]
-    out, split = split_bonus(draws, get_game("rapidopro"))
+    out, split = split_bonus(draws, get_game("rapido-new"))
     assert split and out[0].blocks[1][0] <= 4 and len(out[0].blocks[0]) == 8
     out, split = split_bonus(draws, get_game("rapido"))        # формат есть в реестре — не трогаем
     assert not split

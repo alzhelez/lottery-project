@@ -1,11 +1,13 @@
 """Выплаты из архива: разбор ответа API, оценка в рублях, журнал, модель популярности."""
+import json
+from pathlib import Path
 from datetime import datetime, timedelta
 
 import numpy as np
 import pytest
 from conftest import random_lotto, write_lotto_file
 
-from lottery import prizes
+from lottery import prizes, stoloto
 from lottery.drawfile import load_game_data
 from lottery.games import draws_path, get_game
 
@@ -183,3 +185,60 @@ def test_equal_fields_detected_from_data():
         assert split and all(len(d.blocks) == 2 and len(d.blocks[0]) == k // 2 for d in out)
     digits = [Draw(i, "01.01.2026 10:00", (tuple(rng.randrange(10) for _ in range(4)),)) for i in range(1, 400)]
     assert split_bonus(digits, Game(slug="digits", title="x"))[1] is False
+
+
+REAL = json.loads((Path(__file__).parent / "fixtures" / "api_real_draws.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("slug,shape,expected", [
+    ("4x20", (4, 4), {"4 X 3 и 3 X 4": ["4+3", "3+4"], "3 X 3": ["3+3"]}),
+    ("oxota", (4, 4), {"4 X 1 и 1 X 4": ["4+1", "1+4"]}),
+    ("dvazhdydva", (2, 2), {"1 + 2": ["1+2"]}),
+    ("5x2", (5, 2), {"4+1": ["4+1"]}),
+    ("5x36plus", (5, 1), {"5 + 1": ["5+1"], "3": ["3+0"]}),
+    ("rapido2", (8, 1), {"7 + 1": ["7+1"], "7": ["7+0"], "Больше нечётных": []}),
+    ("rapidopro", (8, 1), {"6": ["6+0"]}),
+    ("6x45", (6,), {"4 из 6": ["4"]}),
+    ("udachanasdachu", (6,), {"1 из 6": ["1"]}),
+    ("crazycombo", (12,), {"2 или 10": ["2", "10"]}),
+    ("keno2", (9, 20), {}),
+    ("gzhl", None, {"Тур 1": []}),
+])
+def test_real_api_draws(slug, shape, expected):
+    """Ответы настоящего API Столото (по последнему тиражу каждой игры, октябрь 2026)."""
+    from lottery.games import get_game
+    raw = REAL[slug]
+    blocks = stoloto.extract_blocks(raw, get_game(slug))
+    if shape:
+        assert tuple(len(b) for b in blocks) == shape
+    rec = prizes.extract(raw)
+    assert rec and rec["price"] == raw["ticketPrice"]
+    labels = {c["label"]: c for c in rec["categories"]}
+    counts = list(shape or [len(blocks[0])])
+    for label, keys in expected.items():
+        assert prizes.category_keys(label, len(counts), counts) == keys and label in labels
+
+
+def test_prize_storage_appends_and_reads_old_format(data_dir):
+    """Новые тиражи дописываются в конец; старый формат 40.3.0–40.3.2 читается; изменение
+    сохранённого тиража переписывает файл; одинаковые записи не пишутся повторно."""
+    path = prizes.prizes_file("4x20")
+    old = {"no": 1, "source": "winCategories", "categories": [{"label": "4 X 4", "winners": 0.0, "prize": 0.0},
+                                                             {"label": "3 X 3", "winners": 5.0, "prize": 4000.0}],
+           "price": 350.0}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(old, ensure_ascii=False) + "\n", encoding="utf-8")
+    known = prizes.line_hashes("4x20")
+    new = {"no": 2, "source": "winCategories", "categories": [{"label": "3 X 3", "winners": 7.0, "prize": 3500.0}],
+           "price": 350.0}
+    prizes.write_records("4x20", {2: prizes.record_line(new)}, known)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert lines[0] == json.dumps(old, ensure_ascii=False) and json.loads(lines[1])["c"] == [["3 X 3", 7.0, 3500.0]]
+    hist = prizes.keyed_history("4x20", [4, 4])
+    assert hist[1]["categories"]["3+3"]["prize"] == 4000.0 and hist[2]["categories"]["3+3"]["winners"] == 7.0
+    assert prizes.typical_prizes("4x20", [4, 4])["prizes"]["3+3"] == 3750.0
+    # переписать тираж 1 (перечитывание архива): файл пересобирается по порядку
+    old["categories"][1]["prize"] = 4100.0
+    prizes.write_records("4x20", {1: prizes.record_line(old)}, prizes.line_hashes("4x20"))
+    assert [prizes._line_no(l) for l in path.read_text(encoding="utf-8").splitlines()] == [1, 2]
+    assert prizes.load("4x20", nos={1})[1]["categories"][1]["prize"] == 4100.0

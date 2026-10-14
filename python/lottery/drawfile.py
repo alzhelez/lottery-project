@@ -379,3 +379,12 @@ def load_game_data(game: Game) -> GameData:
     valid = [d for d in draws if fmt.supported and fmt.matches(d)]
     mats = [block_matrix(valid, s) for s in fmt.blocks] if fmt.supported else []
     return GameData(game, valid, len(draws), fmt, mats)
+
+
+def same_draws(a: list[Draw], b: list[Draw], last: int = 200, min_common: int = 30) -> bool:
+    """Одни и те же тиражи под разными именами игр (в API так бывает: «Дважды два» и
+    «Охота: вызов», «Crazy Combo» и «Остатки сладки»). Сравниваются общие номера среди
+    последних тиражей — у одной игры может быть на пару тиражей больше."""
+    ma = {d.no: d.blocks for d in a[-last:]}
+    common = [d for d in b[-last:] if d.no in ma]
+    return len(common) >= min_common and all(ma[d.no] == d.blocks for d in common)

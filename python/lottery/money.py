@@ -39,17 +39,23 @@ def context(data: GameData) -> dict | None:
     keys = ["+".join(map(str, h)) for h in itertools.product(*[range(c + 1) for c in counts])]
     col = {k: i for i, k in enumerate(keys)}
     table = np.full((data.T, len(keys)), np.nan)
+    # цена билета в каждом тираже: она менялась (4 из 20 — 100 ₽ раньше, 350 ₽ сейчас),
+    # и считать всю историю по сегодняшней цене — занижать возврат. Свою цену пользователь
+    # вводит как сегодняшнюю — она применяется ко всем тиражам.
+    prices = np.full(data.T, float(price))
     for t, d in enumerate(data.draws):
         h = hist.get(d.no)
         if not h:
             continue
+        if not user["price"] and h.get("price"):
+            prices[t] = float(h["price"])
         table[t] = 0.0                                   # категории, которых нет в таблице, — без выигрыша
         for key, c in h["categories"].items():
             if key in col and c["prize"]:
                 table[t, col[key]] = c["prize"]
     pmfs = [block_pmf(s) for s in data.fmt.blocks]
     p_key = np.array([np.prod([p[int(x)] for p, x in zip(pmfs, k.split("+"))]) for k in keys])
-    return {"available": True, "price": float(price), "keys": keys, "col": col, "table": table,
+    return {"available": True, "price": float(price), "prices": prices, "keys": keys, "col": col, "table": table,
             "random_ev": table @ p_key, "has": ~np.isnan(table[:, 0]), "draws_with_prizes": len(hist),
             "price_source": "введена вами" if user["price"] else "из ответа API"}
 
@@ -69,6 +75,6 @@ def summary(ctx: dict, won: np.ndarray, rows: slice) -> dict:
         return {"n": 0}
     w = float(np.nansum(won[rows][mask]))
     r = float(np.nansum(ctx["random_ev"][rows][mask]))
-    spent = ctx["price"] * n
+    spent = float(ctx["prices"][rows][mask].sum()) if "prices" in ctx else ctx["price"] * n
     return {"n": n, "won": w, "spent": spent, "return": w / spent, "random_return": r / spent,
             "excess_pct": (w - r) / r * 100 if r else 0.0}

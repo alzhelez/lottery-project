@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -34,6 +34,7 @@ class Game:
     legacy: tuple[str, ...] = field(default_factory=tuple)
     labels: tuple[str, ...] = field(default_factory=tuple)   # названия блоков строки
     range: tuple[int, ...] = ()                               # (lo, hi), если известен заранее
+    variable: bool = False      # в реестре "counts": [] — число шаров меняется (бинго)
 
     @property
     def stoloto_url(self) -> str:
@@ -90,12 +91,13 @@ def _registry() -> dict[str, Game]:
     for g in raw["games"]:
         games[g["slug"]] = Game(
             slug=g["slug"],
-            title=g.get("title", g["slug"]),
+            title=g.get("title", ""),          # пусто — название возьмётся из ответа API
             counts=tuple(g.get("counts", [])),
             zero=bool(g.get("zero", False)),
             legacy=tuple(g.get("legacy", [])),
             labels=tuple(g.get("labels", [])),
             range=tuple(g.get("range", [])),
+            variable="counts" in g and not g["counts"],
         )
     return games
 
@@ -119,7 +121,10 @@ def get_game(slug: str) -> Game:
     """Игра из реестра; неизвестная игра получает пустые подсказки (формат определится по данным),
     а название — из ответа API или имя игры как есть."""
     validate_slug(slug)
-    return _registry().get(slug) or Game(slug=slug, title=api_titles().get(slug, slug))
+    game = _registry().get(slug)
+    if game is None:
+        return Game(slug=slug, title=api_titles().get(slug, slug))
+    return game if game.title else replace(game, title=api_titles().get(slug, slug))
 
 
 def all_games() -> list[Game]:

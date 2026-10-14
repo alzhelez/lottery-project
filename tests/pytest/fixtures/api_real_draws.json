@@ -1,0 +1,8681 @@
+{
+ "4x20": {
+  "number": 15767,
+  "date": "2026-10-14T22:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "3",
+    "2",
+    "14",
+    "8",
+    "15",
+    "1",
+    "11",
+    "16"
+   ],
+   "structured": [
+    3,
+    2,
+    14,
+    8,
+    15,
+    1,
+    11,
+    16
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 4",
+     "en": "4 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 3 и 3 X 4",
+     "en": "4 X 3 and 3 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 2 и 2 X 4",
+     "en": "4 X 2 and 2 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 8141,
+    "totalAmount": 8141,
+    "amountCents": 814100,
+    "totalAmountCents": 814100,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 1 и 1 X 4",
+     "en": "4 X 1 and 1 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 0 и 0 X 4",
+     "en": "4 X 0 and 0 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 3",
+     "en": "3 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 11,
+    "amount": 2485,
+    "totalAmount": 27335,
+    "amountCents": 248500,
+    "totalAmountCents": 2733500,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 2 и 2 X 3",
+     "en": "3 X 2 and 2 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 16,
+    "amount": 2276,
+    "totalAmount": 36416,
+    "amountCents": 227600,
+    "totalAmountCents": 3641600,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 1 и 1 X 3",
+     "en": "3 X 1 and 1 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 16,
+    "amount": 2812,
+    "totalAmount": 44992,
+    "amountCents": 281200,
+    "totalAmountCents": 4499200,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 0 и 0 X 3",
+     "en": "3 X 0 and 0 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 47,
+    "amount": 957,
+    "totalAmount": 44979,
+    "amountCents": 95700,
+    "totalAmountCents": 4497900,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 2",
+     "en": "2 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 306,
+    "amount": 350,
+    "totalAmount": 107100,
+    "amountCents": 35000,
+    "totalAmountCents": 10710000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 1 и 1 X 2",
+     "en": "2 X 1 and 1 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 234,
+    "amount": 458,
+    "totalAmount": 107172,
+    "amountCents": 45800,
+    "totalAmountCents": 10717200,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 0 и 0 X 2",
+     "en": "2 X 0 and 0 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 350,
+  "betsCount": 2284,
+  "superPrize": 414079395
+ },
+ "4x20mini": {
+  "number": 4143,
+  "date": "2026-10-14T22:20:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "17",
+    "10",
+    "11",
+    "1",
+    "20",
+    "15",
+    "14",
+    "10"
+   ],
+   "structured": [
+    17,
+    10,
+    11,
+    1,
+    20,
+    15,
+    14,
+    10
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 4",
+     "en": "4 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 3 и 3 X 4",
+     "en": "4 X 3 and 3 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 2 и 2 X 4",
+     "en": "4 X 2 and 2 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 2400,
+    "totalAmount": 2400,
+    "amountCents": 240000,
+    "totalAmountCents": 240000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 1 и 1 X 4",
+     "en": "4 X 1 and 1 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 0 и 0 X 4",
+     "en": "4 X 0 and 0 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 3",
+     "en": "3 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 2,
+    "amount": 480,
+    "totalAmount": 960,
+    "amountCents": 48000,
+    "totalAmountCents": 96000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 2 и 2 X 3",
+     "en": "3 X 2 and 2 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 6,
+    "amount": 320,
+    "totalAmount": 1920,
+    "amountCents": 32000,
+    "totalAmountCents": 192000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 1 и 1 X 3",
+     "en": "3 X 1 and 1 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 7,
+    "amount": 240,
+    "totalAmount": 1680,
+    "amountCents": 24000,
+    "totalAmountCents": 168000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 0 и 0 X 3",
+     "en": "3 X 0 and 0 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 12,
+    "amount": 160,
+    "totalAmount": 1920,
+    "amountCents": 16000,
+    "totalAmountCents": 192000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 2",
+     "en": "2 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 172,
+    "amount": 80,
+    "totalAmount": 13760,
+    "amountCents": 8000,
+    "totalAmountCents": 1376000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 1 и 1 X 2",
+     "en": "2 X 1 and 1 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 103,
+    "amount": 80,
+    "totalAmount": 8240,
+    "amountCents": 8000,
+    "totalAmountCents": 824000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 0 и 0 X 2",
+     "en": "2 X 0 and 0 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 80,
+  "betsCount": 1007,
+  "superPrize": 20000000
+ },
+ "5x2": {
+  "number": 3369,
+  "date": "2026-10-14T20:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "48",
+    "36",
+    "33",
+    "6",
+    "24",
+    "2",
+    "9"
+   ],
+   "structured": [
+    48,
+    36,
+    33,
+    6,
+    24,
+    2,
+    9
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "5+2",
+     "en": "5+2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "5+1",
+     "en": "5+1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "5+0",
+     "en": "5+0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4+2",
+     "en": "4+2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 1,
+    "amount": 7500,
+    "totalAmount": 7500,
+    "amountCents": 750000,
+    "totalAmountCents": 750000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4+1",
+     "en": "4+1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 3,
+    "amount": 3000,
+    "totalAmount": 9000,
+    "amountCents": 300000,
+    "totalAmountCents": 900000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4+0",
+     "en": "4+0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3+2",
+     "en": "3+2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 25,
+    "amount": 500,
+    "totalAmount": 12500,
+    "amountCents": 50000,
+    "totalAmountCents": 1250000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2+2",
+     "en": "2+2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 29,
+    "amount": 450,
+    "totalAmount": 13050,
+    "amountCents": 45000,
+    "totalAmountCents": 1305000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3+1",
+     "en": "3+1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 103,
+    "amount": 180,
+    "totalAmount": 18540,
+    "amountCents": 18000,
+    "totalAmountCents": 1854000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3+0",
+     "en": "3+0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 196,
+    "amount": 120,
+    "totalAmount": 23520,
+    "amountCents": 12000,
+    "totalAmountCents": 2352000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1+2",
+     "en": "1+2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 529,
+    "amount": 90,
+    "totalAmount": 47610,
+    "amountCents": 9000,
+    "totalAmountCents": 4761000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2+1",
+     "en": "2+1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 1038,
+    "amount": 60,
+    "totalAmount": 62280,
+    "amountCents": 6000,
+    "totalAmountCents": 6228000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2+0",
+     "en": "2+0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 2902,
+    "amount": 60,
+    "totalAmount": 174120,
+    "amountCents": 6000,
+    "totalAmountCents": 17412000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1+1",
+     "en": "1+1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 30,
+  "betsCount": 25373,
+  "superPrize": 34584899
+ },
+ "5x36lite": {
+  "number": 28,
+  "date": "2026-10-14T13:15:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "29",
+    "6",
+    "14",
+    "25",
+    "20"
+   ],
+   "structured": [
+    29,
+    6,
+    14,
+    25,
+    20
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 1,
+    "amount": 13990500,
+    "totalAmount": 13990500,
+    "amountCents": 1399050000,
+    "totalAmountCents": 1399050000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "5 из 36",
+    "title": {
+     "ru": "5 из 5",
+     "en": "5 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 29,
+    "amount": 50000,
+    "totalAmount": 1450000,
+    "amountCents": 5000000,
+    "totalAmountCents": 145000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "4 из 36",
+    "title": {
+     "ru": "4 из 5",
+     "en": "4 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1045,
+    "amount": 2000,
+    "totalAmount": 2090000,
+    "amountCents": 200000,
+    "totalAmountCents": 209000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "3 из 36",
+    "title": {
+     "ru": "3 из 5",
+     "en": "3 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 11253,
+    "amount": 200,
+    "totalAmount": 2250600,
+    "amountCents": 20000,
+    "totalAmountCents": 225060000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "2 из 36",
+    "title": {
+     "ru": "2 из 5",
+     "en": "2 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 1,
+    "amount": 13990500,
+    "totalAmount": 13990500,
+    "category": 1
+   },
+   {
+    "participants": 29,
+    "amount": 50000,
+    "totalAmount": 1450000,
+    "category": 2
+   },
+   {
+    "participants": 1045,
+    "amount": 2000,
+    "totalAmount": 2090000,
+    "category": 3
+   },
+   {
+    "participants": 11253,
+    "amount": 200,
+    "totalAmount": 2250600,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 200,
+  "betsCount": 96468,
+  "superPrize": 13990500
+ },
+ "5x36lite2": {
+  "number": 28,
+  "date": "2026-10-14T13:15:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "29",
+    "6",
+    "14",
+    "25",
+    "20"
+   ],
+   "structured": [
+    29,
+    6,
+    14,
+    25,
+    20
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 1,
+    "amount": 13990500,
+    "totalAmount": 13990500,
+    "amountCents": 1399050000,
+    "totalAmountCents": 1399050000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "5 из 36",
+    "title": {
+     "ru": "5 из 5",
+     "en": "5 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 29,
+    "amount": 50000,
+    "totalAmount": 1450000,
+    "amountCents": 5000000,
+    "totalAmountCents": 145000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "4 из 36",
+    "title": {
+     "ru": "4 из 5",
+     "en": "4 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1045,
+    "amount": 2000,
+    "totalAmount": 2090000,
+    "amountCents": 200000,
+    "totalAmountCents": 209000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "3 из 36",
+    "title": {
+     "ru": "3 из 5",
+     "en": "3 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 11253,
+    "amount": 200,
+    "totalAmount": 2250600,
+    "amountCents": 20000,
+    "totalAmountCents": 225060000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "2 из 36",
+    "title": {
+     "ru": "2 из 5",
+     "en": "2 from 5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 1,
+    "amount": 13990500,
+    "totalAmount": 13990500,
+    "category": 1
+   },
+   {
+    "participants": 29,
+    "amount": 50000,
+    "totalAmount": 1450000,
+    "category": 2
+   },
+   {
+    "participants": 1045,
+    "amount": 2000,
+    "totalAmount": 2090000,
+    "category": 3
+   },
+   {
+    "participants": 11253,
+    "amount": 200,
+    "totalAmount": 2250600,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 200,
+  "betsCount": 96468,
+  "superPrize": 13990500
+ },
+ "5x36plus": {
+  "number": 168106,
+  "date": "2026-10-14T23:30:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "25",
+    "13",
+    "2",
+    "29",
+    "22",
+    "1"
+   ],
+   "structured": [
+    25,
+    13,
+    2,
+    29,
+    22,
+    1
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "СУПЕР №1",
+    "title": {
+     "ru": "5 + 1",
+     "en": "5 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "СУПЕР №2",
+    "title": {
+     "ru": "5",
+     "en": "5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "4 (+1) из 5",
+    "title": {
+     "ru": "4",
+     "en": "4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 3,
+    "amount": 750,
+    "totalAmount": 2250,
+    "amountCents": 75000,
+    "totalAmountCents": 225000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "3 (+1) из 5",
+    "title": {
+     "ru": "3",
+     "en": "3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 40,
+    "amount": 75,
+    "totalAmount": 3000,
+    "amountCents": 7500,
+    "totalAmountCents": 300000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "2 (+1) из 5",
+    "title": {
+     "ru": "2",
+     "en": "2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 3,
+    "amount": 750,
+    "totalAmount": 2250,
+    "category": 4
+   },
+   {
+    "participants": 40,
+    "amount": 75,
+    "totalAmount": 3000,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 75,
+  "betsCount": 291,
+  "superPrize": 3316732
+ },
+ "6x45": {
+  "number": 19083,
+  "date": "2026-10-14T23:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "13",
+    "8",
+    "20",
+    "29",
+    "14",
+    "44"
+   ],
+   "structured": [
+    13,
+    8,
+    20,
+    29,
+    14,
+    44
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "Совпало 6",
+    "title": {
+     "ru": "6 из 6",
+     "en": "6 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "Совпало 5",
+    "title": {
+     "ru": "5 из 6",
+     "en": "5 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 20,
+    "amount": 3500,
+    "totalAmount": 70000,
+    "amountCents": 350000,
+    "totalAmountCents": 7000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "Совпало 4",
+    "title": {
+     "ru": "4 из 6",
+     "en": "4 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 485,
+    "amount": 560,
+    "totalAmount": 271600,
+    "amountCents": 56000,
+    "totalAmountCents": 27160000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "Совпало 3",
+    "title": {
+     "ru": "3 из 6",
+     "en": "3 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 2926,
+    "amount": 70,
+    "totalAmount": 204820,
+    "amountCents": 7000,
+    "totalAmountCents": 20482000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "Совпало 2",
+    "title": {
+     "ru": "2 из 6",
+     "en": "2 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 20,
+    "amount": 3500,
+    "totalAmount": 70000,
+    "category": 3
+   },
+   {
+    "participants": 485,
+    "amount": 560,
+    "totalAmount": 271600,
+    "category": 4
+   },
+   {
+    "participants": 2926,
+    "amount": 70,
+    "totalAmount": 204820,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 70,
+  "betsCount": 17589,
+  "superPrize": 48489350
+ },
+ "6x45plus": {
+  "number": 7363,
+  "date": "2026-10-15T00:00:00+0300",
+  "status": "PLAYING",
+  "combination": {
+   "serialized": [
+    "3",
+    "37",
+    "2",
+    "19",
+    "32",
+    "30",
+    "2"
+   ],
+   "structured": [
+    3,
+    37,
+    2,
+    19,
+    32,
+    30,
+    2
+   ]
+  },
+  "winCategories": [],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 2,
+    "amount": 500,
+    "totalAmount": 1000,
+    "category": 5
+   },
+   {
+    "participants": 12,
+    "amount": 100,
+    "totalAmount": 1200,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 100,
+  "betsCount": 110,
+  "superPrize": 44509114
+ },
+ "7x49new": {
+  "number": 24183,
+  "date": "2026-10-14T19:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "30",
+    "20",
+    "38",
+    "41",
+    "18",
+    "6",
+    "7"
+   ],
+   "structured": [
+    30,
+    20,
+    38,
+    41,
+    18,
+    6,
+    7
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "Суперпризовая. 7 из 49",
+    "title": {
+     "ru": "7 из 7",
+     "en": "7 from 7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": "6 из 49",
+    "title": {
+     "ru": "6 из 7",
+     "en": "6 from 7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1,
+    "amount": 2400,
+    "totalAmount": 2400,
+    "amountCents": 240000,
+    "totalAmountCents": 240000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "5 из 49",
+    "title": {
+     "ru": "5 из 7",
+     "en": "5 from 7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 40,
+    "amount": 280,
+    "totalAmount": 11200,
+    "amountCents": 28000,
+    "totalAmountCents": 1120000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "4 из 49",
+    "title": {
+     "ru": "4 из 7",
+     "en": "4 from 7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 343,
+    "amount": 120,
+    "totalAmount": 41160,
+    "amountCents": 12000,
+    "totalAmountCents": 4116000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "3 из 49",
+    "title": {
+     "ru": "3 из 7",
+     "en": "3 from 7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 1513,
+    "amount": 40,
+    "totalAmount": 60520,
+    "amountCents": 4000,
+    "totalAmountCents": 6052000,
+    "numbers": [],
+    "altPrize": "",
+    "description": "2 из 49",
+    "title": {
+     "ru": "2 из 7",
+     "en": "2 from 7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 1,
+    "amount": 2400,
+    "totalAmount": 2400,
+    "category": 3
+   },
+   {
+    "participants": 40,
+    "amount": 280,
+    "totalAmount": 11200,
+    "category": 4
+   },
+   {
+    "participants": 343,
+    "amount": 120,
+    "totalAmount": 41160,
+    "category": 5
+   },
+   {
+    "participants": 1513,
+    "amount": 40,
+    "totalAmount": 60520,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 40,
+  "betsCount": 7476,
+  "superPrize": 10000000
+ },
+ "crazycombo": {
+  "number": 23583,
+  "date": "2026-08-22T23:15:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "14",
+    "6",
+    "10",
+    "4",
+    "13",
+    "1",
+    "23",
+    "2",
+    "9",
+    "12",
+    "17",
+    "22"
+   ],
+   "structured": [
+    14,
+    6,
+    10,
+    4,
+    13,
+    1,
+    23,
+    2,
+    9,
+    12,
+    17,
+    22
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "0 или 12",
+     "en": "0 or 12"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "0 или 12",
+     "en": "0 or 12"
+    },
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "1 или 11",
+     "en": "1 or 11"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "1 или 11",
+     "en": "1 or 11"
+    },
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 11,
+    "amount": 150,
+    "totalAmount": 1650,
+    "amountCents": 15000,
+    "totalAmountCents": 165000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "2 или 10",
+     "en": "2 or 10"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 или 10",
+     "en": "2 or 10"
+    },
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 108,
+    "amount": 60,
+    "totalAmount": 6480,
+    "amountCents": 6000,
+    "totalAmountCents": 648000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "3 или 9",
+     "en": "3 or 9"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 или 9",
+     "en": "3 or 9"
+    },
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 584,
+    "amount": 20,
+    "totalAmount": 11680,
+    "amountCents": 2000,
+    "totalAmountCents": 1168000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 или 8",
+     "en": "4 or 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "4 или 8",
+     "en": "4 or 8"
+    },
+    "combination": null
+   }
+  ],
+  "winners": null,
+  "categories": [
+   {
+    "number": 1,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 2,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 3,
+    "prize": 150,
+    "prizesCount": 11
+   },
+   {
+    "number": 4,
+    "prize": 60,
+    "prizesCount": 108
+   },
+   {
+    "number": 5,
+    "prize": 20,
+    "prizesCount": 584
+   }
+  ],
+  "ticketPrice": 15,
+  "betsCount": 3104,
+  "superPrize": 382662
+ },
+ "dvazhdydva": {
+  "number": 341290,
+  "date": "2026-10-14T22:57:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "3",
+    "26",
+    "8",
+    "18"
+   ],
+   "structured": [
+    3,
+    26,
+    8,
+    18
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 + 2",
+     "en": "2 + 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 1000,
+    "totalAmount": 1000,
+    "amountCents": 100000,
+    "totalAmountCents": 100000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1 + 2",
+     "en": "1 + 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 3,
+    "amount": 1000,
+    "totalAmount": 3000,
+    "amountCents": 100000,
+    "totalAmountCents": 300000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 + 1",
+     "en": "2 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "0 + 2",
+     "en": "0 + 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 4,
+    "amount": 40,
+    "totalAmount": 160,
+    "amountCents": 4000,
+    "totalAmountCents": 16000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 + 0",
+     "en": "2 + 0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 27,
+    "amount": 40,
+    "totalAmount": 1080,
+    "amountCents": 4000,
+    "totalAmountCents": 108000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1 + 1",
+     "en": "1 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 116,
+    "amount": 20,
+    "totalAmount": 2320,
+    "amountCents": 2000,
+    "totalAmountCents": 232000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1 + 0",
+     "en": "1 + 0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 84,
+    "amount": 20,
+    "totalAmount": 1680,
+    "amountCents": 2000,
+    "totalAmountCents": 168000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "0 + 1",
+     "en": "0 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 20,
+  "betsCount": 997,
+  "superPrize": 100000
+ },
+ "fzp": {
+  "number": 580,
+  "date": "2026-10-10T16:30:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "6",
+    "11",
+    "38"
+   ],
+   "structured": {
+    "notPlayed": [
+     6,
+     11,
+     38
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 14,
+    "amount": 35714,
+    "totalAmount": 499996,
+    "amountCents": 3571400,
+    "totalAmountCents": 49999600,
+    "numbers": [
+     10,
+     45,
+     7,
+     21,
+     17,
+     32
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 1",
+     "en": "Tour 1"
+    },
+    "combinationsTitle": {
+     "ru": "10 45 07 21 17 32",
+     "en": "10 45 07 21 17 32"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 100000,
+    "totalAmount": 100000,
+    "amountCents": 10000000,
+    "totalAmountCents": 10000000,
+    "numbers": [
+     29,
+     37,
+     28,
+     34,
+     15,
+     5,
+     16,
+     19,
+     8,
+     40,
+     13
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 2",
+     "en": "Tour 2"
+    },
+    "combinationsTitle": {
+     "ru": "29 37 28 34 15 05 16 19 08 40 13",
+     "en": "29 37 28 34 15 05 16 19 08 40 13"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1,
+    "amount": 100000,
+    "totalAmount": 100000,
+    "amountCents": 10000000,
+    "totalAmountCents": 10000000,
+    "numbers": [
+     42,
+     35,
+     23,
+     20,
+     14,
+     39,
+     24
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 3",
+     "en": "Tour 3"
+    },
+    "combinationsTitle": {
+     "ru": "42 35 23 20 14 39 24",
+     "en": "42 35 23 20 14 39 24"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 100000,
+    "totalAmount": 100000,
+    "amountCents": 10000000,
+    "totalAmountCents": 10000000,
+    "numbers": [
+     18,
+     25,
+     36
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 4",
+     "en": "Tour 4"
+    },
+    "combinationsTitle": {
+     "ru": "18 25 36",
+     "en": "18 25 36"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 2,
+    "amount": 100000,
+    "totalAmount": 200000,
+    "amountCents": 10000000,
+    "totalAmountCents": 20000000,
+    "numbers": [
+     43
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 5",
+     "en": "Tour 5"
+    },
+    "combinationsTitle": {
+     "ru": "43",
+     "en": "43"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 3,
+    "amount": 1000,
+    "totalAmount": 3000,
+    "amountCents": 100000,
+    "totalAmountCents": 300000,
+    "numbers": [
+     30
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 6",
+     "en": "Tour 6"
+    },
+    "combinationsTitle": {
+     "ru": "30",
+     "en": "30"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 5,
+    "amount": 500,
+    "totalAmount": 2500,
+    "amountCents": 50000,
+    "totalAmountCents": 250000,
+    "numbers": [
+     22
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 7",
+     "en": "Tour 7"
+    },
+    "combinationsTitle": {
+     "ru": "22",
+     "en": "22"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 46,
+    "amount": 250,
+    "totalAmount": 11500,
+    "amountCents": 25000,
+    "totalAmountCents": 1150000,
+    "numbers": [
+     3
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 8",
+     "en": "Tour 8"
+    },
+    "combinationsTitle": {
+     "ru": "03",
+     "en": "03"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 102,
+    "amount": 170,
+    "totalAmount": 17340,
+    "amountCents": 17000,
+    "totalAmountCents": 1734000,
+    "numbers": [
+     2
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 9",
+     "en": "Tour 9"
+    },
+    "combinationsTitle": {
+     "ru": "02",
+     "en": "02"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 92,
+    "amount": 170,
+    "totalAmount": 15640,
+    "amountCents": 17000,
+    "totalAmountCents": 1564000,
+    "numbers": [
+     33
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 10",
+     "en": "Tour 10"
+    },
+    "combinationsTitle": {
+     "ru": "33",
+     "en": "33"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 130,
+    "amount": 150,
+    "totalAmount": 19500,
+    "amountCents": 15000,
+    "totalAmountCents": 1950000,
+    "numbers": [
+     12
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 11",
+     "en": "Tour 11"
+    },
+    "combinationsTitle": {
+     "ru": "12",
+     "en": "12"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 213,
+    "amount": 150,
+    "totalAmount": 31950,
+    "amountCents": 15000,
+    "totalAmountCents": 3195000,
+    "numbers": [
+     27
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 12",
+     "en": "Tour 12"
+    },
+    "combinationsTitle": {
+     "ru": "27",
+     "en": "27"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 889,
+    "amount": 150,
+    "totalAmount": 133350,
+    "amountCents": 15000,
+    "totalAmountCents": 13335000,
+    "numbers": [
+     44
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 13",
+     "en": "Tour 13"
+    },
+    "combinationsTitle": {
+     "ru": "44",
+     "en": "44"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 1444,
+    "amount": 120,
+    "totalAmount": 173280,
+    "amountCents": 12000,
+    "totalAmountCents": 17328000,
+    "numbers": [
+     41
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 14",
+     "en": "Tour 14"
+    },
+    "combinationsTitle": {
+     "ru": "41",
+     "en": "41"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 15,
+    "participants": 1466,
+    "amount": 120,
+    "totalAmount": 175920,
+    "amountCents": 12000,
+    "totalAmountCents": 17592000,
+    "numbers": [
+     31
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 15",
+     "en": "Tour 15"
+    },
+    "combinationsTitle": {
+     "ru": "31",
+     "en": "31"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 16,
+    "participants": 4124,
+    "amount": 120,
+    "totalAmount": 494880,
+    "amountCents": 12000,
+    "totalAmountCents": 49488000,
+    "numbers": [
+     1
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 16",
+     "en": "Tour 16"
+    },
+    "combinationsTitle": {
+     "ru": "01",
+     "en": "01"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 17,
+    "participants": 6474,
+    "amount": 100,
+    "totalAmount": 647400,
+    "amountCents": 10000,
+    "totalAmountCents": 64740000,
+    "numbers": [
+     4
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 17",
+     "en": "Tour 17"
+    },
+    "combinationsTitle": {
+     "ru": "04",
+     "en": "04"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 18,
+    "participants": 8981,
+    "amount": 100,
+    "totalAmount": 898100,
+    "amountCents": 10000,
+    "totalAmountCents": 89810000,
+    "numbers": [
+     9
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 18",
+     "en": "Tour 18"
+    },
+    "combinationsTitle": {
+     "ru": "09",
+     "en": "09"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 19,
+    "participants": 10530,
+    "amount": 100,
+    "totalAmount": 1053000,
+    "amountCents": 10000,
+    "totalAmountCents": 105300000,
+    "numbers": [
+     26
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 19",
+     "en": "Tour 19"
+    },
+    "combinationsTitle": {
+     "ru": "26",
+     "en": "26"
+    },
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 100,
+  "betsCount": 105503,
+  "superPrize": 20242180
+ },
+ "goldenring": {
+  "number": 72,
+  "date": "2026-10-14T20:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "56",
+    "6",
+    "61",
+    "41",
+    "7",
+    "19",
+    "31",
+    "16",
+    "45",
+    "44",
+    "72",
+    "63",
+    "69",
+    "48",
+    "10",
+    "1",
+    "21",
+    "15",
+    "34",
+    "18",
+    "74",
+    "70",
+    "4",
+    "53",
+    "57",
+    "3",
+    "30",
+    "23",
+    "50",
+    "37",
+    "73",
+    "25",
+    "38",
+    "64",
+    "71"
+   ],
+   "structured": {
+    "notPlayed": [
+     2,
+     5,
+     8,
+     9,
+     11,
+     12,
+     13,
+     14,
+     17,
+     20,
+     22,
+     24,
+     26,
+     27,
+     28,
+     29,
+     32,
+     33,
+     35,
+     36,
+     39,
+     40,
+     42,
+     43,
+     46,
+     47,
+     49,
+     51,
+     52,
+     54,
+     55,
+     58,
+     59,
+     60,
+     62,
+     65,
+     66,
+     67,
+     68,
+     75
+    ],
+    "played": [
+     56,
+     6,
+     61,
+     41,
+     7,
+     19,
+     31,
+     16,
+     45,
+     44,
+     72,
+     63,
+     69,
+     48,
+     10,
+     1,
+     21,
+     15,
+     34,
+     18,
+     74,
+     70,
+     4,
+     53,
+     57,
+     3,
+     30,
+     23,
+     50,
+     37,
+     73,
+     25,
+     38,
+     64,
+     71
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [
+     56,
+     6,
+     61,
+     41,
+     7,
+     19,
+     31,
+     16,
+     45,
+     44,
+     72,
+     63,
+     69,
+     48,
+     10,
+     1,
+     21,
+     15,
+     34,
+     18,
+     74,
+     70,
+     4,
+     53,
+     57,
+     3,
+     30,
+     23
+    ],
+    "altPrize": "",
+    "description": "Джекпот",
+    "title": {
+     "ru": "Джекпот",
+     "en": "Джекпот"
+    },
+    "combinationsTitle": {
+     "ru": "56 06 61 41 07 19 31 16 45 44 72 63 69 48 10 01 21 15 34 18 74 70 04 53 57 03 30 23",
+     "en": "56 06 61 41 07 19 31 16 45 44 72 63 69 48 10 01 21 15 34 18 74 70 04 53 57 03 30 23"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [
+     56,
+     6,
+     61,
+     41,
+     7
+    ],
+    "altPrize": "",
+    "description": "Первый тур",
+    "title": {
+     "ru": "Первый тур",
+     "en": "Первый тур"
+    },
+    "combinationsTitle": {
+     "ru": "56 06 61 41 07",
+     "en": "56 06 61 41 07"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 5,
+    "amount": 7000,
+    "totalAmount": 35000,
+    "amountCents": 700000,
+    "totalAmountCents": 3500000,
+    "numbers": [
+     56,
+     6,
+     61,
+     41,
+     7,
+     19,
+     31,
+     16,
+     45,
+     44
+    ],
+    "altPrize": "",
+    "description": "Второй тур",
+    "title": {
+     "ru": "Второй тур",
+     "en": "Второй тур"
+    },
+    "combinationsTitle": {
+     "ru": "56 06 61 41 07 19 31 16 45 44",
+     "en": "56 06 61 41 07 19 31 16 45 44"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 127,
+    "amount": 200,
+    "totalAmount": 25400,
+    "amountCents": 20000,
+    "totalAmountCents": 2540000,
+    "numbers": [
+     56,
+     6,
+     61,
+     41,
+     7,
+     19,
+     31,
+     16,
+     45,
+     44,
+     72,
+     63,
+     69,
+     48,
+     10,
+     1,
+     21,
+     15,
+     34,
+     18,
+     74,
+     70,
+     4,
+     53,
+     57
+    ],
+    "altPrize": "",
+    "description": "Третий тур",
+    "title": {
+     "ru": "Третий тур",
+     "en": "Третий тур"
+    },
+    "combinationsTitle": {
+     "ru": "56 06 61 41 07 19 31 16 45 44 72 63 69 48 10 01 21 15 34 18 74 70 04 53 57",
+     "en": "56 06 61 41 07 19 31 16 45 44 72 63 69 48 10 01 21 15 34 18 74 70 04 53 57"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 411,
+    "amount": 100,
+    "totalAmount": 41100,
+    "amountCents": 10000,
+    "totalAmountCents": 4110000,
+    "numbers": [
+     56,
+     6,
+     61,
+     41,
+     7,
+     19,
+     31,
+     16,
+     45,
+     44,
+     72,
+     63,
+     69,
+     48,
+     10,
+     1,
+     21,
+     15,
+     34,
+     18,
+     74,
+     70,
+     4,
+     53,
+     57,
+     3,
+     30,
+     23,
+     50,
+     37,
+     73,
+     25,
+     38,
+     64,
+     71
+    ],
+    "altPrize": "",
+    "description": "Четвертый тур",
+    "title": {
+     "ru": "Четвёртый тур",
+     "en": "Четвёртый тур"
+    },
+    "combinationsTitle": {
+     "ru": "56 06 61 41 07 19 31 16 45 44 72 63 69 48 10 01 21 15 34 18 74 70 04 53 57 03 30 23 50 37 73 25 38 64 71",
+     "en": "56 06 61 41 07 19 31 16 45 44 72 63 69 48 10 01 21 15 34 18 74 70 04 53 57 03 30 23 50 37 73 25 38 64 71"
+    },
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 100,
+  "betsCount": 2350,
+  "superPrize": 100000000
+ },
+ "gzhl": {
+  "number": 724,
+  "date": "2026-10-10T16:45:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "22",
+    "26",
+    "72"
+   ],
+   "structured": {
+    "notPlayed": [
+     22,
+     26,
+     72
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 1,
+    "amount": 360000,
+    "totalAmount": 360000,
+    "amountCents": 36000000,
+    "totalAmountCents": 36000000,
+    "numbers": [
+     48,
+     50,
+     86,
+     36,
+     35,
+     18,
+     87
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 1",
+     "en": "Tour 1"
+    },
+    "combinationsTitle": {
+     "ru": "48 50 86 36 35 18 87",
+     "en": "48 50 86 36 35 18 87"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 2000000,
+    "totalAmount": 2000000,
+    "amountCents": 200000000,
+    "totalAmountCents": 200000000,
+    "numbers": [
+     31,
+     55,
+     42,
+     71,
+     1,
+     88,
+     39,
+     70,
+     76,
+     15,
+     45,
+     32,
+     64,
+     29,
+     21,
+     40,
+     43,
+     62,
+     65,
+     81,
+     83,
+     7,
+     25,
+     4,
+     54,
+     90,
+     69,
+     37,
+     52,
+     80,
+     23,
+     10,
+     74,
+     49,
+     9
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 2",
+     "en": "Tour 2"
+    },
+    "combinationsTitle": {
+     "ru": "31 55 42 71 01 88 39 70 76 15 45 32 64 29 21 40 43 62 65 81 83 07 25 04 54 90 69 37 52 80 23 10 74 49 09",
+     "en": "31 55 42 71 01 88 39 70 76 15 45 32 64 29 21 40 43 62 65 81 83 07 25 04 54 90 69 37 52 80 23 10 74 49 09"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1,
+    "amount": 100000,
+    "totalAmount": 100000,
+    "amountCents": 10000000,
+    "totalAmountCents": 10000000,
+    "numbers": [
+     67,
+     56,
+     46,
+     61,
+     6,
+     77,
+     30,
+     85,
+     12,
+     47,
+     13,
+     75,
+     5,
+     58,
+     14,
+     84,
+     53,
+     2,
+     82,
+     89,
+     63,
+     66,
+     60
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 3",
+     "en": "Tour 3"
+    },
+    "combinationsTitle": {
+     "ru": "67 56 46 61 06 77 30 85 12 47 13 75 05 58 14 84 53 02 82 89 63 66 60",
+     "en": "67 56 46 61 06 77 30 85 12 47 13 75 05 58 14 84 53 02 82 89 63 66 60"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 3000,
+    "totalAmount": 3000,
+    "amountCents": 300000,
+    "totalAmountCents": 300000,
+    "numbers": [
+     27
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 4",
+     "en": "Tour 4"
+    },
+    "combinationsTitle": {
+     "ru": "27",
+     "en": "27"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 1,
+    "amount": 2000,
+    "totalAmount": 2000,
+    "amountCents": 200000,
+    "totalAmountCents": 200000,
+    "numbers": [
+     19
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 5",
+     "en": "Tour 5"
+    },
+    "combinationsTitle": {
+     "ru": "19",
+     "en": "19"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 2,
+    "amount": 1500,
+    "totalAmount": 3000,
+    "amountCents": 150000,
+    "totalAmountCents": 300000,
+    "numbers": [
+     68,
+     28
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 6",
+     "en": "Tour 6"
+    },
+    "combinationsTitle": {
+     "ru": "68 28",
+     "en": "68 28"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 5,
+    "amount": 1000,
+    "totalAmount": 5000,
+    "amountCents": 100000,
+    "totalAmountCents": 500000,
+    "numbers": [
+     57
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 7",
+     "en": "Tour 7"
+    },
+    "combinationsTitle": {
+     "ru": "57",
+     "en": "57"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 15,
+    "amount": 500,
+    "totalAmount": 7500,
+    "amountCents": 50000,
+    "totalAmountCents": 750000,
+    "numbers": [
+     24
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 8",
+     "en": "Tour 8"
+    },
+    "combinationsTitle": {
+     "ru": "24",
+     "en": "24"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 14,
+    "amount": 500,
+    "totalAmount": 7000,
+    "amountCents": 50000,
+    "totalAmountCents": 700000,
+    "numbers": [
+     17
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 9",
+     "en": "Tour 9"
+    },
+    "combinationsTitle": {
+     "ru": "17",
+     "en": "17"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 38,
+    "amount": 500,
+    "totalAmount": 19000,
+    "amountCents": 50000,
+    "totalAmountCents": 1900000,
+    "numbers": [
+     20
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 10",
+     "en": "Tour 10"
+    },
+    "combinationsTitle": {
+     "ru": "20",
+     "en": "20"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 50,
+    "amount": 300,
+    "totalAmount": 15000,
+    "amountCents": 30000,
+    "totalAmountCents": 1500000,
+    "numbers": [
+     33
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 11",
+     "en": "Tour 11"
+    },
+    "combinationsTitle": {
+     "ru": "33",
+     "en": "33"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 70,
+    "amount": 300,
+    "totalAmount": 21000,
+    "amountCents": 30000,
+    "totalAmountCents": 2100000,
+    "numbers": [
+     8
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 12",
+     "en": "Tour 12"
+    },
+    "combinationsTitle": {
+     "ru": "08",
+     "en": "08"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 115,
+    "amount": 300,
+    "totalAmount": 34500,
+    "amountCents": 30000,
+    "totalAmountCents": 3450000,
+    "numbers": [
+     11
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 13",
+     "en": "Tour 13"
+    },
+    "combinationsTitle": {
+     "ru": "11",
+     "en": "11"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 154,
+    "amount": 200,
+    "totalAmount": 30800,
+    "amountCents": 20000,
+    "totalAmountCents": 3080000,
+    "numbers": [
+     51
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 14",
+     "en": "Tour 14"
+    },
+    "combinationsTitle": {
+     "ru": "51",
+     "en": "51"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 15,
+    "participants": 378,
+    "amount": 200,
+    "totalAmount": 75600,
+    "amountCents": 20000,
+    "totalAmountCents": 7560000,
+    "numbers": [
+     78
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 15",
+     "en": "Tour 15"
+    },
+    "combinationsTitle": {
+     "ru": "78",
+     "en": "78"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 16,
+    "participants": 540,
+    "amount": 200,
+    "totalAmount": 108000,
+    "amountCents": 20000,
+    "totalAmountCents": 10800000,
+    "numbers": [
+     38
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 16",
+     "en": "Tour 16"
+    },
+    "combinationsTitle": {
+     "ru": "38",
+     "en": "38"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 17,
+    "participants": 711,
+    "amount": 180,
+    "totalAmount": 127980,
+    "amountCents": 18000,
+    "totalAmountCents": 12798000,
+    "numbers": [
+     34
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 17",
+     "en": "Tour 17"
+    },
+    "combinationsTitle": {
+     "ru": "34",
+     "en": "34"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 18,
+    "participants": 1244,
+    "amount": 180,
+    "totalAmount": 223920,
+    "amountCents": 18000,
+    "totalAmountCents": 22392000,
+    "numbers": [
+     44
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 18",
+     "en": "Tour 18"
+    },
+    "combinationsTitle": {
+     "ru": "44",
+     "en": "44"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 19,
+    "participants": 1722,
+    "amount": 180,
+    "totalAmount": 309960,
+    "amountCents": 18000,
+    "totalAmountCents": 30996000,
+    "numbers": [
+     41
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 19",
+     "en": "Tour 19"
+    },
+    "combinationsTitle": {
+     "ru": "41",
+     "en": "41"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 20,
+    "participants": 2614,
+    "amount": 180,
+    "totalAmount": 470520,
+    "amountCents": 18000,
+    "totalAmountCents": 47052000,
+    "numbers": [
+     16
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 20",
+     "en": "Tour 20"
+    },
+    "combinationsTitle": {
+     "ru": "16",
+     "en": "16"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 21,
+    "participants": 3981,
+    "amount": 180,
+    "totalAmount": 716580,
+    "amountCents": 18000,
+    "totalAmountCents": 71658000,
+    "numbers": [
+     59
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 21",
+     "en": "Tour 21"
+    },
+    "combinationsTitle": {
+     "ru": "59",
+     "en": "59"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 22,
+    "participants": 5995,
+    "amount": 150,
+    "totalAmount": 899250,
+    "amountCents": 15000,
+    "totalAmountCents": 89925000,
+    "numbers": [
+     3
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 22",
+     "en": "Tour 22"
+    },
+    "combinationsTitle": {
+     "ru": "03",
+     "en": "03"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 23,
+    "participants": 11932,
+    "amount": 150,
+    "totalAmount": 1789800,
+    "amountCents": 15000,
+    "totalAmountCents": 178980000,
+    "numbers": [
+     79
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 23",
+     "en": "Tour 23"
+    },
+    "combinationsTitle": {
+     "ru": "79",
+     "en": "79"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 24,
+    "participants": 17184,
+    "amount": 150,
+    "totalAmount": 2577600,
+    "amountCents": 15000,
+    "totalAmountCents": 257760000,
+    "numbers": [
+     73
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 24",
+     "en": "Tour 24"
+    },
+    "combinationsTitle": {
+     "ru": "73",
+     "en": "73"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 25,
+    "participants": 0,
+    "amount": 20000000,
+    "totalAmount": 0,
+    "amountCents": 2000000000,
+    "totalAmountCents": 0,
+    "numbers": [
+     0
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 25",
+     "en": "Tour 25"
+    },
+    "combinationsTitle": {
+     "ru": "Номер. Выигрышная комбинация - 44169393",
+     "en": "Номер. Выигрышная комбинация - 44169393"
+    },
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 150,
+  "betsCount": 165524,
+  "superPrize": 700000000
+ },
+ "keno2": {
+  "number": 329524,
+  "date": "2026-10-15T00:17:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "8",
+    "8",
+    "7",
+    "6",
+    "1",
+    "9",
+    "8",
+    "1",
+    "8",
+    "14",
+    "32",
+    "66",
+    "47",
+    "68",
+    "23",
+    "1",
+    "59",
+    "56",
+    "25",
+    "7",
+    "77",
+    "46",
+    "44",
+    "41",
+    "78",
+    "50",
+    "3",
+    "38",
+    "18"
+   ],
+   "structured": {
+    "column": 8,
+    "parity": "EVEN",
+    "played": [
+     8,
+     8,
+     7,
+     6,
+     1,
+     9,
+     8,
+     1,
+     8,
+     14,
+     32,
+     66,
+     47,
+     68,
+     23,
+     1,
+     59,
+     56,
+     25,
+     7,
+     77,
+     46,
+     44,
+     41,
+     78,
+     50,
+     3,
+     38,
+     18
+    ]
+   }
+  },
+  "winCategories": [],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "groupedCategories": [
+   {
+    "group": 1,
+    "categories": [
+     {
+      "number": 44,
+      "participants": 2,
+      "amount": 170,
+      "totalAmount": 340,
+      "amountCents": 17000,
+      "totalAmountCents": 34000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "Четные",
+       "en": "Четные"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 2,
+    "categories": [
+     {
+      "number": 54,
+      "participants": 40,
+      "amount": 700,
+      "totalAmount": 28000,
+      "amountCents": 70000,
+      "totalAmountCents": 2800000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "Столбец 8",
+       "en": "Столбец 8"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 3,
+    "categories": [
+     {
+      "number": 12,
+      "participants": 1,
+      "amount": 750,
+      "totalAmount": 750,
+      "amountCents": 75000,
+      "totalAmountCents": 75000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "6 из 10",
+       "en": "6 из 10"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 17,
+      "participants": 6,
+      "amount": 250,
+      "totalAmount": 1500,
+      "amountCents": 25000,
+      "totalAmountCents": 150000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "5 из 10",
+       "en": "5 из 10"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 39,
+      "participants": 19,
+      "amount": 100,
+      "totalAmount": 1900,
+      "amountCents": 10000,
+      "totalAmountCents": 190000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "4 из 10",
+       "en": "4 из 10"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 35,
+      "participants": 7,
+      "amount": 200,
+      "totalAmount": 1400,
+      "amountCents": 20000,
+      "totalAmountCents": 140000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "0 из 10",
+       "en": "0 из 10"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 4,
+    "categories": [
+     {
+      "number": 18,
+      "participants": 2,
+      "amount": 300,
+      "totalAmount": 600,
+      "amountCents": 30000,
+      "totalAmountCents": 60000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "5 из 9",
+       "en": "5 из 9"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 40,
+      "participants": 2,
+      "amount": 150,
+      "totalAmount": 300,
+      "amountCents": 15000,
+      "totalAmountCents": 30000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "4 из 9",
+       "en": "4 из 9"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 36,
+      "participants": 2,
+      "amount": 150,
+      "totalAmount": 300,
+      "amountCents": 15000,
+      "totalAmountCents": 30000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "0 из 9",
+       "en": "0 из 9"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 5,
+    "categories": [
+     {
+      "number": 19,
+      "participants": 1,
+      "amount": 500,
+      "totalAmount": 500,
+      "amountCents": 50000,
+      "totalAmountCents": 50000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "5 из 8",
+       "en": "5 из 8"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 41,
+      "participants": 5,
+      "amount": 200,
+      "totalAmount": 1000,
+      "amountCents": 20000,
+      "totalAmountCents": 100000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "4 из 8",
+       "en": "4 из 8"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 37,
+      "participants": 2,
+      "amount": 150,
+      "totalAmount": 300,
+      "amountCents": 15000,
+      "totalAmountCents": 30000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "0 из 8",
+       "en": "0 из 8"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 6,
+    "categories": [
+     {
+      "number": 20,
+      "participants": 1,
+      "amount": 1200,
+      "totalAmount": 1200,
+      "amountCents": 120000,
+      "totalAmountCents": 120000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "5 из 7",
+       "en": "5 из 7"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 23,
+      "participants": 7,
+      "amount": 200,
+      "totalAmount": 1400,
+      "amountCents": 20000,
+      "totalAmountCents": 140000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "4 из 7",
+       "en": "4 из 7"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 42,
+      "participants": 13,
+      "amount": 100,
+      "totalAmount": 1300,
+      "amountCents": 10000,
+      "totalAmountCents": 130000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "3 из 7",
+       "en": "3 from 7"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 38,
+      "participants": 8,
+      "amount": 150,
+      "totalAmount": 1200,
+      "amountCents": 15000,
+      "totalAmountCents": 120000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "0 из 7",
+       "en": "0 из 7"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 7,
+    "categories": [
+     {
+      "number": 24,
+      "participants": 2,
+      "amount": 750,
+      "totalAmount": 1500,
+      "amountCents": 75000,
+      "totalAmountCents": 150000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "4 из 6",
+       "en": "4 из 6"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 27,
+      "participants": 23,
+      "amount": 200,
+      "totalAmount": 4600,
+      "amountCents": 20000,
+      "totalAmountCents": 460000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "3 из 6",
+       "en": "3 из 6"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 8,
+    "categories": [
+     {
+      "number": 25,
+      "participants": 1,
+      "amount": 1920,
+      "totalAmount": 1920,
+      "amountCents": 192000,
+      "totalAmountCents": 192000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "4 из 5",
+       "en": "4 из 5"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     },
+     {
+      "number": 28,
+      "participants": 11,
+      "amount": 400,
+      "totalAmount": 4400,
+      "amountCents": 40000,
+      "totalAmountCents": 440000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "3 из 5",
+       "en": "3 из 5"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 9,
+    "categories": [
+     {
+      "number": 31,
+      "participants": 4,
+      "amount": 100,
+      "totalAmount": 400,
+      "amountCents": 10000,
+      "totalAmountCents": 40000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "2 из 4",
+       "en": "2 из 4"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 10,
+    "categories": [
+     {
+      "number": 32,
+      "participants": 1,
+      "amount": 300,
+      "totalAmount": 300,
+      "amountCents": 30000,
+      "totalAmountCents": 30000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "2 из 3",
+       "en": "2 из 3"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   },
+   {
+    "group": 12,
+    "categories": [
+     {
+      "number": 34,
+      "participants": 1,
+      "amount": 280,
+      "totalAmount": 280,
+      "amountCents": 28000,
+      "totalAmountCents": 28000,
+      "numbers": null,
+      "altPrize": null,
+      "description": null,
+      "title": {
+       "ru": "1 из 1",
+       "en": "1 из 1"
+      },
+      "combinationsTitle": null,
+      "subTitle": {},
+      "combination": null
+     }
+    ]
+   }
+  ],
+  "ticketPrice": 100,
+  "betsCount": 968,
+  "superPrize": 20000000
+ },
+ "lovi_moment": {
+  "number": 153,
+  "date": "2026-10-13T23:45:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "1",
+    "15",
+    "2",
+    "19",
+    "7",
+    "6",
+    "14",
+    "10",
+    "2"
+   ],
+   "structured": {
+    "played": [
+     1,
+     15,
+     2,
+     19,
+     7,
+     6,
+     14,
+     10,
+     2
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8 + 1",
+     "en": "8 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8",
+     "en": "8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7 + 1",
+     "en": "7 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 100,
+    "totalAmount": 100,
+    "amountCents": 10000,
+    "totalAmountCents": 10000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7",
+     "en": "7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 14,
+    "amount": 80,
+    "totalAmount": 1120,
+    "amountCents": 8000,
+    "totalAmountCents": 112000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6 + 1",
+     "en": "6 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 44,
+    "amount": 50,
+    "totalAmount": 2200,
+    "amountCents": 5000,
+    "totalAmountCents": 220000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6",
+     "en": "6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 77,
+    "amount": 30,
+    "totalAmount": 2310,
+    "amountCents": 3000,
+    "totalAmountCents": 231000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5 + 1",
+     "en": "5 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 398,
+    "amount": 10,
+    "totalAmount": 3980,
+    "amountCents": 1000,
+    "totalAmountCents": 398000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5",
+     "en": "5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 284,
+    "amount": 7,
+    "totalAmount": 1988,
+    "amountCents": 700,
+    "totalAmountCents": 198800,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 + 1",
+     "en": "4 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 1,
+    "amount": 100,
+    "totalAmount": 100,
+    "category": 4
+   },
+   {
+    "participants": 14,
+    "amount": 80,
+    "totalAmount": 1120,
+    "category": 5
+   },
+   {
+    "participants": 44,
+    "amount": 50,
+    "totalAmount": 2200,
+    "category": 6
+   },
+   {
+    "participants": 77,
+    "amount": 30,
+    "totalAmount": 2310,
+    "category": 7
+   },
+   {
+    "participants": 398,
+    "amount": 10,
+    "totalAmount": 3980,
+    "category": 8
+   },
+   {
+    "participants": 284,
+    "amount": 7,
+    "totalAmount": 1988,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 7,
+  "betsCount": 7260,
+  "superPrize": 223528
+ },
+ "ostatki-sladki": {
+  "number": 25468,
+  "date": "2026-10-14T23:15:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "7",
+    "13",
+    "2",
+    "19",
+    "12",
+    "18",
+    "9",
+    "3",
+    "10",
+    "1",
+    "20",
+    "4"
+   ],
+   "structured": [
+    7,
+    13,
+    2,
+    19,
+    12,
+    18,
+    9,
+    3,
+    10,
+    1,
+    20,
+    4
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "0 или 12",
+     "en": "0 or 12"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "0 или 12",
+     "en": "0 or 12"
+    },
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "1 или 11",
+     "en": "1 or 11"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "1 или 11",
+     "en": "1 or 11"
+    },
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 11,
+    "amount": 150,
+    "totalAmount": 1650,
+    "amountCents": 15000,
+    "totalAmountCents": 165000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "2 или 10",
+     "en": "2 or 10"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 или 10",
+     "en": "2 or 10"
+    },
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 103,
+    "amount": 60,
+    "totalAmount": 6180,
+    "amountCents": 6000,
+    "totalAmountCents": 618000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "3 или 9",
+     "en": "3 or 9"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 или 9",
+     "en": "3 or 9"
+    },
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 525,
+    "amount": 20,
+    "totalAmount": 10500,
+    "amountCents": 2000,
+    "totalAmountCents": 1050000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 или 8",
+     "en": "4 or 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "4 или 8",
+     "en": "4 or 8"
+    },
+    "combination": null
+   }
+  ],
+  "winners": null,
+  "categories": [
+   {
+    "number": 1,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 2,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 3,
+    "prize": 150,
+    "prizesCount": 11
+   },
+   {
+    "number": 4,
+    "prize": 60,
+    "prizesCount": 103
+   },
+   {
+    "number": 5,
+    "prize": 20,
+    "prizesCount": 525
+   }
+  ],
+  "ticketPrice": 15,
+  "betsCount": 2800,
+  "superPrize": 715557
+ },
+ "oxota-vyzov": {
+  "number": 341290,
+  "date": "2026-10-14T22:57:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "3",
+    "26",
+    "8",
+    "18"
+   ],
+   "structured": [
+    3,
+    26,
+    8,
+    18
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 + 2",
+     "en": "2 + 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 1000,
+    "totalAmount": 1000,
+    "amountCents": 100000,
+    "totalAmountCents": 100000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1 + 2",
+     "en": "1 + 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 3,
+    "amount": 1000,
+    "totalAmount": 3000,
+    "amountCents": 100000,
+    "totalAmountCents": 300000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 + 1",
+     "en": "2 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "0 + 2",
+     "en": "0 + 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 4,
+    "amount": 40,
+    "totalAmount": 160,
+    "amountCents": 4000,
+    "totalAmountCents": 16000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 + 0",
+     "en": "2 + 0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 27,
+    "amount": 40,
+    "totalAmount": 1080,
+    "amountCents": 4000,
+    "totalAmountCents": 108000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1 + 1",
+     "en": "1 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 116,
+    "amount": 20,
+    "totalAmount": 2320,
+    "amountCents": 2000,
+    "totalAmountCents": 232000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "1 + 0",
+     "en": "1 + 0"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 84,
+    "amount": 20,
+    "totalAmount": 1680,
+    "amountCents": 2000,
+    "totalAmountCents": 168000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "0 + 1",
+     "en": "0 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 20,
+  "betsCount": 997,
+  "superPrize": 100000
+ },
+ "oxota": {
+  "number": 46317,
+  "date": "2026-10-14T23:40:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "1",
+    "19",
+    "11",
+    "14",
+    "13",
+    "11",
+    "10",
+    "2"
+   ],
+   "structured": [
+    1,
+    19,
+    11,
+    14,
+    13,
+    11,
+    10,
+    2
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 4",
+     "en": "4 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 250000,
+    "totalAmount": 250000,
+    "amountCents": 25000000,
+    "totalAmountCents": 25000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 3 и 3 X 4",
+     "en": "4 X 3 and 3 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 2 и 2 X 4",
+     "en": "4 X 2 and 2 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 1 и 1 X 4",
+     "en": "4 X 1 and 1 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "4 X 0 и 0 X 4",
+     "en": "4 X 0 and 0 X 4"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 3",
+     "en": "3 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 4,
+    "amount": 2500,
+    "totalAmount": 10000,
+    "amountCents": 250000,
+    "totalAmountCents": 1000000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 2 и 2 X 3",
+     "en": "3 X 2 and 2 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 29,
+    "amount": 1374,
+    "totalAmount": 39846,
+    "amountCents": 137400,
+    "totalAmountCents": 3984600,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 1 и 1 X 3",
+     "en": "3 X 1 and 1 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 13,
+    "amount": 1402,
+    "totalAmount": 18226,
+    "amountCents": 140200,
+    "totalAmountCents": 1822600,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "3 X 0 и 0 X 3",
+     "en": "3 X 0 and 0 X 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 28,
+    "amount": 943,
+    "totalAmount": 26404,
+    "amountCents": 94300,
+    "totalAmountCents": 2640400,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 2",
+     "en": "2 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 195,
+    "amount": 379,
+    "totalAmount": 73905,
+    "amountCents": 37900,
+    "totalAmountCents": 7390500,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 1 и 1 X 2",
+     "en": "2 X 1 and 1 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 222,
+    "amount": 350,
+    "totalAmount": 77700,
+    "amountCents": 35000,
+    "totalAmountCents": 7770000,
+    "numbers": [],
+    "altPrize": "",
+    "description": null,
+    "title": {
+     "ru": "2 X 0 и 0 X 2",
+     "en": "2 X 0 and 0 X 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 250,
+  "betsCount": 1699,
+  "superPrize": 37504685
+ },
+ "rapido2": {
+  "number": 187602,
+  "date": "2026-10-15T01:05:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "2",
+    "15",
+    "12",
+    "1",
+    "8",
+    "18",
+    "11",
+    "4",
+    "3"
+   ],
+   "structured": {
+    "parity": "EVEN",
+    "played": [
+     2,
+     15,
+     12,
+     1,
+     8,
+     18,
+     11,
+     4,
+     3
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8 + 1",
+     "en": "8 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8",
+     "en": "8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1,
+    "amount": 1200,
+    "totalAmount": 1200,
+    "amountCents": 120000,
+    "totalAmountCents": 120000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7 + 1",
+     "en": "7 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7",
+     "en": "7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6 + 1",
+     "en": "6 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 5,
+    "amount": 360,
+    "totalAmount": 1800,
+    "amountCents": 36000,
+    "totalAmountCents": 180000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6",
+     "en": "6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 14,
+    "amount": 240,
+    "totalAmount": 3360,
+    "amountCents": 24000,
+    "totalAmountCents": 336000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5 + 1",
+     "en": "5 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 43,
+    "amount": 120,
+    "totalAmount": 5160,
+    "amountCents": 12000,
+    "totalAmountCents": 516000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5",
+     "en": "5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 34,
+    "amount": 60,
+    "totalAmount": 2040,
+    "amountCents": 6000,
+    "totalAmountCents": 204000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 + 1",
+     "en": "4 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 3,
+    "amount": 95,
+    "totalAmount": 285,
+    "amountCents": 9500,
+    "totalAmountCents": 28500,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Больше четных",
+     "en": "Больше четных"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Больше нечётных",
+     "en": "Больше нечётных"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Поровну",
+     "en": "Поровну"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 0 из 8",
+     "en": "БСтраховка 0 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 2,
+    "amount": 120,
+    "totalAmount": 240,
+    "amountCents": 12000,
+    "totalAmountCents": 24000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 1 из 8",
+     "en": "Страховка 1 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 15,
+    "participants": 5,
+    "amount": 60,
+    "totalAmount": 300,
+    "amountCents": 6000,
+    "totalAmountCents": 30000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 2 из 8",
+     "en": "Страховка 2 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 16,
+    "participants": 6,
+    "amount": 30,
+    "totalAmount": 180,
+    "amountCents": 3000,
+    "totalAmountCents": 18000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 3 из 8",
+     "en": "Страховка 3 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 1,
+    "amount": 1200,
+    "totalAmount": 1200,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 5,
+    "amount": 360,
+    "totalAmount": 1800,
+    "category": 6
+   },
+   {
+    "participants": 14,
+    "amount": 240,
+    "totalAmount": 3360,
+    "category": 7
+   },
+   {
+    "participants": 43,
+    "amount": 120,
+    "totalAmount": 5160,
+    "category": 8
+   },
+   {
+    "participants": 34,
+    "amount": 60,
+    "totalAmount": 2040,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 60,
+  "betsCount": 594,
+  "superPrize": 3286681
+ },
+ "rapidodrive": {
+  "number": 26012,
+  "date": "2026-10-15T00:10:30+0300",
+  "status": "PLAYING",
+  "combination": {
+   "serialized": [
+    "10",
+    "1",
+    "12",
+    "20",
+    "14",
+    "11",
+    "2",
+    "18",
+    "1"
+   ],
+   "structured": {
+    "parity": "EVEN",
+    "played": [
+     10,
+     1,
+     12,
+     20,
+     14,
+     11,
+     2,
+     18,
+     1
+    ]
+   }
+  },
+  "winCategories": [],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 2,
+    "amount": 500,
+    "totalAmount": 1000,
+    "category": 5
+   },
+   {
+    "participants": 7,
+    "amount": 300,
+    "totalAmount": 2100,
+    "category": 6
+   },
+   {
+    "participants": 12,
+    "amount": 300,
+    "totalAmount": 3600,
+    "category": 7
+   },
+   {
+    "participants": 42,
+    "amount": 300,
+    "totalAmount": 12600,
+    "category": 8
+   },
+   {
+    "participants": 28,
+    "amount": 300,
+    "totalAmount": 8400,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 100,
+  "betsCount": 524,
+  "superPrize": 3303325
+ },
+ "rapidopro": {
+  "number": 373515,
+  "date": "2026-10-14T23:23:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "19",
+    "9",
+    "13",
+    "12",
+    "4",
+    "6",
+    "8",
+    "10",
+    "4"
+   ],
+   "structured": {
+    "parity": "EVEN",
+    "played": [
+     19,
+     9,
+     13,
+     12,
+     4,
+     6,
+     8,
+     10,
+     4
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8 + 1",
+     "en": "8 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8",
+     "en": "8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7 + 1",
+     "en": "7 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 25000,
+    "totalAmount": 25000,
+    "amountCents": 2500000,
+    "totalAmountCents": 2500000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7",
+     "en": "7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 1,
+    "amount": 5000,
+    "totalAmount": 5000,
+    "amountCents": 500000,
+    "totalAmountCents": 500000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6 + 1",
+     "en": "6 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 3,
+    "amount": 2500,
+    "totalAmount": 7500,
+    "amountCents": 250000,
+    "totalAmountCents": 750000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6",
+     "en": "6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 5,
+    "amount": 1500,
+    "totalAmount": 7500,
+    "amountCents": 150000,
+    "totalAmountCents": 750000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5 + 1",
+     "en": "5 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 24,
+    "amount": 1000,
+    "totalAmount": 24000,
+    "amountCents": 100000,
+    "totalAmountCents": 2400000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5",
+     "en": "5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 24,
+    "amount": 500,
+    "totalAmount": 12000,
+    "amountCents": 50000,
+    "totalAmountCents": 1200000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 + 1",
+     "en": "4 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 3,
+    "amount": 950,
+    "totalAmount": 2850,
+    "amountCents": 95000,
+    "totalAmountCents": 285000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Больше чётных",
+     "en": "Больше чётных"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Больше нечётных",
+     "en": "Больше нечётных"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Поровну",
+     "en": "Поровну"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 0 из 8",
+     "en": "БСтраховка 0 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 1 из 8",
+     "en": "Страховка 1 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 15,
+    "participants": 1,
+    "amount": 700,
+    "totalAmount": 700,
+    "amountCents": 70000,
+    "totalAmountCents": 70000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 2 из 8",
+     "en": "Страховка 2 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 16,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 3 из 8",
+     "en": "Страховка 3 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 1,
+    "amount": 25000,
+    "totalAmount": 25000,
+    "category": 4
+   },
+   {
+    "participants": 1,
+    "amount": 5000,
+    "totalAmount": 5000,
+    "category": 5
+   },
+   {
+    "participants": 3,
+    "amount": 2500,
+    "totalAmount": 7500,
+    "category": 6
+   },
+   {
+    "participants": 5,
+    "amount": 1500,
+    "totalAmount": 7500,
+    "category": 7
+   },
+   {
+    "participants": 24,
+    "amount": 1000,
+    "totalAmount": 24000,
+    "category": 8
+   },
+   {
+    "participants": 24,
+    "amount": 500,
+    "totalAmount": 12000,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 500,
+  "betsCount": 304,
+  "superPrize": 24004157
+ },
+ "rapidoultra": {
+  "number": 41567,
+  "date": "2026-10-15T00:03:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "16",
+    "17",
+    "13",
+    "18",
+    "6",
+    "7",
+    "8",
+    "4",
+    "3"
+   ],
+   "structured": {
+    "played": [
+     16,
+     17,
+     13,
+     18,
+     6,
+     7,
+     8,
+     4,
+     3
+    ],
+    "parity": "EVEN"
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8 + 1",
+     "en": "8 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "8",
+     "en": "8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7 + 1",
+     "en": "7 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "7",
+     "en": "7"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6 + 1",
+     "en": "6 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 2,
+    "amount": 3000,
+    "totalAmount": 6000,
+    "amountCents": 300000,
+    "totalAmountCents": 600000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6",
+     "en": "6"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 4,
+    "amount": 2500,
+    "totalAmount": 10000,
+    "amountCents": 250000,
+    "totalAmountCents": 1000000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5 + 1",
+     "en": "5 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 3,
+    "amount": 1000,
+    "totalAmount": 3000,
+    "amountCents": 100000,
+    "totalAmountCents": 300000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5",
+     "en": "5"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 10,
+    "amount": 1000,
+    "totalAmount": 10000,
+    "amountCents": 100000,
+    "totalAmountCents": 1000000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 + 1",
+     "en": "4 + 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 1,
+    "amount": 750,
+    "totalAmount": 750,
+    "amountCents": 75000,
+    "totalAmountCents": 75000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Больше чётных",
+     "en": "Больше чётных"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Больше нечётных",
+     "en": "Больше нечётных"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Поровну",
+     "en": "Поровну"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 0 из 8",
+     "en": "БСтраховка 0 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 1 из 8",
+     "en": "Страховка 1 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 15,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 2 из 8",
+     "en": "Страховка 2 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 16,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Страховка 3 из 8",
+     "en": "Страховка 3 из 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 2,
+    "amount": 3000,
+    "totalAmount": 6000,
+    "category": 6
+   },
+   {
+    "participants": 4,
+    "amount": 2500,
+    "totalAmount": 10000,
+    "category": 7
+   },
+   {
+    "participants": 3,
+    "amount": 1000,
+    "totalAmount": 3000,
+    "category": 8
+   },
+   {
+    "participants": 10,
+    "amount": 1000,
+    "totalAmount": 10000,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 500,
+  "betsCount": 91,
+  "superPrize": 10000000
+ },
+ "rocketbingo": {
+  "number": 71542,
+  "date": "2026-10-15T00:47:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "44",
+    "57",
+    "43",
+    "9",
+    "63",
+    "5",
+    "35",
+    "21",
+    "59",
+    "3",
+    "38",
+    "25",
+    "67",
+    "20",
+    "56",
+    "42",
+    "74",
+    "45",
+    "15",
+    "66",
+    "58",
+    "69",
+    "61",
+    "36",
+    "47",
+    "37",
+    "16",
+    "22",
+    "13",
+    "18",
+    "7",
+    "72",
+    "55",
+    "2",
+    "52"
+   ],
+   "structured": {
+    "notPlayed": [
+     1,
+     4,
+     6,
+     8,
+     10,
+     11,
+     12,
+     14,
+     17,
+     19,
+     23,
+     24,
+     26,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     39,
+     40,
+     41,
+     46,
+     48,
+     49,
+     50,
+     51,
+     53,
+     54,
+     60,
+     62,
+     64,
+     65,
+     68,
+     70,
+     71,
+     73,
+     75
+    ],
+    "played": [
+     44,
+     57,
+     43,
+     9,
+     63,
+     5,
+     35,
+     21,
+     59,
+     3,
+     38,
+     25,
+     67,
+     20,
+     56,
+     42,
+     74,
+     45,
+     15,
+     66,
+     58,
+     69,
+     61,
+     36,
+     47,
+     37,
+     16,
+     22,
+     13,
+     18,
+     7,
+     72,
+     55,
+     2,
+     52
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [
+     44,
+     57,
+     43,
+     9,
+     63,
+     5
+    ],
+    "altPrize": "",
+    "description": "Первый тур",
+    "title": {
+     "ru": "Первый тур",
+     "en": "Первый тур"
+    },
+    "combinationsTitle": {
+     "ru": "44 57 43 09 63 05",
+     "en": "44 57 43 09 63 05"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 10,
+    "amount": 1500,
+    "totalAmount": 15000,
+    "amountCents": 150000,
+    "totalAmountCents": 1500000,
+    "numbers": [
+     44,
+     57,
+     43,
+     9,
+     63,
+     5,
+     35,
+     21,
+     59,
+     3,
+     38,
+     25,
+     67,
+     20,
+     56
+    ],
+    "altPrize": "",
+    "description": "Второй тур",
+    "title": {
+     "ru": "Второй тур",
+     "en": "Второй тур"
+    },
+    "combinationsTitle": {
+     "ru": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56",
+     "en": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 178,
+    "amount": 150,
+    "totalAmount": 26700,
+    "amountCents": 15000,
+    "totalAmountCents": 2670000,
+    "numbers": [
+     44,
+     57,
+     43,
+     9,
+     63,
+     5,
+     35,
+     21,
+     59,
+     3,
+     38,
+     25,
+     67,
+     20,
+     56,
+     42,
+     74,
+     45,
+     15,
+     66,
+     58,
+     69,
+     61,
+     36,
+     47,
+     37,
+     16,
+     22
+    ],
+    "altPrize": "",
+    "description": "Третий тур",
+    "title": {
+     "ru": "Третий тур",
+     "en": "Третий тур"
+    },
+    "combinationsTitle": {
+     "ru": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56 42 74 45 15 66 58 69 61 36 47 37 16 22",
+     "en": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56 42 74 45 15 66 58 69 61 36 47 37 16 22"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 221,
+    "amount": 150,
+    "totalAmount": 33150,
+    "amountCents": 15000,
+    "totalAmountCents": 3315000,
+    "numbers": [
+     44,
+     57,
+     43,
+     9,
+     63,
+     5,
+     35,
+     21,
+     59,
+     3,
+     38,
+     25,
+     67,
+     20,
+     56,
+     42,
+     74,
+     45,
+     15,
+     66,
+     58,
+     69,
+     61,
+     36,
+     47,
+     37,
+     16,
+     22,
+     13,
+     18,
+     7,
+     72,
+     55,
+     2,
+     52
+    ],
+    "altPrize": "",
+    "description": "Четвертый тур",
+    "title": {
+     "ru": "Четвёртый тур",
+     "en": "Четвёртый тур"
+    },
+    "combinationsTitle": {
+     "ru": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56 42 74 45 15 66 58 69 61 36 47 37 16 22 13 18 07 72 55 02 52",
+     "en": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56 42 74 45 15 66 58 69 61 36 47 37 16 22 13 18 07 72 55 02 52"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": [
+     44,
+     57,
+     43,
+     9,
+     63,
+     5,
+     35,
+     21,
+     59,
+     3,
+     38,
+     25,
+     67,
+     20,
+     56,
+     42,
+     74,
+     45,
+     15,
+     66,
+     58,
+     69,
+     61
+    ],
+    "altPrize": "",
+    "description": "Джекпот",
+    "title": {
+     "ru": "Джекпот",
+     "en": "Джекпот"
+    },
+    "combinationsTitle": {
+     "ru": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56 42 74 45 15 66 58 69 61",
+     "en": "44 57 43 09 63 05 35 21 59 03 38 25 67 20 56 42 74 45 15 66 58 69 61"
+    },
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 75,
+  "betsCount": 1848,
+  "superPrize": 500000000
+ },
+ "ruslotto": {
+  "number": 1847,
+  "date": "2026-10-14T21:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "40",
+    "42",
+    "43",
+    "58"
+   ],
+   "structured": {
+    "notPlayed": [
+     40,
+     42,
+     43,
+     58
+    ]
+   }
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 1,
+    "amount": 100000,
+    "totalAmount": 100000,
+    "amountCents": 10000000,
+    "totalAmountCents": 10000000,
+    "numbers": [
+     41,
+     66,
+     53,
+     21,
+     11,
+     89,
+     18
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 1",
+     "en": "Tour 1"
+    },
+    "combinationsTitle": {
+     "ru": "41 66 53 21 11 89 18",
+     "en": "41 66 53 21 11 89 18"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 200000,
+    "totalAmount": 200000,
+    "amountCents": 20000000,
+    "totalAmountCents": 20000000,
+    "numbers": [
+     50,
+     51,
+     67,
+     25,
+     75,
+     2,
+     38,
+     63,
+     62,
+     86,
+     35,
+     52,
+     78,
+     46,
+     48,
+     13,
+     83,
+     36,
+     29,
+     84,
+     77,
+     15,
+     74,
+     4,
+     54,
+     16,
+     23,
+     44,
+     68,
+     49,
+     81,
+     60,
+     59,
+     69,
+     76,
+     56,
+     28,
+     45,
+     37
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 2",
+     "en": "Tour 2"
+    },
+    "combinationsTitle": {
+     "ru": "50 51 67 25 75 02 38 63 62 86 35 52 78 46 48 13 83 36 29 84 77 15 74 04 54 16 23 44 68 49 81 60 59 69 76 56 28 45 37",
+     "en": "50 51 67 25 75 02 38 63 62 86 35 52 78 46 48 13 83 36 29 84 77 15 74 04 54 16 23 44 68 49 81 60 59 69 76 56 28 45 37"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 1,
+    "amount": 200000,
+    "totalAmount": 200000,
+    "amountCents": 20000000,
+    "totalAmountCents": 20000000,
+    "numbers": [
+     17,
+     27,
+     88,
+     14,
+     87,
+     19,
+     71,
+     10,
+     33,
+     12,
+     90,
+     22,
+     30,
+     85,
+     72,
+     64,
+     9,
+     73,
+     80,
+     7,
+     61
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 3",
+     "en": "Tour 3"
+    },
+    "combinationsTitle": {
+     "ru": "17 27 88 14 87 19 71 10 33 12 90 22 30 85 72 64 09 73 80 07 61",
+     "en": "17 27 88 14 87 19 71 10 33 12 90 22 30 85 72 64 09 73 80 07 61"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 1,
+    "amount": 12000,
+    "totalAmount": 12000,
+    "amountCents": 1200000,
+    "totalAmountCents": 1200000,
+    "numbers": [
+     65
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 4",
+     "en": "Tour 4"
+    },
+    "combinationsTitle": {
+     "ru": "65",
+     "en": "65"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 1,
+    "amount": 7000,
+    "totalAmount": 7000,
+    "amountCents": 700000,
+    "totalAmountCents": 700000,
+    "numbers": [
+     5,
+     39,
+     79
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 5",
+     "en": "Tour 5"
+    },
+    "combinationsTitle": {
+     "ru": "05 39 79",
+     "en": "05 39 79"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 3,
+    "amount": 7000,
+    "totalAmount": 21000,
+    "amountCents": 700000,
+    "totalAmountCents": 2100000,
+    "numbers": [
+     1
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 6",
+     "en": "Tour 6"
+    },
+    "combinationsTitle": {
+     "ru": "01",
+     "en": "01"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 1,
+    "amount": 1500,
+    "totalAmount": 1500,
+    "amountCents": 150000,
+    "totalAmountCents": 150000,
+    "numbers": [
+     57
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 7",
+     "en": "Tour 7"
+    },
+    "combinationsTitle": {
+     "ru": "57",
+     "en": "57"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 11,
+    "amount": 1500,
+    "totalAmount": 16500,
+    "amountCents": 150000,
+    "totalAmountCents": 1650000,
+    "numbers": [
+     34
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 8",
+     "en": "Tour 8"
+    },
+    "combinationsTitle": {
+     "ru": "34",
+     "en": "34"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 11,
+    "amount": 1500,
+    "totalAmount": 16500,
+    "amountCents": 150000,
+    "totalAmountCents": 1650000,
+    "numbers": [
+     70
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 9",
+     "en": "Tour 9"
+    },
+    "combinationsTitle": {
+     "ru": "70",
+     "en": "70"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 17,
+    "amount": 700,
+    "totalAmount": 11900,
+    "amountCents": 70000,
+    "totalAmountCents": 1190000,
+    "numbers": [
+     6
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 10",
+     "en": "Tour 10"
+    },
+    "combinationsTitle": {
+     "ru": "06",
+     "en": "06"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 33,
+    "amount": 700,
+    "totalAmount": 23100,
+    "amountCents": 70000,
+    "totalAmountCents": 2310000,
+    "numbers": [
+     31
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 11",
+     "en": "Tour 11"
+    },
+    "combinationsTitle": {
+     "ru": "31",
+     "en": "31"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 40,
+    "amount": 700,
+    "totalAmount": 28000,
+    "amountCents": 70000,
+    "totalAmountCents": 2800000,
+    "numbers": [
+     32
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 12",
+     "en": "Tour 12"
+    },
+    "combinationsTitle": {
+     "ru": "32",
+     "en": "32"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 88,
+    "amount": 250,
+    "totalAmount": 22000,
+    "amountCents": 25000,
+    "totalAmountCents": 2200000,
+    "numbers": [
+     26
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 13",
+     "en": "Tour 13"
+    },
+    "combinationsTitle": {
+     "ru": "26",
+     "en": "26"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 14,
+    "participants": 148,
+    "amount": 250,
+    "totalAmount": 37000,
+    "amountCents": 25000,
+    "totalAmountCents": 3700000,
+    "numbers": [
+     24
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 14",
+     "en": "Tour 14"
+    },
+    "combinationsTitle": {
+     "ru": "24",
+     "en": "24"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 15,
+    "participants": 212,
+    "amount": 200,
+    "totalAmount": 42400,
+    "amountCents": 20000,
+    "totalAmountCents": 4240000,
+    "numbers": [
+     55
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 15",
+     "en": "Tour 15"
+    },
+    "combinationsTitle": {
+     "ru": "55",
+     "en": "55"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 16,
+    "participants": 478,
+    "amount": 200,
+    "totalAmount": 95600,
+    "amountCents": 20000,
+    "totalAmountCents": 9560000,
+    "numbers": [
+     47
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 16",
+     "en": "Tour 16"
+    },
+    "combinationsTitle": {
+     "ru": "47",
+     "en": "47"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 17,
+    "participants": 551,
+    "amount": 170,
+    "totalAmount": 93670,
+    "amountCents": 17000,
+    "totalAmountCents": 9367000,
+    "numbers": [
+     20
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 17",
+     "en": "Tour 17"
+    },
+    "combinationsTitle": {
+     "ru": "20",
+     "en": "20"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 18,
+    "participants": 939,
+    "amount": 170,
+    "totalAmount": 159630,
+    "amountCents": 17000,
+    "totalAmountCents": 15963000,
+    "numbers": [
+     8
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 18",
+     "en": "Tour 18"
+    },
+    "combinationsTitle": {
+     "ru": "08",
+     "en": "08"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 19,
+    "participants": 1275,
+    "amount": 150,
+    "totalAmount": 191250,
+    "amountCents": 15000,
+    "totalAmountCents": 19125000,
+    "numbers": [
+     3
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 19",
+     "en": "Tour 19"
+    },
+    "combinationsTitle": {
+     "ru": "03",
+     "en": "03"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 20,
+    "participants": 1961,
+    "amount": 150,
+    "totalAmount": 294150,
+    "amountCents": 15000,
+    "totalAmountCents": 29415000,
+    "numbers": [
+     82
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 20",
+     "en": "Tour 20"
+    },
+    "combinationsTitle": {
+     "ru": "82",
+     "en": "82"
+    },
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 21,
+    "participants": 0,
+    "amount": 5400000,
+    "totalAmount": 0,
+    "amountCents": 540000000,
+    "totalAmountCents": 0,
+    "numbers": [
+     0
+    ],
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 21",
+     "en": "Tour 21"
+    },
+    "combinationsTitle": {
+     "ru": "Золотой бочонок",
+     "en": "Золотой бочонок"
+    },
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 150,
+  "betsCount": 33944,
+  "superPrize": 800000000
+ },
+ "spec": {
+  "number": 3832,
+  "date": "2026-10-11T11:05:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "134 0",
+    "069 0"
+   ],
+   "structured": [
+    {
+     "first": [
+      1,
+      3,
+      4
+     ],
+     "second": [
+      0
+     ]
+    },
+    {
+     "first": [
+      0,
+      6,
+      9
+     ],
+     "second": [
+      0
+     ]
+    }
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 4,
+    "amount": 17299,
+    "totalAmount": 69196,
+    "amountCents": 1729900,
+    "totalAmountCents": 6919600,
+    "numbers": [
+     1,
+     3,
+     4
+    ],
+    "altPrize": "Аэрогриль Tefal",
+    "description": "",
+    "title": null,
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": {
+     "first": [
+      1,
+      3,
+      4
+     ],
+     "second": [
+      0
+     ]
+    }
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 1004,
+    "totalAmount": 1004,
+    "amountCents": 100400,
+    "totalAmountCents": 100400,
+    "numbers": [
+     6,
+     9
+    ],
+    "altPrize": "1004 рубля",
+    "description": "",
+    "title": null,
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": {
+     "first": [
+      0,
+      6,
+      9
+     ],
+     "second": [
+      0
+     ]
+    }
+   }
+  ],
+  "winners": null,
+  "ticketPrice": 100,
+  "betsCount": 1404,
+  "superPrize": 0
+ },
+ "top-3": {
+  "number": 269494,
+  "date": "2026-10-14T22:55:30+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "2",
+    "0",
+    "1",
+    "3",
+    "5",
+    "2",
+    "1",
+    "3",
+    "4",
+    "5",
+    "8",
+    "6"
+   ],
+   "structured": [
+    2,
+    0,
+    1,
+    3,
+    5,
+    2,
+    1,
+    3,
+    4,
+    5,
+    8,
+    6
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Тур 1",
+     "en": "Tour 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Точный порядок 3",
+     "en": "Exact order 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Комбо",
+     "en": "Combo"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Точно 3 + Любой 3 (Т3+Л3)",
+     "en": "Exact 3 + Any 3 (E3 + A3)"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 одинаковых числа",
+     "en": "2 similar numbers"
+    },
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Точно 3 + Любой 3 (Т3+Л3)",
+     "en": "Exact 3 + Any 3 (E3 + A3)"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 разных числа",
+     "en": "3 different numers"
+    },
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Любой порядок 3",
+     "en": "Any order 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 одинаковых числа",
+     "en": "2 similar numbers"
+    },
+    "combination": null
+   },
+   {
+    "number": 7,
+    "participants": 2,
+    "amount": 9000,
+    "totalAmount": 18000,
+    "amountCents": 900000,
+    "totalAmountCents": 1800000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Любой порядок 3",
+     "en": "Any order 3"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 разных числа",
+     "en": "3 different numers"
+    },
+    "combination": null
+   },
+   {
+    "number": 8,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Точно 3 + Любой 3 (Л3)",
+     "en": "Exact 3 + Any 3 (A3)"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 одинаковых числа",
+     "en": "2 similar numbers"
+    },
+    "combination": null
+   },
+   {
+    "number": 9,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Первые 2 числа",
+     "en": "First 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 10,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Последние 2 числа",
+     "en": "Last 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 11,
+    "participants": 3,
+    "amount": 4500,
+    "totalAmount": 13500,
+    "amountCents": 450000,
+    "totalAmountCents": 1350000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Точно 3 + Любой 3 (Л3)",
+     "en": "Exact 3 + Any 3 (A3)"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 разных числа",
+     "en": "Any 3"
+    },
+    "combination": null
+   },
+   {
+    "number": 12,
+    "participants": 3,
+    "amount": 2700,
+    "totalAmount": 8100,
+    "amountCents": 270000,
+    "totalAmountCents": 810000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Любой порядок 2",
+     "en": "Any order 2"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   },
+   {
+    "number": 13,
+    "participants": 1,
+    "amount": 450,
+    "totalAmount": 450,
+    "amountCents": 45000,
+    "totalAmountCents": 45000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "Точно 1",
+     "en": "Exact 1"
+    },
+    "combinationsTitle": null,
+    "subTitle": null,
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 2,
+    "amount": 9000,
+    "totalAmount": 18000,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 10
+   },
+   {
+    "participants": 3,
+    "amount": 4500,
+    "totalAmount": 13500,
+    "category": 11
+   },
+   {
+    "participants": 3,
+    "amount": 2700,
+    "totalAmount": 8100,
+    "category": 12
+   },
+   {
+    "participants": 1,
+    "amount": 450,
+    "totalAmount": 450,
+    "category": 13
+   }
+  ],
+  "ticketPrice": 90,
+  "betsCount": 1441,
+  "superPrize": 10000000
+ },
+ "udachanasdachu": {
+  "number": 1358,
+  "date": "2026-10-14T21:00:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "31",
+    "20",
+    "8",
+    "35",
+    "12",
+    "15"
+   ],
+   "structured": [
+    31,
+    20,
+    8,
+    35,
+    12,
+    15
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "6 из 6",
+     "en": "6 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "6 из 6",
+     "en": "6 from 6"
+    },
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 1,
+    "amount": 3000,
+    "totalAmount": 3000,
+    "amountCents": 300000,
+    "totalAmountCents": 300000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "5 из 6",
+     "en": "5 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "5 из 6",
+     "en": "5 from 6"
+    },
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 36,
+    "amount": 450,
+    "totalAmount": 16200,
+    "amountCents": 45000,
+    "totalAmountCents": 1620000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 из 6",
+     "en": "4 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "4 из 6",
+     "en": "4 from 6"
+    },
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 529,
+    "amount": 60,
+    "totalAmount": 31740,
+    "amountCents": 6000,
+    "totalAmountCents": 3174000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "3 из 6",
+     "en": "3 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 из 6",
+     "en": "3 from 6"
+    },
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 2607,
+    "amount": 30,
+    "totalAmount": 78210,
+    "amountCents": 3000,
+    "totalAmountCents": 7821000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "2 из 6",
+     "en": "2 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 из 6",
+     "en": "2 from 6"
+    },
+    "combination": null
+   },
+   {
+    "number": 6,
+    "participants": 5486,
+    "amount": 15,
+    "totalAmount": 82290,
+    "amountCents": 1500,
+    "totalAmountCents": 8229000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "1 из 6",
+     "en": "1 from 6"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "1 из 6",
+     "en": "1 from 6"
+    },
+    "combination": null
+   }
+  ],
+  "winners": [
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 1
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 2
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 3
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 4
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 5
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 6
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 7
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 8
+   },
+   {
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "category": 9
+   }
+  ],
+  "ticketPrice": 30,
+  "betsCount": 12490,
+  "superPrize": 3361806
+ },
+ "vin": {
+  "number": 187792,
+  "date": "2026-10-14T23:16:00+0300",
+  "status": "PLAYING",
+  "combination": {
+   "serialized": [
+    "2",
+    "12",
+    "7",
+    "11",
+    "22",
+    "23",
+    "3",
+    "5",
+    "1",
+    "8",
+    "17",
+    "14"
+   ],
+   "structured": [
+    2,
+    12,
+    7,
+    11,
+    22,
+    23,
+    3,
+    5,
+    1,
+    8,
+    17,
+    14
+   ]
+  },
+  "winCategories": [],
+  "winners": null,
+  "categories": [
+   {
+    "number": 1,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 2,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 3,
+    "prize": 8000,
+    "prizesCount": 2
+   },
+   {
+    "number": 4,
+    "prize": 1600,
+    "prizesCount": 57
+   },
+   {
+    "number": 5,
+    "prize": 400,
+    "prizesCount": 125
+   }
+  ],
+  "ticketPrice": 400,
+  "betsCount": 842,
+  "superPrize": 45690840
+ },
+ "zabavaloto": {
+  "number": 187794,
+  "date": "2026-10-14T23:46:00+0300",
+  "status": "COMPLETED",
+  "combination": {
+   "serialized": [
+    "24",
+    "8",
+    "9",
+    "5",
+    "20",
+    "21",
+    "23",
+    "10",
+    "22",
+    "17",
+    "15",
+    "4"
+   ],
+   "structured": [
+    24,
+    8,
+    9,
+    5,
+    20,
+    21,
+    23,
+    10,
+    22,
+    17,
+    15,
+    4
+   ]
+  },
+  "winCategories": [
+   {
+    "number": 1,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "0 или 12",
+     "en": "0 or 12"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "0 или 12",
+     "en": "0 or 12"
+    },
+    "combination": null
+   },
+   {
+    "number": 2,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "1 или 11",
+     "en": "1 or 11"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "1 или 11",
+     "en": "1 or 11"
+    },
+    "combination": null
+   },
+   {
+    "number": 3,
+    "participants": 0,
+    "amount": 0,
+    "totalAmount": 0,
+    "amountCents": 0,
+    "totalAmountCents": 0,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "2 или 10",
+     "en": "2 or 10"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "2 или 10",
+     "en": "2 or 10"
+    },
+    "combination": null
+   },
+   {
+    "number": 4,
+    "participants": 16,
+    "amount": 1600,
+    "totalAmount": 25600,
+    "amountCents": 160000,
+    "totalAmountCents": 2560000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "3 или 9",
+     "en": "3 or 9"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "3 или 9",
+     "en": "3 or 9"
+    },
+    "combination": null
+   },
+   {
+    "number": 5,
+    "participants": 143,
+    "amount": 400,
+    "totalAmount": 57200,
+    "amountCents": 40000,
+    "totalAmountCents": 5720000,
+    "numbers": null,
+    "altPrize": null,
+    "description": null,
+    "title": {
+     "ru": "4 или 8",
+     "en": "4 or 8"
+    },
+    "combinationsTitle": null,
+    "subTitle": {
+     "ru": "4 или 8",
+     "en": "4 or 8"
+    },
+    "combination": null
+   }
+  ],
+  "winners": null,
+  "categories": [
+   {
+    "number": 1,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 2,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 3,
+    "prize": 0,
+    "prizesCount": 0
+   },
+   {
+    "number": 4,
+    "prize": 1600,
+    "prizesCount": 16
+   },
+   {
+    "number": 5,
+    "prize": 400,
+    "prizesCount": 143
+   }
+  ],
+  "ticketPrice": 400,
+  "betsCount": 711,
+  "superPrize": 45822920
+ }
+}

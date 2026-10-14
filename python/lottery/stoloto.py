@@ -29,6 +29,7 @@ WINDOW_DAYS = 365
 EPOCH = datetime(2009, 1, 1)
 REQUEST_DELAY = float(os.environ.get("STOLOTO_DELAY", "0.2"))
 FLUSH_EVERY_S = 30         # файл переписывается не чаще раза в 30 с (и в конце загрузки)
+PRIZE_REWRITE_S = 300      # файл выплат при перечитывании архива переписывается не чаще
 FLUSH_MAX_PAGES = 40       # …или каждые 40 страниц (2000 тиражей), если API отвечает быстро
 REPAIR_LIMIT = 2000        # больше испорченных тиражей — перекачиваем весь период целиком
 
@@ -317,8 +318,11 @@ class DrawStore:
     def __init__(self, game: Game, existing: list[Draw]):
         self.game = game
         self.by_no = {d.no: d for d in existing}
-        self.prizes = prizes_mod.load(game.slug)      # призы и победители по тиражам
-        self._prizes_changed = False
+        # выплаты: в памяти — хеши сохранённых строк и новые/изменённые строки (не весь файл:
+        # у частых игр он в сотни мегабайт)
+        self.prize_hashes = prizes_mod.line_hashes(game.slug)
+        self.prize_lines: dict[int, str] = {}
+        self._last_prize_flush = time.time()
         self.latest_raw: list[dict] = []              # сырые ответы API — для диагностики
         self.added = 0
         self._dirty_pages = 0
@@ -331,9 +335,10 @@ class DrawStore:
             if d is None:
                 continue
             rec = prizes_mod.extract(raw)
-            if rec and self.prizes.get(d.no) != rec:
-                self.prizes[d.no] = rec
-                self._prizes_changed = True
+            if rec:
+                line = prizes_mod.record_line(rec)
+                if self.prize_hashes.get(d.no) != hash(line):
+                    self.prize_lines[d.no] = line
             if not self.latest_raw or d.no >= max(int(r.get("number", 0)) for r in self.latest_raw):
                 self.latest_raw = (self.latest_raw + [raw])[-2:]
             old = self.by_no.get(d.no)
@@ -348,14 +353,26 @@ class DrawStore:
         if self._dirty_pages >= FLUSH_MAX_PAGES or time.time() - self._last_flush >= FLUSH_EVERY_S:
             self.flush()
 
+    def flush_prizes(self, force: bool = True) -> None:
+        """Новые тиражи дописываются сразу; если меняются уже сохранённые (перечитывание
+        архива), файл переписывается не чаще раза в 5 минут и в конце загрузки."""
+        if not self.prize_lines:
+            return
+        last = max(self.prize_hashes) if self.prize_hashes else -1
+        append = min(self.prize_lines) > last
+        if not (force or append or time.time() - self._last_prize_flush >= PRIZE_REWRITE_S):
+            return
+        prizes_mod.write_records(self.game.slug, self.prize_lines, self.prize_hashes)
+        self.prize_hashes.update({no: hash(line) for no, line in self.prize_lines.items()})
+        self.prize_lines = {}
+        self._last_prize_flush = time.time()
+
     def flush(self) -> None:
         # переписываем файл, только если что-то изменилось: меньше записей — меньше
         # конфликтов с антивирусом и не сбрасывается кэш проверки на случайность
         if self.by_no and self._changed:
             write_draws(draws_path(self.game.slug), list(self.by_no.values()))
-        if self._prizes_changed:
-            prizes_mod.save(self.game.slug, self.prizes)
-            self._prizes_changed = False
+        self.flush_prizes(force=False)
         if self.latest_raw:
             prizes_mod.save_samples(self.game.slug, self.latest_raw)
         self._dirty_pages = 0
@@ -440,7 +457,7 @@ def expected_shape(game: Game, draws: list[Draw]) -> tuple[int, ...] | None:
     (если у 90%+ тиражей она одинакова). None — форма переменная (бинго), чинить нечего."""
     if game.counts:
         return tuple(game.counts)
-    if not draws:
+    if game.variable or not draws:      # бинго: число шаров в тираже меняется — это не порча
         return None
     from collections import Counter
     shape, n = Counter(tuple(len(b) for b in d.blocks) for d in draws).most_common(1)[0]
@@ -522,6 +539,7 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
             fetch_range(game, store, datetime(first_dt.year, first_dt.month, first_dt.day), today,
                         log=log, on_page=page_note)
             store.flush()
+            store.flush_prizes()
             _write_meta(game, {**_read_meta(game), "prizes_v": prizes_mod.VERSION})
             meta = _read_meta(game)
         else:
@@ -538,14 +556,17 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
 
         # Ремонт: тиражи, сохранённые старой версией с потерей чисел, перекачиваются один раз
         bad = damaged(game, list(store.by_no.values()))
-        if bad and not meta.get("repaired_v2"):
+        shape_sig = list(expected_shape(game, list(store.by_no.values())) or [])
+        # перекачиваем один раз: после старой версии или когда в реестре поменялась форма
+        # тиража (например, Кено 2.0: 9 цифр + 20 чисел вместо 20 + 1)
+        if bad and (not meta.get("repaired_v2") or meta.get("repaired_shape") != shape_sig):
             dated = [d.dt for d in bad if d.dt]
             ranges = ([(min(dated), max(dated))] if len(bad) > REPAIR_LIMIT
                       else _date_ranges(dated))
             for i, (d_from, d_to) in enumerate(ranges):
                 status(f"Исправляю тиражи с неполными данными: {len(bad)} шт. ({i + 1}/{len(ranges)})")
                 fetch_range(game, store, d_from, d_to, log=log)
-        _write_meta(game, {**_read_meta(game), "repaired_v2": True})
+        _write_meta(game, {**_read_meta(game), "repaired_v2": True, "repaired_shape": shape_sig})
 
         current = sorted(store.by_no.values(), key=lambda d: d.no)
         gaps = _gap_ranges(current)
@@ -553,6 +574,7 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
             status(f"Заполняю пропуск №{lo}–{hi} ({i + 1}/{min(len(gaps), 200)})")
             fetch_range(game, store, d_from, d_to, log=log)
     store.flush()
+    store.flush_prizes()
 
     cleanup_stale_tmp(draws_path(game.slug).parent)
     if store.added:
