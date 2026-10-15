@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { AnalysisMethods, AnalysisOverview, type Analysis } from './AnalysisPanels'
+import { ChaosPanel } from './ChaosPanel'
 import { dateOnly, nf, plural, span } from './format'
 import { GodModePanel } from './GodModePanel'
 import { JournalPanel } from './JournalPanel'
@@ -25,6 +26,7 @@ export interface Info {
 const TABS = [
   { id: 'overview', label: 'Обзор' },
   { id: 'methods', label: 'Сравнение методов' },
+  { id: 'chaos', label: 'Порядок из хаоса' },
   { id: 'god', label: 'Режим Бога' },
   { id: 'journal', label: 'Журнал прогнозов' },
   { id: 'odds', label: 'Шансы' },
@@ -135,7 +137,7 @@ export function GameView({ info }: { info: Info }) {
             ))}
           </div>
 
-          {(tab === 'overview' || tab === 'methods') && (
+          {(tab === 'overview' || tab === 'methods' || tab === 'chaos') && (
             <div className="run-bar">
               <button className="btn" onClick={() => job.start()} disabled={job.running} data-testid="run-analysis">
                 {job.running ? 'Идёт анализ…' : analysis ? 'Пересчитать анализ' : 'Запустить анализ'}
@@ -156,6 +158,7 @@ export function GameView({ info }: { info: Info }) {
 
           {tab === 'overview' && (analysis ? <AnalysisOverview a={analysis} /> : loaded && <p className="empty">Запустите анализ — он займёт от секунд до пары минут.</p>)}
           {tab === 'methods' && (analysis ? <AnalysisMethods a={analysis} nextNo={info.nextNo} /> : loaded && <p className="empty">Запустите анализ, чтобы сравнить методы.</p>)}
+          {tab === 'chaos' && <ChaosPanel slug={info.slug} chaos={analysis?.chaos} loaded={loaded} onDone={loadAnalysis} />}
           {tab === 'god' && <GodModePanel info={info} />}
           {tab === 'journal' && <JournalPanel info={info} />}
           {tab === 'odds' && <OddsPanel slug={info.slug} />}

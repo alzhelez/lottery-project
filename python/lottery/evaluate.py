@@ -117,7 +117,8 @@ class Evaluator:
         return [_numbers(p[row], s.lo) for p, s in zip(picks, self.data.fmt.blocks)]
 
 
-def evaluate_game(data: GameData, progress=None) -> dict:
+def evaluate_game(data: GameData, progress=None, models: list[Model] | None = None) -> dict:
+    """models — свой набор методов (по умолчанию стандартный); первый метод-контроль обязателен."""
     t_total = data.T
     ev = Evaluator(data)
     warm = warmup_size(t_total)
@@ -126,7 +127,7 @@ def evaluate_game(data: GameData, progress=None) -> dict:
         return {"status": "insufficient",
                 "message": f"Для проверки методов нужно хотя бы {warm + MIN_TEST} тиражей, есть {t_total}."}
     split = warm + int(test_len * SELECTION_SHARE)
-    models = standard_models()
+    models = models or standard_models()
     results = []
     all_picks: dict[str, list[np.ndarray]] = {}
     for i, m in enumerate(models):

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Balls, BlockBalls } from './Balls'
 import { FreqBars, LineChart } from './Charts'
+import type { ChaosResult } from './ChaosPanel'
 import { nf, num, pct, pval } from './format'
 
 interface Metric { n: number; mean_hits: number; baseline: number; excess: number; excess_pct: number; z: number; p_better: number; p_adjusted?: number }
@@ -24,6 +25,7 @@ export interface Analysis {
     mechanisms?: MechReport
   }
   drift?: { verdict: string; alarms: Array<{ title: string; block: string; check: string; p_adjusted: number; detail: string }>; checks: unknown[] }
+  chaos?: ChaosResult
   popularity?: { available: boolean; significant?: boolean; verdict?: string; reason?: string; p_value?: number; draws?: number }
   descriptive: Array<{ block: string; numbers: number[]; frequency: number[]; recent100: number[]; gap: number[]; expected: number; expected_recent: number; count: number }>
   evaluation: {

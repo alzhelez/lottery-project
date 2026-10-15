@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dataDir, PROJECT_ROOT, resultsFile } from './paths'
 
-export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules'
+export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos'
 export type JobStatus = 'running' | 'done' | 'error' | 'cancelled'
 
 export interface Job {
@@ -128,6 +128,8 @@ function argsFor(kind: JobKind, game: string | null, params: Record<string, unkn
       return ['auto']
     case 'rules':
       return ['rules', ...(game ? ['--game', game] : [])]
+    case 'chaos':
+      return ['chaos', '--game', game!]
   }
 }
 

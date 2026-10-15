@@ -284,10 +284,44 @@ def analyze_game(slug: str, progress=None) -> dict:
             if progress:
                 progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
             evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
+    chaos_res = run_chaos(data, progress)
     payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
-               "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity}
+               "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity,
+               "chaos": chaos_res}
     save_json(results_dir(slug) / "analysis.json", payload)
     return payload
+
+
+def run_chaos(data, progress=None) -> dict:
+    """«Порядок из хаоса» по способам розыгрыша; прогноз на ближайший тираж — в журнал."""
+    from lottery import chaos
+    res = chaos.analyze(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
+    nxt = res.get("next") or {}
+    if nxt.get("numbers"):
+        journal_record(data, "chaos", nxt["numbers"], f"{nxt['model']} · {nxt['title']}")
+    return res
+
+
+def cmd_chaos(args) -> None:
+    """Только «порядок из хаоса» (быстрее полного анализа); результат дописывается в analysis.json."""
+    data = load_game_data(get_game(args.game))
+    if not data.fmt.supported:
+        raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
+    res = run_chaos(data, emit)
+    path = results_dir(args.game) / "analysis.json"
+    payload = _read_json(path) or {**meta(data), "evaluation": {"status": "none"}}
+    payload["chaos"] = res
+    save_json(path, payload)
+    emit({"type": "result", "path": str(path)})
+    say(f"\n{data.game.title} — порядок из хаоса\n{res['conclusion']}")
+    for g in res["groups"].values():
+        say(f"  {g['title']}: {g['verdict']}")
+    nxt = res.get("next") or {}
+    if nxt.get("numbers"):
+        say(f"Прогноз на тираж №{nxt['draw_no']} ({nxt['title']}; {nxt['reason']}), «{nxt['model']}»: "
+            f"{balls(nxt['numbers'])}")
+    else:
+        say(f"Прогноз на тираж №{nxt.get('draw_no')}: нет — {nxt.get('reason', '')}")
 
 
 def cmd_analyze(args) -> None:
@@ -301,6 +335,9 @@ def cmd_analyze(args) -> None:
         say(f"Прогноз на тираж №{payload['last_draw_no'] + 1} («{evaluation['next_prediction']['model']}»): "
             f"{balls(evaluation['next_prediction']['numbers'])}")
         say(f"Консенсус методов: {balls(evaluation['next_consensus'])}")
+    ch = (payload.get("chaos") or {}).get("next") or {}
+    if ch.get("numbers"):
+        say(f"Порядок из хаоса ({ch['title']}, «{ch['model']}»): {balls(ch['numbers'])}")
     else:
         say(evaluation.get("message", ""))
     say(f"Полный отчёт: {path}")
@@ -392,6 +429,9 @@ def auto_once(args) -> dict:
             if g["analyzed"]:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
                                      "numbers": ev["next_prediction"]["numbers"]}
+                ch = (payload.get("chaos") or {}).get("next") or {}
+                if ch.get("numbers"):
+                    predictions[slug]["chaos"] = {"numbers": ch["numbers"], "title": ch["title"]}
             log(f"{slug}: анализ готов, прогноз на тираж №{g['next_no']} записан в журнал")
             if args.godmode_budget > 0:
                 from lottery.godmode import run_godmode
@@ -859,6 +899,8 @@ def main() -> None:
     sub.add_parser("scan")
     p = sub.add_parser("analyze")
     p.add_argument("--game", required=True)
+    p = sub.add_parser("chaos", help="порядок из хаоса: динамика тиражей отдельно по лототрону и ГСЧ")
+    p.add_argument("--game", required=True)
     p = sub.add_parser("godmode")
     p.add_argument("--game", required=True)
     p.add_argument("--budget", type=float, default=30.0, help="бюджет времени, минут (1–480)")
@@ -900,7 +942,7 @@ def main() -> None:
     handlers = {"fetch": cmd_fetch, "scan": cmd_scan, "analyze": cmd_analyze, "godmode": cmd_godmode,
                 "info": cmd_info, "journal": cmd_journal, "auto": cmd_auto, "odds": cmd_odds,
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
-                "rules": cmd_rules, "nextdraw": cmd_nextdraw}
+                "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

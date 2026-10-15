@@ -86,9 +86,9 @@ def test_cli_records_only_for_active_games(data_dir):
     subprocess.run([sys.executable, str(ROOT / "python" / "lp.py"), "analyze", "--game", "5x36"],
                    env=env, check=True, capture_output=True, timeout=300)
     entries = journal.load("5x36")["entries"]
-    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus"}
+    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos"}
     assert all(e["draw_no"] == 401 for e in entries)
     out = subprocess.run([sys.executable, str(ROOT / "python" / "lp.py"), "journal", "--game", "5x36"],
                          env=env, check=True, capture_output=True, text=True, encoding="utf-8").stdout
     res = json.loads([l for l in out.splitlines() if l.startswith("@@")][-1][2:])
-    assert len(res["journals"]["5x36"]["entries"]) == 2
+    assert len(res["journals"]["5x36"]["entries"]) == 3

@@ -28,6 +28,7 @@ SOURCES = {
     "analysis_best": "Лучший метод анализа",
     "analysis_consensus": "Консенсус методов",
     "godmode": "Режим Бога",
+    "chaos": "Порядок из хаоса",
 }
 
 

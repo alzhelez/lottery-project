@@ -159,6 +159,9 @@ def auto_message(status: dict, predictions: dict[str, dict]) -> str:
         lines.append("\nПрогнозы на следующие тиражи:")
         for slug, p in predictions.items():
             lines.append(f"• {esc(p['title'])} №{p['next_no']}: <code>{esc(fmt_blocks(p['numbers']))}</code>")
+            if p.get("chaos"):
+                lines.append(f"  порядок из хаоса ({esc(p['chaos']['title'])}): "
+                             f"<code>{esc(fmt_blocks(p['chaos']['numbers']))}</code>")
     return "\n".join(lines)
 
 

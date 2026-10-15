@@ -4,8 +4,8 @@ import { isValidSlug } from '@/lib/paths'
 
 export const dynamic = 'force-dynamic'
 
-const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules']
-const NEEDS_GAME: JobKind[] = ['analyze', 'godmode']
+const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules', 'chaos']
+const NEEDS_GAME: JobKind[] = ['analyze', 'godmode', 'chaos']
 
 function parse(kind: unknown, game: unknown): { kind: JobKind; game: string | null } | string {
   if (!KINDS.includes(kind as JobKind)) return 'Неизвестный тип задачи'

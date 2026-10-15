@@ -83,6 +83,17 @@ test('анализ: тесты случайности и сравнение ме
   await expect(page.getByTestId('mechanisms')).toContainText('ГСЧ — 899 тиражей')
   await expect(page.getByTestId('detectable')).toContainText('чаще нормы')
   await expect(page.getByTestId('drift')).toContainText('Дрейфа нет')
+  // порядок из хаоса: лототрон и ГСЧ — отдельные наборы тиражей
+  await page.getByTestId('tab-chaos').click()
+  await expect(page.getByTestId('chaos-conclusion')).toContainText('Лототрон (600 тиражей)')
+  await expect(page.getByTestId('chaos-conclusion')).toContainText('ГСЧ (899 тиражей)')
+  await expect(page.getByTestId('chaos-prediction')).toContainText('Прогноз на тираж №13896')
+  await expect(page.getByTestId('chaos-group-R')).toContainText('порядка нет')
+  await expect(page.getByTestId('chaos-checks-L')).toContainText('Нелинейная предсказуемость')
+  await expect(page.getByTestId('chaos-methods-R')).toContainText('Аналоги последнего тиража')
+  await page.getByText('Как это устроено').click()
+  await expect(page.getByTestId('chaos-about')).toContainText('Такенса')
+  await page.screenshot({ path: 'tests/e2e/.data/chaos.png', fullPage: true })
 })
 
 test('правила игры со stoloto.ru и ожидаемый возврат ближайшего тиража', async ({ page }) => {
@@ -116,7 +127,7 @@ test('журнал прогнозов: запись до тиража и све�
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   const entries = page.getByTestId('journal-entries')
-  await expect(entries.locator('tbody tr')).toHaveCount(3)
+  await expect(entries.locator('tbody tr')).toHaveCount(4)
   await expect(entries).toContainText('ждёт тиража')
   await expect(entries).toContainText('№13896')
 
@@ -124,14 +135,14 @@ test('журнал прогнозов: запись до тиража и све�
   expect((await (await request.get(`${MOCK}/__release`)).json()).released).toEqual([13896])
   const job = await runJob(request, { kind: 'fetch', game: '4x20' })
   expect(job.status).toBe('done')
-  expect(job.games['4x20'].journal_checked).toBe(3)
+  expect(job.games['4x20'].journal_checked).toBe(4)
 
   await page.reload()
   await page.getByTestId('tab-journal').click()
   await expect(entries).toContainText('сверен')
   await expect(entries).not.toContainText('ждёт тиража')
   const summary = page.getByTestId('journal-summary')
-  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Режим Бога']) {
+  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Режим Бога', 'Порядок из хаоса']) {
     await expect(summary.locator('tr', { hasText: title }).locator('td').nth(1)).toHaveText('1')
   }
   await page.screenshot({ path: 'tests/e2e/.data/journal.png', fullPage: true })
