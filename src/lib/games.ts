@@ -23,7 +23,7 @@ export interface GameInfo {
   activity: Activity
 }
 
-interface RegistryGame { slug: string; title: string }
+interface RegistryGame { slug: string; title?: string; excluded?: string }
 
 const REGISTRY = new Map<string, RegistryGame>((registry.games as RegistryGame[]).map((g) => [g.slug, g]))
 const INACTIVE_DAYS = Number(process.env.LOTTERY_INACTIVE_DAYS || (registry as { inactive_days?: number }).inactive_days || 15)
@@ -60,6 +60,12 @@ function apiGames(): Array<{ name: string; title: string | null }> | null {
   return raw?.games ?? null
 }
 
+/** Игра убрана из приложения (в реестре есть причина excluded) — например, «Спец»:
+ *  числа в ней при покупке не выбираются. */
+export function isExcluded(slug: string): boolean {
+  return Boolean(REGISTRY.get(slug)?.excluded)
+}
+
 export function gameTitle(slug: string): string {
   return REGISTRY.get(slug)?.title ?? apiGames()?.find((g) => g.name === slug)?.title ?? slug
 }
@@ -70,7 +76,7 @@ export function stolotoUrl(slug: string): string {
 
 /** Быстрое чтение сводки по файлу тиражей (номера, даты) без разбора чисел. */
 export function readGameInfo(slug: string): GameInfo | null {
-  if (!isValidSlug(slug)) return null
+  if (!isValidSlug(slug) || isExcluded(slug)) return null
   const file = drawsFile(slug)
   const checkedAt = readMeta(slug).checked_at ?? null
   const base: GameInfo = {
@@ -113,7 +119,7 @@ export function listGames(): GameInfo[] {
       if (m && isValidSlug(m[1])) slugs.add(m[1])
     }
   }
-  return [...slugs].map((s) => readGameInfo(s)).filter((g): g is GameInfo => g !== null)
+  return [...slugs].filter((s) => !isExcluded(s)).map((s) => readGameInfo(s)).filter((g): g is GameInfo => g !== null)
 }
 
 export function readJson<T = unknown>(file: string): T | null {

@@ -24,7 +24,8 @@ def local_slugs() -> list[str]:
     for p in sorted(draws_path("x").parent.glob("draws_*.txt")):
         slug = p.stem[len("draws_"):]
         try:
-            get_game(slug)
+            if get_game(slug).excluded:
+                continue
         except ValueError:
             continue
         out.append(slug)

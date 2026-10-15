@@ -70,6 +70,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .data tr.sig td { background: #fff4e5; }
 .data tr.best td { background: #eaf0ff; }
 .data tr.control td { color: var(--muted); font-style: italic; }
+.data tr.selected td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
 .data.compact td, .data.compact th { padding: .35rem .5rem; }
 .empty-games { columns: 3 14rem; padding-left: 1.2rem; }
 

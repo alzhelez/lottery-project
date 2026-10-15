@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -144,10 +144,16 @@ class BlockSpec:
     hi: int
     mode: str = "set"
     avg: float = 0.0
+    drawn: int = 0         # сколько чисел выпадает, если игрок выбирает меньше (Кено: 10 из 20 выпавших)
 
     @property
     def size(self) -> int:
         return self.hi - self.lo + 1
+
+    @property
+    def balls(self) -> int:
+        """Сколько чисел блока выпадает в тираже (для «k из N» — столько же, сколько выбирается)."""
+        return self.drawn or self.count
 
     @property
     def variable(self) -> bool:
@@ -155,12 +161,12 @@ class BlockSpec:
 
     def to_dict(self) -> dict:
         return {"name": self.name, "source": self.source, "position": self.position, "count": self.count,
-                "lo": self.lo, "hi": self.hi, "mode": self.mode, "avg": self.avg}
+                "lo": self.lo, "hi": self.hi, "mode": self.mode, "avg": self.avg, "drawn": self.drawn}
 
     @classmethod
     def from_dict(cls, d: dict) -> "BlockSpec":
         return cls(d["name"], d["source"], d.get("position"), d["count"], d["lo"], d["hi"],
-                   d.get("mode", "set"), d.get("avg", 0.0))
+                   d.get("mode", "set"), d.get("avg", 0.0), d.get("drawn", 0))
 
 
 def block_values(d: Draw, spec: BlockSpec) -> tuple[int, ...]:
@@ -207,6 +213,8 @@ class GameFormat:
             if s.variable:
                 parts.append(f"{s.name}: прогноз {s.count} из {s.lo}–{s.hi} "
                              f"(в тираже в среднем {s.avg:.1f})".replace(".", ","))
+            elif s.drawn and s.drawn != s.count:
+                parts.append(f"{s.name}: прогноз {s.count} из {s.lo}–{s.hi} (выпадает {s.drawn})")
             elif s.mode == "first":
                 parts.append(f"{s.name}: {s.count} из {s.lo}–{s.hi} по порядку выпадения")
             else:
@@ -347,6 +355,20 @@ def infer_format(draws: list[Draw], game: Game | None = None, labels: list[str] 
                 blocks.append(BlockSpec(f"Позиция {j + 1}", i, j, 1, lo, hi, mode="position"))
         else:
             return GameFormat(False, reason="в каждом тираже выпадают все числа диапазона")
+    picks = tuple(game.picks) if game and game.picks else ()
+    if picks:
+        # игрок выбирает меньше чисел, чем выпадает (Кено 2.0: 10 из 20), или блок не для ставок
+        adjusted = []
+        for b in blocks:
+            pk = picks[b.source] if b.source < len(picks) else None
+            if pk == 0:
+                continue
+            if pk and b.mode == "set" and pk < b.count:
+                b = replace(b, count=pk, drawn=b.count)
+            adjusted.append(b)
+        blocks = adjusted
+        if not blocks:
+            return GameFormat(False, reason="в реестре не осталось блоков для прогноза")
     return GameFormat(True, blocks=blocks, shape=tuple(shape), min_len=tuple(min_len))
 
 

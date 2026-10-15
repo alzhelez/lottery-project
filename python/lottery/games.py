@@ -35,6 +35,8 @@ class Game:
     labels: tuple[str, ...] = field(default_factory=tuple)   # названия блоков строки
     range: tuple[int, ...] = ()                               # (lo, hi), если известен заранее
     variable: bool = False      # в реестре "counts": [] — число шаров меняется (бинго)
+    picks: tuple[int, ...] = ()  # сколько чисел выбирает игрок в блоке (0 — блок не анализируется)
+    excluded: str = ""          # причина, по которой игра не загружается и не показывается
 
     @property
     def stoloto_url(self) -> str:
@@ -98,6 +100,8 @@ def _registry() -> dict[str, Game]:
             labels=tuple(g.get("labels", [])),
             range=tuple(g.get("range", [])),
             variable="counts" in g and not g["counts"],
+            picks=tuple(g.get("picks", [])),
+            excluded=g.get("excluded", ""),
         )
     return games
 
@@ -129,3 +133,16 @@ def get_game(slug: str) -> Game:
 
 def all_games() -> list[Game]:
     return list(_registry().values())
+
+
+def is_excluded(slug: str) -> bool:
+    g = _registry().get(slug)
+    return bool(g and g.excluded)
+
+
+def local_slugs() -> list[str]:
+    """Игры, по которым есть файл тиражей (кроме исключённых из реестра)."""
+    folder = draws_path("x").parent
+    if not folder.exists():
+        return []
+    return sorted(s for s in (p.stem[len("draws_"):] for p in folder.glob("draws_*.txt")) if not is_excluded(s))

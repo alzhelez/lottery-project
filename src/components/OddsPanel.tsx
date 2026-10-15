@@ -22,6 +22,102 @@ export interface Odds {
   price_source?: 'user' | 'archive' | null
   archive_draws?: number
   legal_prize_fund: number
+  archive?: ArchiveStats | null
+  variants?: KenoVariant[] | null
+}
+
+export interface ArchiveStats {
+  draws: number; from: number; to: number; price: number; bets_per_draw: number; return: number; p_any: number
+  categories: Array<{ label: string; chance: number; one_in: number | null; prize: number | null; return: number; winners: number }>
+}
+
+export interface KenoVariant {
+  pick: number
+  rows: Array<{ hits: number; p: number; one_in: number | null; prize: number | null }>
+  expected_value: number | null; return_per_ruble: number | null; p_any_prize: number | null
+}
+
+const rub = (v: number) => v.toLocaleString('ru-RU', { maximumFractionDigits: v < 10 ? 2 : 0 })
+const ret3 = (v: number | null | undefined) => (v != null ? v.toLocaleString('ru-RU', { maximumFractionDigits: 3 }) : '—')
+
+/** Шансы и возврат по реальным итогам тиражей: победители / проданные ставки, выплаты. */
+export function ArchiveOdds({ a }: { a: ArchiveStats }) {
+  const shown = a.categories.filter((c) => c.winners > 0 || (c.prize ?? 0) > 0)
+  return (
+    <section data-testid="archive-odds">
+      <h3>Шансы по архиву</h3>
+      <p className="muted small">
+        По итогам последних {a.draws} тиражей (№{a.from}–{a.to}): шанс категории — доля выигравших ставок
+        (победители ÷ проданные ставки, в среднем {nf.format(Math.round(a.bets_per_draw))} за тираж), приз — медиана выплаты,
+        возврат — сколько из каждого рубля ставок вернулось игрокам в этой категории. Это оценка по истории, а не формула:
+        в ней уже учтены популярность комбинаций и увеличенные ставки.
+      </p>
+      <dl className="facts">
+        <div><dt>Возврат с рубля по архиву</dt><dd data-testid="archive-return">{ret3(a.return)}</dd>
+          <dd className="sub">цена ставки ≈ {rub(a.price)} ₽</dd></div>
+        <div><dt>Шанс выиграть хоть что-то</dt><dd>{a.p_any > 0 ? oneIn(1 / a.p_any) : '—'}</dd></div>
+      </dl>
+      <div className="table-wrap">
+        <table className="data" data-testid="archive-table">
+          <thead><tr><th>Категория</th><th className="r">Шанс на ставку</th><th className="r">Приз, ₽</th><th className="r">Возврат с рубля</th></tr></thead>
+          <tbody>
+            {shown.map((c) => (
+              <tr key={c.label}>
+                <td>{c.label}</td>
+                <td className="r num">{oneIn(c.one_in)}</td>
+                <td className="r num">{c.prize != null ? rub(c.prize) : '—'}</td>
+                <td className="r num">{ret3(c.return)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+/** Кено: билет на K чисел (1…10) при 20 выпавших из 80 — точные шансы и возврат для каждого K. */
+export function KenoVariants({ variants, price }: { variants: KenoVariant[]; price: number | null | undefined }) {
+  const [pick, setPick] = useState(variants[variants.length - 1].pick)
+  const v = variants.find((x) => x.pick === pick) ?? variants[0]
+  const best = variants.filter((x) => x.return_per_ruble != null).sort((a, b) => b.return_per_ruble! - a.return_per_ruble!)[0]
+  return (
+    <section data-testid="keno-variants">
+      <h3>Сколько чисел выбрать</h3>
+      <p className="muted small">
+        В Кено выбирают от 1 до {variants.length} чисел, а выпадает 20 из 80. Вероятности посчитаны точно
+        (гипергеометрическое распределение), призы — медиана выплат за последние 500 тиражей{price ? `, ставка ${rub(price)} ₽` : ''}.
+        Исходы, по которым за это время не было ни одного победителя (например, 10 из 10), в возврат не вошли.
+        {best && <> Больше всего в среднем возвращает билет на {best.pick} {best.pick === 1 ? 'число' : best.pick < 5 ? 'числа' : 'чисел'} — {ret3(best.return_per_ruble)} с рубля.</>}
+      </p>
+      <div className="table-wrap">
+        <table className="data" data-testid="keno-table">
+          <thead><tr><th>Чисел в билете</th><th className="r">Шанс выиграть</th><th className="r">Возврат с рубля</th></tr></thead>
+          <tbody>
+            {variants.map((x) => (
+              <tr key={x.pick} className={x.pick === pick ? 'selected' : ''} onClick={() => setPick(x.pick)} style={{ cursor: 'pointer' }}>
+                <td className="num">{x.pick}</td>
+                <td className="r num">{x.p_any_prize ? oneIn(1 / x.p_any_prize) : '—'}</td>
+                <td className="r num">{ret3(x.return_per_ruble)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <h4>Билет на {v.pick}: исходы</h4>
+      <div className="table-wrap">
+        <table className="data">
+          <thead><tr><th>Угадано</th><th className="r">Шанс</th><th className="r">Приз, ₽</th></tr></thead>
+          <tbody>
+            {v.rows.map((r) => (
+              <tr key={r.hits}><td className="num">{r.hits} из {v.pick}</td><td className="r num">{oneIn(r.one_in)}</td>
+                <td className="r num">{r.prize != null ? rub(r.prize) : '—'}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
 }
 
 export function oneIn(v: number | null | undefined): string {
@@ -88,7 +184,14 @@ export function OddsPanel({ slug }: { slug: string }) {
 
   if (error) return <p className="error">{error}</p>
   if (!odds) return <p className="muted">Считаю вероятности…</p>
-  if (!odds.supported) return <p className="empty" data-testid="odds">{odds.reason}</p>
+  if (!odds.supported) {
+    return (
+      <section className="panel" data-testid="odds">
+        <p className="empty">{odds.reason}</p>
+        {odds.archive ? <ArchiveOdds a={odds.archive} /> : <p className="muted small">Данных о выплатах в архиве пока мало — загрузите тиражи.</p>}
+      </section>
+    )
+  }
 
   const shown = odds.patterns!.filter((p) => p.total > 0)
   return (
@@ -163,6 +266,8 @@ export function OddsPanel({ slug }: { slug: string }) {
           шанс выиграть хоть что-то — <b>{oneIn(1 / live.any)}</b>.
         </p>
       )}
+      {odds.variants && odds.variants.length > 0 && <KenoVariants variants={odds.variants} price={odds.price} />}
+      {odds.archive && <ArchiveOdds a={odds.archive} />}
     </section>
   )
 }

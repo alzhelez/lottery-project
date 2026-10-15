@@ -54,7 +54,7 @@ _load_dotenv()
 
 from lottery import __version__  # noqa: E402
 from lottery.drawfile import load_game_data  # noqa: E402
-from lottery.games import activity, all_games, draws_path, get_game, read_meta, results_dir  # noqa: E402
+from lottery.games import local_slugs, activity, all_games, draws_path, get_game, read_meta, results_dir  # noqa: E402
 
 if sys.stdout is None or sys.stderr is None:  # pythonw.exe (Планировщик без окна консоли)
     sys.stdout = sys.stdout or open(os.devnull, "w", encoding="utf-8")
@@ -301,7 +301,7 @@ def auto_once(args) -> dict:
                 {"fetch": r.get("status"), "added": r.get("added", 0), "journal_checked": r.get("journal_checked", 0)})
             if r.get("status") == "error":
                 log(f"{slug}: ошибка загрузки — {r.get('message')}")
-        slugs = args.game or sorted(p.stem[len("draws_"):] for p in draws_path("x").parent.glob("draws_*.txt"))
+        slugs = args.game or local_slugs()
         from lottery.drawfile import same_draws
         seen: dict[str, list] = {}
         for slug in slugs:
@@ -401,7 +401,7 @@ def cmd_odds(args) -> None:
     if args.set_prizes:
         raw = json.loads(Path(args.set_prizes).read_text(encoding="utf-8"))
         save_prizes(args.game, raw.get("price"), raw.get("prizes") or {})
-    slugs = args.game and [args.game] or sorted(p.stem[len("draws_"):] for p in draws_path("x").parent.glob("draws_*.txt"))
+    slugs = args.game and [args.game] or local_slugs()
     tables = {}
     for slug in slugs:
         try:
@@ -595,7 +595,7 @@ def diagnose_game(slug: str) -> dict:
 
 def cmd_diagnose(args) -> None:
     from lottery.games import data_dir
-    slugs = args.game or sorted(p.stem[len("draws_"):] for p in draws_path("x").parent.glob("draws_*.txt"))
+    slugs = args.game or local_slugs()
     report = []
     for slug in slugs:
         try:

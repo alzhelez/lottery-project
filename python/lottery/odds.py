@@ -47,18 +47,51 @@ def save_prizes(slug: str, price, prizes: dict) -> dict:
 
 
 def supported(data: GameData) -> tuple[bool, str]:
+    """Можно ли посчитать шансы точно (по комбинаторике). Если нет — остаются шансы по архиву."""
     if not data.fmt.supported:
         return False, data.fmt.reason
     if data.fmt.bingo:
-        return False, ("В бинго-играх выигрыш зависит от готового билета и туров, а не от выбранных "
-                       "чисел, — калькулятор к ним не применим.")
+        return False, ("В бинго выигрыш зависит от готового билета и того, на каком шаре закроется тур, — "
+                       "точной формулы нет. Шансы туров ниже посчитаны по реальным итогам тиражей.")
+    if any(s.mode == "position" for s in data.fmt.blocks):
+        return False, ("Здесь ставят на цифры и их порядок (точный порядок, любой порядок, первые и последние "
+                       "цифры), у каждой ставки свои правила. Шансы ставок ниже посчитаны по реальным итогам тиражей.")
     return True, ""
 
 
+def keno_variants(data: GameData, price: float | None) -> list[dict] | None:
+    """Кено: игрок выбирает K чисел (1…10), выпадает 20 из 80. Для каждого K — точное
+    распределение совпадений и выплаты из архива (медиана по подписи «k из K»)."""
+    specs = [s for s in data.fmt.blocks if s.drawn and s.drawn > s.count]
+    if len(specs) != 1:
+        return None
+    from .prizes import typical_by_label
+    spec = specs[0]
+    prizes = typical_by_label(data.game.slug, last=500)   # у Кено призы фиксированные — берём окно шире
+    out = []
+    for k_pick in range(1, spec.count + 1):
+        pmf = sps.hypergeom(spec.size, spec.drawn, k_pick).pmf(np.arange(k_pick + 1))
+        rows = []
+        ev = 0.0
+        p_win = 0.0
+        for hits in range(k_pick, -1, -1):
+            prize = prizes.get(f"{hits} из {k_pick}")
+            rows.append({"hits": hits, "p": float(pmf[hits]), "one_in": float(1 / pmf[hits]) if pmf[hits] > 0 else None,
+                         "prize": prize})
+            if prize:
+                ev += float(pmf[hits]) * prize
+                p_win += float(pmf[hits])
+        out.append({"pick": k_pick, "rows": rows, "expected_value": ev if p_win else None,
+                    "return_per_ruble": ev / price if p_win and price else None,
+                    "p_any_prize": p_win if p_win else None})
+    return out
+
+
 def block_pmf(spec) -> np.ndarray:
-    """Распределение совпадений в одном поле: выбрано count чисел, выпало count из size."""
+    """Распределение совпадений в одном поле: выбрано count чисел из size, выпало balls
+    (обычно столько же; в Кено — 20 выпавших на 10 выбранных)."""
     k = spec.count
-    return sps.hypergeom(spec.size, k, k).pmf(np.arange(k + 1))
+    return sps.hypergeom(spec.size, getattr(spec, "balls", k), k).pmf(np.arange(k + 1))
 
 
 def pattern_key(hits: tuple[int, ...]) -> str:
@@ -67,8 +100,9 @@ def pattern_key(hits: tuple[int, ...]) -> str:
 
 def odds_table(data: GameData) -> dict:
     ok, reason = supported(data)
+    from .prizes import archive_stats
     base = {"slug": data.game.slug, "title": data.game.title, "format": data.fmt.describe(),
-            "legal_prize_fund": LEGAL_PRIZE_FUND}
+            "legal_prize_fund": LEGAL_PRIZE_FUND, "archive": archive_stats(data.game.slug)}
     if not ok:
         return {**base, "supported": False, "reason": reason}
     specs = data.fmt.blocks
@@ -87,7 +121,7 @@ def odds_table(data: GameData) -> dict:
     jackpot = rows[0]
     tickets = 1
     for s in specs:
-        tickets *= int(round(1 / sps.hypergeom(s.size, s.count, s.count).pmf(s.count)))
+        tickets *= int(round(1 / sps.hypergeom(s.size, s.count, s.count).pmf(s.count)))   # C(size, count)
     user = load_prizes(data.game.slug)
     archive = {"prizes": {}, "price": None, "draws": 0}
     if not any(s.mode == "position" for s in specs):
@@ -123,4 +157,5 @@ def odds_table(data: GameData) -> dict:
         "p_any_prize": win_p if any_prize else None,
         "prizes_entered": len(user["prizes"]),
         "archive_draws": archive["draws"],
+        "variants": keno_variants(data, price),
     }

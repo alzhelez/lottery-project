@@ -21,6 +21,13 @@ from .fsutil import write_text
 from .games import data_dir, draws_path
 
 VERSION = 2   # версия разбора: записи старых версий перечитываются из API один раз
+# игры, у которых разбор выплат менялся позже: 40.5 — Кено 2.0 (группы категорий),
+# Топ-3 (подзаголовки «2 одинаковых / 3 разных числа»)
+GAME_VERSION = {"keno2": 3, "top-3": 3}
+
+
+def required_version(slug: str) -> int:
+    return GAME_VERSION.get(slug, VERSION)
 
 WINNER_KEYS = ("winners", "winnersCount", "winnerCount", "winnersAmount", "participants", "count",
                "quantity", "ticketsCount", "winTickets")
@@ -65,6 +72,16 @@ def _first(d: dict, keys) -> tuple[str | None, object]:
 
 
 def _label(item: dict) -> str | None:
+    base = _label_main(item)
+    sub = item.get("subTitle")
+    sub = sub.get("ru") if isinstance(sub, dict) else sub
+    # «Любой порядок 3» бывает двух видов: «2 одинаковых числа» и «3 разных числа» (Топ-3)
+    if base and isinstance(sub, str) and sub.strip() and sub.strip().lower() not in base.lower():
+        return f"{base} ({sub.strip()})"
+    return base
+
+
+def _label_main(item: dict) -> str | None:
     k, v = _first(item, LABEL_KEYS)
     if isinstance(v, (str, int)):
         return str(v)
@@ -121,7 +138,15 @@ def extract(raw: dict) -> dict | None:
     if status not in ("COMPLETED", "FINISHED", "CLOSED"):
         return None             # тираж ещё не закрыт (PLAYING): выплаты не посчитаны
     best = None
-    for key, value in _walk({k: v for k, v in raw.items() if k not in ("combination", "winningCombination")}):
+    groups = raw.get("groupedCategories")
+    if isinstance(groups, list):
+        # Кено 2.0: категории разбиты на группы (чётность, столбец, «k из K» для каждого K)
+        merged = [c for g in groups if isinstance(g, dict) for c in (g.get("categories") or [])]
+        cats = _categories(merged) if len(merged) >= 2 else None
+        if cats:
+            best = ("groupedCategories", cats)
+    for key, value in _walk({k: v for k, v in raw.items() if k not in ("combination", "winningCombination",
+                                                                         "groupedCategories")}):
         if isinstance(value, list) and len(value) >= 2:
             cats = _categories(value)
             if cats and (best is None or _score(cats) > _score(best[1])):
@@ -156,6 +181,10 @@ def category_keys(label: str, n_blocks: int, block_counts: list[int]) -> list[st
     s = label.lower().replace("—", "-").strip()
     if any(w in s for w in _NOT_OUTCOME):
         return []
+    # слова в подписи — только про совпадения; «Столбец 8», «Сектор 2» — другие ставки
+    if re.search(r"[а-яёa-z]", s.replace(" из ", " ").replace(" или ", " ").replace(" и ", " ")
+                 .replace("x", "").replace("х", "")) and not any(w in s for w in ("угад", "совпад", "числ")):
+        return []
     out: list[str] = []
     if n_blocks >= 2:
         pairs = _PAIR_X.findall(s) or _PAIR_OLD.findall(s)
@@ -167,7 +196,8 @@ def category_keys(label: str, n_blocks: int, block_counts: list[int]) -> list[st
     else:
         nums = [int(x) for x in re.findall(r"\d+", s)]
         if " из " in s and len(nums) >= 2:      # «5 из 36», «4 из 6» — первое число совпадения
-            nums = nums[:1]
+            # «5 из 9» в Кено — ставка на 9 чисел, а мы считаем билет на 10: не наш исход
+            nums = nums[:1] if nums[1] >= block_counts[0] else []
         elif " или " in s:                       # «2 или 10» — одна категория на два исхода
             pass
         elif len(nums) != 1:
@@ -401,3 +431,75 @@ def typical_prizes(slug: str, block_counts: list[int], last: int = 50) -> dict:
     prices = [p for _, p in recent if p]
     return {"prizes": {k: float(np.median(v)) for k, v in by_key.items()},
             "price": float(np.median(prices)) if prices else None, "draws": len(recent)}
+
+
+# ── Шансы по архиву ──────────────────────────────────────────────────────────
+
+def _tail(slug: str, last: int) -> list[dict]:
+    """Последние `last` записей файла выплат (разбирается только хвост)."""
+    from collections import deque
+    path = prizes_file(slug)
+    if not path.exists():
+        return []
+    tail: deque = deque(maxlen=last)
+    for line in _lines(path):
+        tail.append(line)
+    out = []
+    for line in tail:
+        try:
+            out.append(_expand(json.loads(line)))
+        except (ValueError, KeyError, TypeError):
+            continue
+    return sorted(out, key=lambda r: r.get("no") or 0)
+
+
+def typical_by_label(slug: str, last: int = 50) -> dict[str, float]:
+    """Медиана выплаты по подписи категории за последние тиражи (ненулевые выплаты)."""
+    import numpy as np
+    by: dict[str, list[float]] = {}
+    for r in _tail(slug, last):
+        for c in r["categories"]:
+            if c["prize"] and c["prize"] > 0:
+                by.setdefault(c["label"], []).append(c["prize"])
+    return {k: float(np.median(v)) for k, v in by.items()}
+
+
+def archive_stats(slug: str, last: int = 200) -> dict | None:
+    """Шансы и возврат по реальным итогам последних тиражей — для любых игр, в том числе
+    тех, где точный расчёт невозможен (туры бинго, ставки на порядок цифр, чётность).
+
+    Шанс категории на одну ставку = победителей / проданных ставок (суммарно по тиражам);
+    вклад в возврат = выплачено в категории / (ставок × цена). Это оценка по истории: в ней
+    есть и популярность комбинаций, и множители ставок, если игроки их используют."""
+    import numpy as np
+    recs = [r for r in _tail(slug, last) if r.get("sales") and r.get("price")]
+    if len(recs) < 10:
+        return None
+    spent = sum(r["sales"] * r["price"] for r in recs)
+    bets = sum(r["sales"] for r in recs)
+    rows: dict[str, dict] = {}
+    order: list[str] = []
+    for r in recs:
+        for c in r["categories"]:
+            row = rows.get(c["label"])
+            if row is None:
+                row = rows[c["label"]] = {"label": c["label"], "winners": 0.0, "paid": 0.0, "prizes": [], "draws": 0}
+                order.append(c["label"])
+            w, p = c["winners"] or 0.0, c["prize"] or 0.0
+            row["winners"] += w
+            row["paid"] += w * p
+            row["draws"] += 1
+            if p > 0 and w > 0:
+                row["prizes"].append(p)
+    cats = []
+    for label in order:
+        row = rows[label]
+        chance = row["winners"] / bets if bets else 0.0
+        cats.append({"label": label, "chance": chance, "one_in": (1 / chance) if chance > 0 else None,
+                     "prize": float(np.median(row["prizes"])) if row["prizes"] else None,
+                     "return": row["paid"] / spent if spent else 0.0, "winners": row["winners"]})
+    total = sum(c["return"] for c in cats)
+    return {"draws": len(recs), "from": recs[0]["no"], "to": recs[-1]["no"],
+            "price": float(np.median([r["price"] for r in recs])),
+            "bets_per_draw": bets / len(recs), "return": total,
+            "p_any": min(1.0, sum(c["chance"] for c in cats)), "categories": cats}

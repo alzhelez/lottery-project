@@ -517,7 +517,7 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
         if first is None:
             write_meta(game.slug, checked_at=datetime.now().isoformat(timespec="seconds"))
             return {"status": "no_data", "draws": 0, "added": 0, "message": "В архиве нет тиражей этой игры"}
-        _write_meta(game, {"first_date": fmt_date(first), "repaired_v2": True, "prizes_v": prizes_mod.VERSION})
+        _write_meta(game, {"first_date": fmt_date(first), "repaired_v2": True, "prizes_v": prizes_mod.required_version(game.slug)})
         status(f"Первый тираж: {fmt_date(first)}. Загружаю архив…")
         fetch_range(game, store, first, today, log=log, on_page=page_note)
     else:
@@ -525,7 +525,7 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
         last_dt = last.dt or today
         first = min(existing, key=lambda d: d.no)
         meta = _read_meta(game)
-        if meta.get("prizes_v") != prizes_mod.VERSION:
+        if meta.get("prizes_v") != prizes_mod.required_version(game.slug):
             # Выплаты по всему архиву: в 40.3.0 их не было у старых тиражей, а разбор выбирал
             # не тот список из ответа API. Один раз перечитываем архив целиком (заодно докачка).
             first_dt = first.dt or today
@@ -540,7 +540,7 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
                         log=log, on_page=page_note)
             store.flush()
             store.flush_prizes()
-            _write_meta(game, {**_read_meta(game), "prizes_v": prizes_mod.VERSION})
+            _write_meta(game, {**_read_meta(game), "prizes_v": prizes_mod.required_version(game.slug)})
             meta = _read_meta(game)
         else:
             status(f"В файле {len(existing)} тиражей, докачиваю с {fmt_date(last_dt)}…")
@@ -613,12 +613,14 @@ def fetch_all(slugs: list[str] | None, emit, workers: int = 2) -> dict:
     """Загрузка всех игр (по 2 параллельно). emit(event) — события прогресса."""
     if not slugs:
         discovered = discover_games(log=lambda m: emit({"type": "log", "message": m}))
-        local = sorted(p.stem[len("draws_"):] for p in draws_path("x").parent.glob("draws_*.txt"))
+        from .games import is_excluded, local_slugs
+        local = local_slugs()
+        discovered = [s for s in discovered if not is_excluded(s)]
         if discovered:
             # активные по данным API + уже скачанные (чтобы обновлялись и они)
             slugs = discovered + [s for s in local if s not in discovered]
         else:
-            registry = [g.slug for g in all_games()]
+            registry = [g.slug for g in all_games() if not g.excluded]
             slugs = registry + [s for s in local if s not in registry]
         emit({"type": "log", "message": f"Игр к загрузке: {len(slugs)}" +
               (f" (активных по API: {len(discovered)})" if discovered else " (список из реестра — API игр недоступно)")})
