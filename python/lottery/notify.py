@@ -3,7 +3,8 @@
 Настройка (.env в папке проекта):
     TELEGRAM_BOT_TOKEN=123456:ABC...   токен бота от @BotFather
     TELEGRAM_CHAT_ID=123456789         куда писать (узнать: lp.bat telegram setup)
-    TELEGRAM_EVENTS=journal,auto,godmode,errors   какие события присылать (по умолчанию все)
+    TELEGRAM_EVENTS=journal,auto,godmode,errors,drift,ev   какие события присылать (по умолчанию все)
+    TELEGRAM_EV_THRESHOLD=1   порог ожидаемого возврата ближайшего тиража для события ev
     TELEGRAM_PROXY=socks5://host:port  если api.telegram.org недоступен напрямую (нужен pip install pysocks)
     TELEGRAM_API_BASE=https://...      свой адрес Bot API (зеркало или локальный сервер)
 
@@ -20,7 +21,7 @@ import requests
 
 from .games import data_dir
 
-EVENTS = ("journal", "auto", "godmode", "errors")
+EVENTS = ("journal", "auto", "godmode", "errors", "drift", "ev")
 TIMEOUT = 15
 
 
@@ -165,3 +166,23 @@ def godmode_message(title: str, res: dict) -> str:
     return (f"<b>{esc(title)}</b> — режим Бога: {esc(res['stage'].lower())}\n"
             f"{esc(res['verdict'])}\n"
             f"Прогноз на тираж №{res['next']['no']}: <code>{esc(fmt_blocks(res['next']['numbers']))}</code>")
+
+
+def drift_message(title: str, alarms: list[dict]) -> str:
+    lines = [f"<b>{esc(title)}</b> — возможный дрейф"]
+    for a in alarms[:5]:
+        lines.append(f"• {esc(a['title'])}, {esc(a['block'])}: {esc(a['check'])} — p={a['p_adjusted']:.4f}; "
+                     f"{esc(a['detail'])}")
+    lines.append("Это сигнал проверить, а не прогноз: тревога засчитывается, если повторится в следующих тиражах.")
+    return "\n".join(lines)
+
+
+def ev_message(items: list[dict]) -> str:
+    lines = ["<b>Ближайшие тиражи с возвратом выше порога</b>"]
+    for r in items:
+        when = (r.get("date") or "").replace("T", " ")[:16]
+        sp = f"{r['super_prize']:,.0f}".replace(",", " ")
+        lines.append(f"• {esc(r['title'])} №{r['number']} ({esc(when)}): возврат {r['return']:.2f} "
+                     f"на рубль, суперприз {sp} ₽".replace(".", ",", 1))
+    lines.append("Ожидание в среднем по очень большому числу билетов; почти все билеты проигрывают.")
+    return "\n".join(lines)

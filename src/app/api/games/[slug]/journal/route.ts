@@ -21,6 +21,7 @@ interface Entry {
   draw_no: number
   made_at: string
   won?: number | null
+  mechanism?: 'L' | 'R' | null
 }
 
 /** Сводка по журналу: средние угаданные против ожидания случайного выбора (z-тест). */
@@ -70,5 +71,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const entries = ((journal?.entries ?? []) as unknown as Entry[])
     .slice()
     .sort((a, b) => b.draw_no - a.draw_no || b.made_at.localeCompare(a.made_at))
-  return NextResponse.json({ entries, summary: summarize(entries) })
+  // отдельно для тиражей на лототроне и ГСЧ (если в журнале есть оба)
+  const byMechanism = (['L', 'R'] as const)
+    .map((m) => ({ mechanism: m, title: m === 'L' ? 'Лототрон' : 'ГСЧ', summary: summarize(entries.filter((e) => e.mechanism === m)) }))
+    .filter((x) => x.summary.length > 0)
+  return NextResponse.json({ entries, summary: summarize(entries), byMechanism: byMechanism.length > 1 ? byMechanism : [] })
 }

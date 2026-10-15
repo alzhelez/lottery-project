@@ -6,6 +6,7 @@ import { dateOnly, nf, plural, span } from './format'
 import { GodModePanel } from './GodModePanel'
 import { JournalPanel } from './JournalPanel'
 import { OddsPanel } from './OddsPanel'
+import { RulesPanel } from './RulesPanel'
 import { TicketsPanel } from './TicketsPanel'
 import { useJob } from './useJob'
 
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'journal', label: 'Журнал прогнозов' },
   { id: 'odds', label: 'Шансы' },
   { id: 'tickets', label: 'Билеты' },
+  { id: 'rules', label: 'Правила' },
 ] as const
 
 const EXPORTS = [
@@ -158,6 +160,7 @@ export function GameView({ info }: { info: Info }) {
           {tab === 'journal' && <JournalPanel info={info} />}
           {tab === 'odds' && <OddsPanel slug={info.slug} />}
           {tab === 'tickets' && <TicketsPanel slug={info.slug} />}
+          {tab === 'rules' && <RulesPanel slug={info.slug} stolotoUrl={info.stolotoUrl} />}
         </>
       )}
     </main>

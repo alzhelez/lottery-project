@@ -17,7 +17,13 @@ export interface Analysis {
   last_draw_no: number
   format: string
   seconds: number
-  randomness: { status: string; verdict: string; level: string; tests: Test[]; q_value?: number }
+  randomness: {
+    status: string; verdict: string; level: string; tests: Test[]; q_value?: number
+    unreplicated?: string[]
+    detectable?: Array<{ block: string; draws: number; relative_pct: number; text: string }>
+    mechanisms?: MechReport
+  }
+  drift?: { verdict: string; alarms: Array<{ title: string; block: string; check: string; p_adjusted: number; detail: string }>; checks: unknown[] }
   popularity?: { available: boolean; significant?: boolean; verdict?: string; reason?: string; p_value?: number; draws?: number }
   descriptive: Array<{ block: string; numbers: number[]; frequency: number[]; recent100: number[]; gap: number[]; expected: number; expected_recent: number; count: number }>
   evaluation: {
@@ -33,8 +39,54 @@ export interface Analysis {
     next_votes: Array<{ block: string; models: number; votes: Array<{ number: number; votes: number }> }>
     next_prediction: { model: string; numbers: number[][] }
     money?: { available: boolean; reason?: string; price?: number; price_source?: string; draws_with_prizes?: number } | null
+    detectable_edge_pct?: number | null
+    by_mechanism?: Record<string, { title: string; draws: number; baseline: { mean: number }; conclusion?: string
+      best: { title: string; selection: { excess_pct: number; mean_hits: number }; holdout: { excess_pct: number; mean_hits: number; p_adjusted?: number } } | null }>
     distribution: { observed: number[]; expected: number[] }
   }
+}
+
+interface MechReport {
+  counts: { L: number; R: number; unknown: number }
+  mixed: boolean
+  by_mechanism: Record<string, { title: string; draws: number; verdict: string; level: string; significant: Test[] }>
+  comparison: Array<{ block: string; p_value: number; detail: string }>
+  order: Record<string, { verdict: string; significant: Array<{ block: string; position: number; p_adjusted: number; detail: string; replicated?: boolean }> }>
+}
+
+const MECH: Record<string, string> = { L: 'Лототрон', R: 'ГСЧ' }
+
+/** Лототрон и ГСЧ отдельно, сравнение между ними и порядок выпадения шаров. */
+function Mechanisms({ m }: { m: MechReport }) {
+  const kinds = Object.keys(m.by_mechanism)
+  if (!kinds.length) return null
+  return (
+    <section data-testid="mechanisms">
+      <h3>Лототрон и ГСЧ</h3>
+      <p className="muted small">
+        Тиражи разделены по способу проведения: по видеозаписи трансляции в ответе API и по расписанию из правил игры
+        (лототрон: {nf.format(m.counts.L)}, ГСЧ: {nf.format(m.counts.R)}{m.counts.unknown ? `, не определено: ${nf.format(m.counts.unknown)}` : ''}).
+        Физический лототрон теоретически может давать перекосы (износ шаров, порядок загрузки), ГСЧ — только при ошибке.
+      </p>
+      <div className="mech-grid">
+        {kinds.map((k) => {
+          const b = m.by_mechanism[k]
+          const o = m.order[k]
+          return (
+            <div key={k} className={`mech-card callout lv-${b.level}`}>
+              <h4>{MECH[k]} — {nf.format(b.draws)} тиражей</h4>
+              <div>{b.verdict}</div>
+              {o && <div className="small">Порядок шаров: {o.verdict}.{o.significant.length > 0 && ' ' + o.significant.slice(0, 2).map((t) => `${t.block}, шар ${t.position}: ${t.detail}${t.replicated ? '' : ' (не повторилось)'}`).join('; ')}</div>}
+            </div>
+          )
+        })}
+      </div>
+      {m.comparison.length > 0 && (
+        <p className="small">Совпадают ли частоты чисел у лототрона и ГСЧ: {m.comparison.map((c) => `${c.block} — ${c.detail}`).join('; ')}.
+          {m.comparison.every((c) => c.p_value >= 0.05) ? ' Разницы нет.' : ' Есть разница — проверьте, повторится ли она.'}</p>
+      )}
+    </section>
+  )
 }
 
 const LEVEL_TEXT: Record<string, string> = { random: 'Случайная', weak: 'Отклонения без пользы', signal: 'Есть отклонения', na: '—' }
@@ -67,8 +119,23 @@ export function AnalysisOverview({ a }: { a: Analysis }) {
       )}
       <p className="muted small">
         p — вероятность увидеть такое же или большее отклонение у честной лотереи. Поправка Холма учитывает,
-        что проверок много: значимым считается p с поправкой ниже 0,05.
+        что проверок много: значимым считается p с поправкой ниже 0,05 — и только если отклонение повторилось
+        во второй половине истории.
+        {r.unreplicated && r.unreplicated.length > 0 && ` Не повторилось (шум): ${r.unreplicated.join(', ').toLowerCase()}.`}
       </p>
+      {r.detectable && r.detectable.length > 0 && (
+        <div className="callout" data-testid="detectable">
+          <strong>Что уже исключено.</strong> {r.detectable.map((d) => d.text).join('. ')}. Меньшие перекосы при таком
+          объёме архива не отличить от случайности — и пользы для прогноза от них почти нет.
+        </div>
+      )}
+      {a.drift && (
+        <div className={`callout ${a.drift.alarms.length ? 'lv-signal' : 'lv-random'}`} data-testid="drift">
+          <strong>Наблюдение за дрейфом.</strong> {a.drift.verdict}
+          <span className="sub">Последние тиражи каждого способа сравниваются с честной лотереей и с прошлой историей; о новой тревоге приходит уведомление в Telegram.</span>
+        </div>
+      )}
+      {r.mechanisms && <Mechanisms m={r.mechanisms} />}
       {a.popularity?.available && (
         <div className={`callout ${a.popularity.significant ? 'lv-signal' : ''}`} data-testid="popularity">
           <strong>Популярность чисел у игроков.</strong> {a.popularity.verdict}
@@ -160,6 +227,36 @@ export function AnalysisMethods({ a, nextNo }: { a: Analysis; nextNo: number | n
         </p>
       )}
       {e.money && !e.money.available && <p className="muted small">{e.money.reason}</p>}
+
+      {e.detectable_edge_pct != null && (
+        <p className="callout" data-testid="method-edge">
+          <strong>Что исключено.</strong> На контрольном отрезке ({nf.format(e.test.holdout_draws)} тиражей) метод,
+          угадывающий хотя бы на {e.detectable_edge_pct.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}% больше
+          случайного выбора, был бы виден с вероятностью 80%. Методов с таким преимуществом не найдено.
+        </p>
+      )}
+
+      {e.by_mechanism && Object.keys(e.by_mechanism).length > 0 && (
+        <>
+          <h3>Лототрон и ГСЧ отдельно</h3>
+          <p className="muted small">Все методы заново проверены только на тиражах одного способа — на случай, если закономерность есть у лототрона, но размывается тиражами ГСЧ.</p>
+          <div className="table-wrap">
+            <table className="data" data-testid="methods-by-mechanism">
+              <thead><tr><th>Способ</th><th className="r">Тиражей</th><th>Лучший на отборе</th><th className="r">Контроль: к случайному</th><th className="r">p с поправкой</th></tr></thead>
+              <tbody>
+                {Object.entries(e.by_mechanism).map(([k, m]) => (
+                  <tr key={k}>
+                    <td>{m.title}</td><td className="r num">{nf.format(m.draws)}</td>
+                    <td>{m.best?.title ?? '—'}</td>
+                    <td className="r num">{m.best ? pct(m.best.holdout.excess_pct) : '—'}</td>
+                    <td className="r num">{m.best ? pval(m.best.holdout.p_adjusted) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <h3>Накопленное превышение над случайным выбором</h3>
       <p className="muted small">Сумма (угадано − {num(e.baseline.mean, 2)}) по тиражам. Линия, которая блуждает около нуля, — это удача, а не закономерность.</p>

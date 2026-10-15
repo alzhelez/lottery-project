@@ -122,12 +122,19 @@ def reconcile(game: Game, now: datetime | None = None, collect: list | None = No
     from . import prizes as prizes_mod
     tables = None
     changed = 0
+    from .mechanics import mechanism_of_draw
+    from .rules import load_rules
+    rules = load_rules(game.slug)
+    stored = None
     for i, e in enumerate(journal["entries"]):
         if e["status"] == "pending" and e["draw_no"] in by_no:
             if tables is None:
                 counts = [b["count"] for b in e["blocks"]]
                 tables = prizes_mod.keyed_history(game.slug, counts)
-            journal["entries"][i] = _check(e, by_no[e["draw_no"]], now, tables.get(e["draw_no"]))
+                stored = prizes_mod.mechanisms(game.slug)
+            d = by_no[e["draw_no"]]
+            journal["entries"][i] = {**_check(e, d, now, tables.get(e["draw_no"])),
+                                     "mechanism": mechanism_of_draw(game.slug, d.no, d.date, rules, stored)}
             if collect is not None:
                 collect.append(journal["entries"][i])
             changed += 1
@@ -175,4 +182,10 @@ def summary(entries: list[dict]) -> list[dict]:
 def view(slug: str) -> dict:
     journal = load(slug)
     entries = sorted(journal["entries"], key=lambda e: (e["draw_no"], e["made_at"]), reverse=True)
-    return {"game": slug, "entries": entries, "summary": summary(entries)}
+    by_mech = {}
+    for m, title in (("L", "лототрон"), ("R", "ГСЧ")):
+        part = [e for e in entries if e.get("mechanism") == m]
+        if part:
+            by_mech[m] = {"title": title, "summary": summary(part)}
+    return {"game": slug, "entries": entries, "summary": summary(entries),
+            "by_mechanism": by_mech if len(by_mech) > 1 else {}}

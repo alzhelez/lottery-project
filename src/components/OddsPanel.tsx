@@ -4,7 +4,8 @@ import { nf } from './format'
 
 export interface Pattern {
   key: string; hits: number[]; total: number; p: number; one_in: number | null; prize: number | null
-  prize_source?: 'user' | 'archive' | null; archive_prize?: number | null
+  prize_source?: 'user' | 'archive' | 'rules' | null; archive_prize?: number | null
+  official_prize?: number | null; fund_share?: number | null; superprize?: boolean
 }
 export interface Odds {
   supported: boolean
@@ -24,6 +25,8 @@ export interface Odds {
   legal_prize_fund: number
   archive?: ArchiveStats | null
   variants?: KenoVariant[] | null
+  rules?: { prize_fund_pct: number | null; min_prize: number | null; jackpot_guaranteed: number | null; super_prize: number | null } | null
+  next_draw?: { number: number; date: string | null; return: number; return_without_super: number; super_prize: number; verdict: string; lototron?: boolean | null } | null
 }
 
 export interface ArchiveStats {
@@ -162,7 +165,7 @@ export function OddsPanel({ slug }: { slug: string }) {
     let any = 0
     let entered = 0
     for (const p of odds.patterns) {
-      const v = Number(prizes[p.key]?.replace(',', '.')) || p.archive_prize || 0
+      const v = Number(prizes[p.key]?.replace(',', '.')) || p.official_prize || p.archive_prize || 0
       if (v > 0) { ev += p.p * v; any += p.p; entered++ }
     }
     const pr = Number(price.replace(',', '.')) || (odds.price_source === 'archive' ? odds.price ?? 0 : 0)
@@ -209,8 +212,19 @@ export function OddsPanel({ slug }: { slug: string }) {
           <dd className="sub">{live?.ret != null ? `по ${live.entered} введённым призам` : 'введите цену и призы'}</dd>
         </div>
       </dl>
+      {odds.next_draw && (
+        <div className={`callout ${odds.next_draw.return >= 1 ? 'lv-signal' : ''}`} data-testid="next-draw-return">
+          <strong>Ближайший тираж №{odds.next_draw.number}</strong>
+          {odds.next_draw.date && ` (${odds.next_draw.date.replace('T', ' ').slice(0, 16)})`}: суперприз{' '}
+          {nf.format(Math.round(odds.next_draw.super_prize))} ₽, ожидаемый возврат{' '}
+          <b>{odds.next_draw.return.toLocaleString('ru-RU', { maximumFractionDigits: 3 })}</b> на рубль
+          (без суперприза — {odds.next_draw.return_without_super.toLocaleString('ru-RU', { maximumFractionDigits: 3 })}).
+          <span className="sub">{odds.next_draw.verdict}</span>
+        </div>
+      )}
       <div className="callout">
         По закону «О лотереях» (ст. 10) призовой фонд — не меньше {Math.round(odds.legal_prize_fund * 100)}% выручки.
+        {odds.rules?.prize_fund_pct ? ` В этой игре по правилам — ${odds.rules.prize_fund_pct}%.` : ''}
         Значит, в среднем лотерея возвращает игрокам порядка половины ставок: с каждого рубля ожидаемый
         возврат около {odds.legal_prize_fund.toLocaleString('ru-RU')} ₽, если суперприз и накопления в итоге разыгрываются.
       </div>
@@ -224,6 +238,7 @@ export function OddsPanel({ slug }: { slug: string }) {
           <> Серые значения в полях — медиана реальных выплат за последние {odds.archive_draws} тиражей из архива,
           они уже учтены в расчёте.</>
         )}
+        {odds.patterns!.some((p) => p.official_prize) && <> Фиксированные выигрыши подставлены из официальной таблицы stoloto.ru (вкладка «Правила»).</>}
       </p>
       <div className="run-bar">
         <label className="budget">Цена билета, ₽
@@ -240,7 +255,7 @@ export function OddsPanel({ slug }: { slug: string }) {
           </thead>
           <tbody>
             {shown.map((p) => {
-              const v = Number(prizes[p.key]?.replace(',', '.')) || p.archive_prize || 0
+              const v = Number(prizes[p.key]?.replace(',', '.')) || p.official_prize || p.archive_prize || 0
               return (
                 <tr key={p.key}>
                   <td className="num">{p.key}</td>
@@ -249,8 +264,8 @@ export function OddsPanel({ slug }: { slug: string }) {
                   <td className="r">
                     <input className="prize-input" type="text" inputMode="decimal" aria-label={`Приз за ${p.key}`}
                       value={prizes[p.key] ?? ''} onChange={(e) => setPrizes({ ...prizes, [p.key]: e.target.value })}
-                      placeholder={p.archive_prize ? String(Math.round(p.archive_prize)) : ''}
-                      title={p.archive_prize ? 'Медиана реальных выплат из архива — введите своё значение, чтобы заменить' : undefined}
+                      placeholder={p.superprize ? 'суперприз' : p.official_prize ? String(Math.round(p.official_prize)) : p.archive_prize ? String(Math.round(p.archive_prize)) : ''}
+                      title={p.official_prize ? 'Фиксированный выигрыш по официальной таблице stoloto.ru' : p.archive_prize ? `Медиана реальных выплат из архива${p.fund_share ? ` (по правилам — ${p.fund_share}% призового фонда)` : ''} — введите своё значение, чтобы заменить` : undefined}
                       data-testid={`prize-${p.key}`} />
                   </td>
                   <td className="r num">{v > 0 ? (p.p * v).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) : ''}</td>

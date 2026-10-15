@@ -224,7 +224,16 @@ def game_randomness(data: GameData, seed: int = 12345) -> dict:
     for t, a in zip(tests, adj):
         t["p_adjusted"] = a
         t["significant"] = a < ALPHA
-    return {**base, "status": "ok", "tests": tests, "p_game": float(min(adj))}
+        if t["significant"]:
+            # находка засчитывается, только если повторяется во второй половине истории
+            from .mechanics import replicate
+            t.update(replicate(data, t))
+            if not t["replicated"]:
+                t["significant"] = False
+                t["detail"] += ru(f"; во второй половине истории не повторилось (p={t['p_second']:.3f}) — шум"
+                                  if t.get("p_second") is not None else "; повторяемость не проверить")
+    return {**base, "status": "ok", "tests": tests, "p_game": float(min(adj)),
+            "unreplicated": [t["title"] for t in tests if t.get("replicated") is False]}
 
 
 def finalize_scan(games: list[dict]) -> list[dict]:

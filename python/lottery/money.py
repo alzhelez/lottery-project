@@ -43,9 +43,10 @@ def context(data: GameData) -> dict | None:
     # и считать всю историю по сегодняшней цене — занижать возврат. Свою цену пользователь
     # вводит как сегодняшнюю — она применяется ко всем тиражам.
     prices = np.full(data.T, float(price))
+    bad = set(prizes_mod.anomalies(data.game.slug))     # тиражи с аномально малыми продажами
     for t, d in enumerate(data.draws):
         h = hist.get(d.no)
-        if not h:
+        if not h or d.no in bad:
             continue
         if not user["price"] and h.get("price"):
             prices[t] = float(h["price"])

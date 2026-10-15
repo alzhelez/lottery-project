@@ -19,6 +19,7 @@ interface Entry {
   expected?: number
   won?: number | null
   draw_date?: string
+  mechanism?: 'L' | 'R' | null
 }
 
 interface Summary {
@@ -43,7 +44,7 @@ const STATUS: Record<Entry['status'], string> = {
 }
 
 export function JournalPanel({ info }: { info: Info }) {
-  const [data, setData] = useState<{ entries: Entry[]; summary: Summary[] } | null>(null)
+  const [data, setData] = useState<{ entries: Entry[]; summary: Summary[]; byMechanism?: Array<{ mechanism: string; title: string; summary: Summary[] }> } | null>(null)
   const [source, setSource] = useState('all')
   const load = useCallback(async () => {
     const r = await fetch(`/api/games/${info.slug}/journal`, { cache: 'no-store' })
@@ -97,6 +98,23 @@ export function JournalPanel({ info }: { info: Info }) {
             p — вероятность, что случайный выбор угадал бы столько же или больше. Считается от 30 сверенных
             прогнозов: на меньшем числе разница почти всегда объясняется удачей.
           </p>
+          {(data.byMechanism?.length ?? 0) > 0 && (
+            <div className="table-wrap">
+              <table className="data compact" data-testid="journal-by-mechanism">
+                <thead><tr><th>Способ розыгрыша</th><th>Источник</th><th className="r">Сверено</th><th className="r">Угадано</th><th className="r">Случайный выбор</th><th className="r">Разница</th><th className="r">p</th></tr></thead>
+                <tbody>
+                  {data.byMechanism!.flatMap((m) => m.summary.filter((s) => s.checked > 0).map((s) => (
+                    <tr key={m.mechanism + s.source}>
+                      <td>{m.title}</td><td>{s.title}</td><td className="r num">{s.checked}</td>
+                      <td className="r num">{num(s.mean_hits)}</td><td className="r num">{num(s.expected)}</td>
+                      <td className="r num">{pct(s.excess_pct)}</td>
+                      <td className="r num">{s.p_better == null ? <span className="muted">мало данных</span> : pval(s.p_better)}</td>
+                    </tr>
+                  )))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="run-bar">
             {[['all', 'Все'], ...data.summary.map((s) => [s.source, s.title])].map(([k, label]) => (
@@ -112,7 +130,7 @@ export function JournalPanel({ info }: { info: Info }) {
               <tbody>
                 {entries.slice(0, 200).map((e) => (
                   <tr key={e.id}>
-                    <td>№{e.draw_no}<span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
+                    <td>№{e.draw_no}{e.mechanism && <span className="sub">{e.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}<span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
                     <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
                     <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" /></td>
                     <td>{e.actual ? <BlockBalls blocks={e.actual} tone="actual" size="sm" /> : <span className="muted">—</span>}</td>

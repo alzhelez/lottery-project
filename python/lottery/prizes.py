@@ -132,6 +132,19 @@ def _walk(obj, depth=0):
             yield from _walk(v, depth + 1)
 
 
+def draw_mechanism(raw: dict) -> str | None:
+    """Способ розыгрыша по ответу API: у тиражей на лототроне есть видеозапись трансляции,
+    тиражи ГСЧ идут «с секундами» (11:07:30). Иначе — неизвестно (у старых тиражей
+    лототрона видео в архиве нет)."""
+    if raw.get("videoLink"):
+        return "L"
+    date = str(raw.get("date") or "")
+    m = re.search(r"T\d{2}:\d{2}:(\d{2})", date)
+    if m and m.group(1) != "00":
+        return "R"
+    return None
+
+
 def extract(raw: dict) -> dict | None:
     """Призы тиража из ответа API или None, если их там нет."""
     status = str(raw.get("status") or "COMPLETED").upper()
@@ -154,6 +167,9 @@ def extract(raw: dict) -> dict | None:
     if best is None or not _score(best[1])[0]:
         return None
     out = {"no": raw.get("number"), "source": best[0], "categories": best[1], "v": VERSION}
+    m = draw_mechanism(raw)
+    if m:
+        out["m"] = m
     for name, keys in (("sales", SALES_KEYS), ("price", PRICE_KEYS), ("super", SUPER_KEYS)):
         _, v = _first(raw, keys)
         if _num(v) is not None:
@@ -233,7 +249,7 @@ _NO = re.compile(r'"no":\s*(\d+)')
 def _compact(rec: dict) -> dict:
     out = {"no": rec.get("no"), "src": rec.get("source"), "v": rec.get("v", VERSION),
            "c": [[c["label"], c["winners"], c["prize"]] for c in rec["categories"]]}
-    for long, short in (("price", "p"), ("sales", "s"), ("super", "sp")):
+    for long, short in (("price", "p"), ("sales", "s"), ("super", "sp"), ("m", "m")):
         if rec.get(long) is not None:
             out[short] = rec[long]
     return out
@@ -244,7 +260,7 @@ def _expand(r: dict) -> dict:
         return r
     out = {"no": r["no"], "source": r.get("src"), "v": r.get("v"),
            "categories": [{"label": c[0], "winners": c[1], "prize": c[2]} for c in r.get("c", [])]}
-    for long, short in (("price", "p"), ("sales", "s"), ("super", "sp")):
+    for long, short in (("price", "p"), ("sales", "s"), ("super", "sp"), ("m", "m")):
         if short in r:
             out[long] = r[short]
     return out
@@ -409,11 +425,13 @@ def typical_prizes(slug: str, block_counts: list[int], last: int = 50) -> dict:
     for line in _lines(path):                       # без разбора JSON — только хвост
         tail.append(line)
     recent = []
+    parsed = []
     for line in sorted(tail, key=lambda s: _line_no(s) or 0):
         try:
-            r = _expand(json.loads(line))
+            parsed.append(_expand(json.loads(line)))
         except (ValueError, KeyError):
             continue
+    for r in clean(parsed):
         cats = {}
         for c in r["categories"]:
             for key in _keys_cached(c["label"], len(counts), counts):
@@ -472,7 +490,7 @@ def archive_stats(slug: str, last: int = 200) -> dict | None:
     вклад в возврат = выплачено в категории / (ставок × цена). Это оценка по истории: в ней
     есть и популярность комбинаций, и множители ставок, если игроки их используют."""
     import numpy as np
-    recs = [r for r in _tail(slug, last) if r.get("sales") and r.get("price")]
+    recs = clean([r for r in _tail(slug, last) if r.get("sales") and r.get("price")])
     if len(recs) < 10:
         return None
     spent = sum(r["sales"] * r["price"] for r in recs)
@@ -503,3 +521,57 @@ def archive_stats(slug: str, last: int = 200) -> dict | None:
             "price": float(np.median([r["price"] for r in recs])),
             "bets_per_draw": bets / len(recs), "return": total,
             "p_any": min(1.0, sum(c["chance"] for c in cats)), "categories": cats}
+
+
+_M = re.compile(r'"m":"([LR])"')
+
+
+def mechanisms(slug: str) -> dict[int, str]:
+    """Номер тиража → способ розыгрыша из сохранённых ответов API (без разбора JSON)."""
+    path = prizes_file(slug)
+    if not path.exists():
+        return {}
+    out = {}
+    for line in _lines(path):
+        m = _M.search(line)
+        if m:
+            no = _line_no(line)
+            if no is not None:
+                out[no] = m.group(1)
+    return out
+
+
+ANOMALY_SHARE = 0.1     # продажи меньше 10% от обычных — тираж-аномалия (сбой, тестовый тираж)
+
+
+def clean(recs: list[dict]) -> list[dict]:
+    """Убирает тиражи с аномально малыми продажами: по ним выплаты и возврат искажены
+    (например, «6 из 45» №16382 — 2926 ставок при обычных сотнях тысяч)."""
+    import numpy as np
+    sales = [r["sales"] for r in recs if r.get("sales")]
+    if len(sales) < 10:
+        return recs
+    out = []
+    for i, r in enumerate(recs):
+        lo, hi = max(0, i - 50), min(len(recs), i + 51)
+        near = [x["sales"] for x in recs[lo:hi] if x.get("sales")]
+        med = float(np.median(near)) if near else 0
+        if r.get("sales") and med and r["sales"] < ANOMALY_SHARE * med:
+            continue
+        out.append(r)
+    return out
+
+
+def anomalies(slug: str) -> list[int]:
+    """Номера тиражей с аномально малыми продажами (для diagnose)."""
+    path = prizes_file(slug)
+    if not path.exists():
+        return []
+    recs = []
+    for line in _lines(path):
+        m = re.search(r'"s":([0-9.]+)', line) or re.search(r'"sales":\s*([0-9.]+)', line)
+        no = _line_no(line)
+        if no is not None:
+            recs.append({"no": no, "sales": float(m.group(1)) if m else None})
+    kept = {r["no"] for r in clean(recs)}
+    return [r["no"] for r in recs if r["no"] not in kept]

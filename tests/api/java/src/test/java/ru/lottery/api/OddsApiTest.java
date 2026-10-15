@@ -63,14 +63,14 @@ public class OddsApiTest extends BaseApiTest {
         Allure.step("1 из C(20,4)² = 23 474 025 за 4+4", () ->
                 // Сравниваем с допуском: дробная часть — погрешность деления.
                 assertThat(num(obj(odds, "jackpot").get("one_in"))).isCloseTo(23_474_025.0, within(2.0)));
-        // Шаг: без своих данных берутся выплаты из архива.
-        Allure.step("Выплата за 2+2 — медиана архива (300 ₽)", () -> {
+        // Шаг: без своих данных берётся официальная таблица выигрышей.
+        Allure.step("Выплата за 2+2 — по таблице выигрышей (300 ₽)", () -> {
             // Исход 2+2.
             Map<String, Object> row = pattern(odds, "2+2");
             // Сумма из мока.
             assertThat(num(row.get("prize"))).isEqualTo(300.0);
-            // Источник — архив.
-            assertThat(row.get("prize_source")).isEqualTo("archive");
+            // Источник — официальная таблица выигрышей.
+            assertThat(row.get("prize_source")).isEqualTo("rules");
         });
         // Шаг: свои цена и приз важнее архива, лишний ключ отбрасывается.
         Allure.step("Свои цена и приз", () -> {

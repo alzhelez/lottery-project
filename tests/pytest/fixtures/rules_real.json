@@ -1,0 +1,552 @@
+{
+ "4x20": {
+  "draw": {
+   "number": 15782,
+   "date": 1792080450,
+   "superPrize": 418062296,
+   "jackpots": [
+    418062296
+   ],
+   "betCost": 350,
+   "tvShow": false,
+   "winnersDistribitionPers": 67,
+   "jackpotGuaranteed": 100000000,
+   "rollover": false,
+   "status": "WAITING"
+  },
+  "table": {
+   "requestStatus": "success",
+   "errors": [],
+   "minPrize": 350,
+   "winningTable": [
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 4,
+     "prize": 0,
+     "superprize": true,
+     "percentprize": 30.0,
+     "wcnumber": 1
+    },
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 3,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 3.12,
+     "wcnumber": 2
+    },
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 2,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 1.5,
+     "wcnumber": 3
+    },
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 1,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 1.9,
+     "wcnumber": 4
+    },
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 0,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 1.8,
+     "wcnumber": 5
+    },
+    {
+     "guessNumber1": 3,
+     "guessNumber2": 3,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 0.8,
+     "wcnumber": 6
+    },
+    {
+     "guessNumber1": 3,
+     "guessNumber2": 2,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 6.38,
+     "wcnumber": 7
+    },
+    {
+     "guessNumber1": 3,
+     "guessNumber2": 1,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 8.5,
+     "wcnumber": 8
+    },
+    {
+     "guessNumber1": 3,
+     "guessNumber2": 0,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 10.5,
+     "wcnumber": 9
+    },
+    {
+     "guessNumber1": 2,
+     "guessNumber2": 2,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 10.5,
+     "wcnumber": 10
+    },
+    {
+     "guessNumber1": 2,
+     "guessNumber2": 1,
+     "prize": 350,
+     "superprize": false,
+     "percentprize": 0.0,
+     "wcnumber": 11
+    },
+    {
+     "guessNumber1": 2,
+     "guessNumber2": 0,
+     "prize": 0,
+     "superprize": false,
+     "percentprize": 25.0,
+     "wcnumber": 12
+    }
+   ]
+  },
+  "how": "<p>Тиражи лотереи проходят каждый день в 10:00 (лототрон), 11:07:30 (ГСЧ), 11:37:30 (ГСЧ), 12:00 (лототрон), 13:07:30 (ГСЧ), 13:37:30 (ГСЧ), 14:00 (лототрон), 15:07:30 (ГСЧ), 15:37:30 (ГСЧ),16:00 (лототрон), 17:07:30 (ГСЧ), 17:37:30 (ГСЧ), 18:00 (лототрон), 19:07:30 (ГСЧ), 19:37:30 (ГСЧ), 20:37:30 (ГСЧ), 21:07:30 (ГСЧ), 21:37:30 (ГСЧ), 22:00 (лототрон),&nbsp; 23:37:30 (ГСЧ) &nbsp;мск. Продажи билетов на тиражи заканчиваются за 5 минут до их начала. Билеты, купленные после 09:55, 11:02:30, 11:32:30, 11:55, 13:02:30, 13:32:30, 13:55, 15:02:30, 15:32:30, 15:55, 17:02:30, 17:32:30, 17:55, 19:02:30, 19:32:30, 20:32:30, 21:02:30, 21:32:30, 21:55, 23:32:30 мск, автоматически переходят на следующий тираж.</p>\n<p> Розыгрыши &laquo;Спортлото &laquo;4 из 20&raquo; проводят на лототроне в лотерейном центре &laquo;Столото&raquo;, а также с помощью ГСЧ (генератор случайных чисел). Вы можете приехать в лотерейный центр и увидеть всё своими глазами. Либо посмотреть прямую трансляцию на stoloto.ru</p>\n<p>Розыгрыши всех тиражных лотерей проводятся под&nbsp;контролем тиражной комиссии в&nbsp;соответствии с&nbsp;18-й статьёй ФЗ&nbsp;&laquo;О&nbsp;лотереях&raquo;.</p>",
+  "faq": [
+   {
+    "question": "Как копится суперприз?",
+    "answer": "<p>В призовой фонд лотереи уходит {{lottery_winners_distribution_pers}} от стоимости каждого проданного билета. Часть этих денег идёт в суперприз, и он накапливается. Если никто не выиграл суперприз, накопленная сумма переходит на следующий тираж. Минимальный гарантированный суперприз &laquo;Спортлото &laquo;4 из 20&raquo; &mdash; <span data-sheets-root=\"1\">{{lottery_jackpot_guaranteed}}</span>.</p>"
+   }
+  ],
+  "cards": [
+   {
+    "title": " Призовой фонд  лотереи",
+    "text": "{{lottery_winners_distribution_pers}}"
+   },
+   {
+    "title": " Крупнейший выигрыш в истории лотереи",
+    "text": "> 600 млн ₽"
+   }
+  ],
+  "superprize": {
+   "data": [
+    {
+     "guessNumbers": [
+      {
+       "superprizeValue": "Суперприз",
+       "guessNumber1": 4,
+       "guessNumber2": 4,
+       "secondCount": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "6x45": {
+  "draw": {
+   "number": 19091,
+   "date": 1792081500,
+   "superPrize": 49548548,
+   "jackpots": [
+    49548548
+   ],
+   "betCost": 70,
+   "tvShow": false,
+   "winnersDistribitionPers": 60,
+   "jackpotGuaranteed": 15000000,
+   "rollover": false,
+   "status": "WAITING"
+  },
+  "table": {
+   "requestStatus": "success",
+   "errors": [],
+   "minPrize": 70,
+   "winningTable": [
+    {
+     "guessNumber1": 6,
+     "guessNumber2": 0,
+     "prize": 0,
+     "superprize": true,
+     "percentprize": null,
+     "wcnumber": 1
+    },
+    {
+     "guessNumber1": 5,
+     "guessNumber2": 0,
+     "prize": 140000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 2
+    },
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 0,
+     "prize": 3500,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 3
+    },
+    {
+     "guessNumber1": 3,
+     "guessNumber2": 0,
+     "prize": 560,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 4
+    },
+    {
+     "guessNumber1": 2,
+     "guessNumber2": 0,
+     "prize": 70,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 5
+    }
+   ]
+  },
+  "how": "<p>Тиражи проходят 11 раз в день: в 11:00, 12:30, 14:25 (ГСЧ), 14:40 (ГСЧ), 14:55 (ГСЧ), 17:30, 19:25 (ГСЧ), 19:40 (ГСЧ), 19:55 (ГСЧ), 23:00 и 23:59 мск. Продажи билетов на ближайший розыгрыш закрываются за 5 минут до его начала.</p>\n<p>Билеты, купленные после 10:55, 12:25, 14:20, 14:35, 14:50, 17:25, 19:20, 19:35, 19:50, 22:55 и 23:54 мск, автоматически переходят на следующий тираж.</p>\n<p>Розыгрыши &laquo;Спортлото &laquo;6 из 45&raquo; проводят на лототроне в лотерейном центре &laquo;Столото&raquo;, а также с помощью ГСЧ (генератор случайных чисел).</p>",
+  "faq": [],
+  "cards": [],
+  "superprize": {
+   "data": []
+  }
+ },
+ "5x36plus": {
+  "draw": {
+   "number": 168154,
+   "date": 1792080030,
+   "superPrize": 3484837,
+   "jackpots": [
+    3484837,
+    1395270
+   ],
+   "betCost": 75,
+   "tvShow": false,
+   "winnersDistribitionPers": 50,
+   "jackpotGuaranteed": 3000000,
+   "rollover": false,
+   "status": "WAITING"
+  },
+  "table": {
+   "requestStatus": "success",
+   "errors": [],
+   "minPrize": 75,
+   "winningTable": [
+    {
+     "guessNumber1": 5,
+     "guessNumber2": 1,
+     "prize": 0,
+     "superprize": true,
+     "percentprize": null,
+     "wcnumber": 1
+    },
+    {
+     "guessNumber1": 5,
+     "guessNumber2": 0,
+     "prize": 0,
+     "superprize": true,
+     "percentprize": null,
+     "wcnumber": 2
+    },
+    {
+     "guessNumber1": 4,
+     "guessNumber2": 0,
+     "prize": 7500,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 3
+    },
+    {
+     "guessNumber1": 3,
+     "guessNumber2": 0,
+     "prize": 750,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 4
+    },
+    {
+     "guessNumber1": 2,
+     "guessNumber2": 0,
+     "prize": 75,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 5
+    }
+   ]
+  },
+  "how": "<p>Розыгрыши &laquo;Спортлото 5 из 36&raquo; проводят с помощью ГСЧ (генератор случайных чисел). Билеты можно купить вплоть до начала розыгрыша.</p>",
+  "faq": [],
+  "cards": [],
+  "superprize": {
+   "data": []
+  }
+ },
+ "crazycombo": {
+  "draw": {
+   "number": 25497,
+   "date": 1792081500,
+   "superPrize": 820632,
+   "jackpots": [
+    820632
+   ],
+   "betCost": 15,
+   "tvShow": false,
+   "winnersDistribitionPers": 50,
+   "jackpotGuaranteed": 300000,
+   "status": "WAITING"
+  },
+  "table": {
+   "requestStatus": "success",
+   "errors": [],
+   "minPrize": 20,
+   "winningTable": [
+    {
+     "guessNumber1": 12,
+     "guessNumber2": 0,
+     "prize": 0,
+     "superprize": true,
+     "percentprize": null,
+     "wcnumber": 1
+    },
+    {
+     "guessNumber1": 11,
+     "guessNumber2": 1,
+     "prize": 750,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 2
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 2,
+     "prize": 150,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 3
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 3,
+     "prize": 60,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 4
+    },
+    {
+     "guessNumber1": 8,
+     "guessNumber2": 4,
+     "prize": 20,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 5
+    }
+   ]
+  },
+  "how": null,
+  "faq": [],
+  "cards": [],
+  "superprize": {
+   "data": []
+  }
+ },
+ "keno2": {
+  "draw": {
+   "number": 329576,
+   "date": 1792081500,
+   "superPrize": 20000000,
+   "jackpots": [
+    20000000
+   ],
+   "betCost": 100,
+   "tvShow": false,
+   "winnersDistribitionPers": 70,
+   "jackpotGuaranteed": 20000000,
+   "status": "WAITING"
+  },
+  "table": {
+   "requestStatus": "success",
+   "errors": [],
+   "minPrize": 100,
+   "winningTable": [
+    {
+     "guessNumber1": 100,
+     "guessNumber2": 100,
+     "prize": 0,
+     "superprize": true,
+     "percentprize": null,
+     "wcnumber": 1
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 10,
+     "prize": 10000000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 2
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 9,
+     "prize": 1000000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 3
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 8,
+     "prize": 50000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 4
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 7,
+     "prize": 5000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 5
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 6,
+     "prize": 750,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 6
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 5,
+     "prize": 250,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 7
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 4,
+     "prize": 100,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 8
+    },
+    {
+     "guessNumber1": 10,
+     "guessNumber2": 0,
+     "prize": 200,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 9
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 9,
+     "prize": 4000000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 10
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 8,
+     "prize": 210000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 11
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 7,
+     "prize": 10000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 12
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 6,
+     "prize": 1000,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 13
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 5,
+     "prize": 300,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 14
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 4,
+     "prize": 150,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 15
+    },
+    {
+     "guessNumber1": 9,
+     "guessNumber2": 0,
+     "prize": 150,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 16
+    },
+    {
+     "guessNumber1": 1,
+     "guessNumber2": 1,
+     "prize": 280,
+     "superprize": false,
+     "percentprize": null,
+     "wcnumber": 17
+    }
+   ]
+  },
+  "how": null,
+  "faq": [],
+  "cards": [],
+  "superprize": {
+   "data": []
+  }
+ },
+ "gzhl": {
+  "draw": {
+   "number": 725,
+   "date": 1792081500,
+   "superPrize": 700000000,
+   "jackpots": [
+    700000000
+   ],
+   "betCost": 150,
+   "tvShow": true,
+   "winnersDistribitionPers": 50,
+   "jackpotGuaranteed": 0,
+   "status": "WAITING"
+  },
+  "table": {
+   "requestStatus": "error",
+   "errors": [
+    "not valid request"
+   ],
+   "minPrize": null,
+   "winningTable": []
+  },
+  "how": null,
+  "faq": [],
+  "cards": [],
+  "superprize": {
+   "data": []
+  }
+ }
+}

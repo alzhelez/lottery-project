@@ -187,6 +187,22 @@ def game_info(slug: str) -> dict:
     }
 
 
+def after_fetch(slugs: list[str] | None = None, log=None) -> dict:
+    """После загрузки: правила игр и ближайшие тиражи, ожидаемый возврат, уведомления."""
+    from lottery import notify
+    from lottery import nextdraw, rules
+    log = log or (lambda m: emit({"type": "log", "message": m}))
+    try:
+        rules.fetch(slugs, log=log)
+    except Exception as exc:          # правила — дополнение, их сбой не должен ронять загрузку
+        log(f"Правила игр не обновлены: {exc}")
+    res = nextdraw.compute_all(slugs or local_slugs(), lambda s: load_game_data(get_game(s)))
+    hot = nextdraw.to_notify(res)
+    if hot:
+        notify.send(notify.ev_message(hot), "ev")
+    return res
+
+
 def cmd_fetch(args) -> None:
     from lottery.stoloto import fetch_all
     slugs = args.game or None
@@ -194,6 +210,33 @@ def cmd_fetch(args) -> None:
     emit({"type": "result", "results": results})
     done = [r for r in results.values() if r.get("status") == "done"]
     say(f"Загружено игр: {len(done)} из {len(results)}, тиражей всего: {sum(r.get('draws', 0) for r in done)}")
+    nd = after_fetch(slugs)
+    best = sorted(nd.values(), key=lambda r: -r["return"])[:3]
+    if best:
+        say("Ближайшие тиражи с наибольшим ожидаемым возвратом: " +
+            "; ".join(f"{r['title']} №{r['number']} — {r['return']:.2f}" for r in best))
+
+
+def cmd_rules(args) -> None:
+    from lottery import rules
+    res = rules.fetch(args.game or None, log=say, force=True)
+    emit({"type": "result", **res})
+    for slug in res["done"]:
+        r = rules.load_rules(slug) or {}
+        s = r.get("schedule") or {}
+        kinds = " и ".join(k for k, v in (("лототрон", s.get("lototron")), ("ГСЧ", s.get("rng"))) if v) or "способ не указан"
+        say(f"{slug:<16} {kinds}; таблица выигрышей: {len(r.get('table') or [])} строк"
+            + (f" ({r['table_error']})" if r.get("table_error") else ""))
+    say(f"Правила сохранены в data\\rules ({len(res['done'])} игр)" + (f", ошибки: {', '.join(res['failed'])}" if res["failed"] else ""))
+
+
+def cmd_nextdraw(args) -> None:
+    from lottery import nextdraw
+    res = nextdraw.compute_all(args.game or local_slugs(), lambda s: load_game_data(get_game(s)))
+    emit({"type": "result", "games": res})
+    for r in sorted(res.values(), key=lambda r: -r["return"]):
+        say(f"{r['title']:<22} №{r['number']}  возврат {r['return']:.2f}"
+            f" (без суперприза {r['return_without_super']:.2f}), суперприз {r['super_prize']:,.0f} ₽".replace(",", " "))
 
 
 def cmd_scan(args) -> None:
@@ -217,6 +260,14 @@ def analyze_game(slug: str, progress=None) -> dict:
     if progress:
         progress({"type": "progress", "stage": "tests", "done": 0, "total": 1})
     randomness = finalize_scan([game_randomness(data)])[0]
+    from lottery import mechanics
+    mech = mechanics.mechanism_report(data)
+    randomness["mechanisms"] = mech
+    randomness["detectable"] = mechanics.detectable(data)
+    drift = mechanics.save_drift(data)
+    if drift.get("new_alarms"):
+        from lottery import notify
+        notify.send(notify.drift_message(data.game.title, drift["new_alarms"]), "drift")
     reconcile(data.game)
     evaluation = evaluate_game(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
     if evaluation.get("status") == "ok":
@@ -227,7 +278,13 @@ def analyze_game(slug: str, progress=None) -> dict:
     popularity = fit_popularity(data)
     if popularity.get("available"):
         save_json(results_dir(slug) / "popularity.json", popularity)
-    payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness,
+    if evaluation.get("status") == "ok":
+        evaluation["detectable_edge_pct"] = mechanics.method_edge(data, evaluation)
+        if mech["mixed"]:
+            if progress:
+                progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
+            evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
+    payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
                "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity}
     save_json(results_dir(slug) / "analysis.json", payload)
     return payload
@@ -301,6 +358,9 @@ def auto_once(args) -> dict:
                 {"fetch": r.get("status"), "added": r.get("added", 0), "journal_checked": r.get("journal_checked", 0)})
             if r.get("status") == "error":
                 log(f"{slug}: ошибка загрузки — {r.get('message')}")
+        if not args.skip_fetch:
+            nd = after_fetch(args.game or None, log=log)
+            status["nextdraw"] = {s: round(r["return"], 3) for s, r in nd.items()}
         slugs = args.game or local_slugs()
         from lottery.drawfile import same_draws
         seen: dict[str, list] = {}
@@ -577,6 +637,9 @@ def diagnose_game(slug: str) -> dict:
         "prizes": {"draws": len(prize_recs), "source": last_prize and last_prize.get("source"),
                    "categories": mapped, "price": last_prize and last_prize.get("price")},
         "api_keys": sample_keys,
+        "anomalies": prizes_mod.anomalies(slug),
+        "mechanisms": _mech_counts(data),
+        "rules": _rules_brief(slug),
         "slug": slug, "title": game.title, "in_registry": bool(game.counts or game.labels or game.title != slug),
         "draws": len(raw), "valid": data.T,
         "numbers": f"№{raw[0].no}–{raw[-1].no}" if raw else "—",
@@ -591,6 +654,24 @@ def diagnose_game(slug: str) -> dict:
         "supported": data.fmt.supported,
         "lines": lines,
     }
+
+
+def _mech_counts(data) -> dict | None:
+    try:
+        from lottery.mechanics import mechanism_counts
+        return mechanism_counts(data) if data.draws else None
+    except Exception:
+        return None
+
+
+def _rules_brief(slug: str) -> str:
+    from lottery.rules import load_rules
+    r = load_rules(slug)
+    if not r:
+        return "не загружены (lp.bat rules)"
+    s = r.get("schedule") or {}
+    kinds = " и ".join(k for k, v in (("лототрон", s.get("lototron")), ("ГСЧ", s.get("rng"))) if v) or "способ не указан"
+    return f"{kinds}; таблица выигрышей: {len(r.get('table') or [])} строк; загружены {r.get('fetched_at', '?')[:16]}"
 
 
 def cmd_diagnose(args) -> None:
@@ -668,6 +749,13 @@ def cmd_diagnose(args) -> None:
                        f"категории: {', '.join(pz['categories'][:12])}")
         else:
             out.append("   выплаты: в ответах API не найдены")
+        if r.get("anomalies"):
+            out.append(f"   тиражи с аномально малыми продажами (исключены из расчётов в рублях): "
+                       f"{len(r['anomalies'])} — №{', №'.join(map(str, r['anomalies'][:10]))}")
+        if r.get("mechanisms"):
+            m = r["mechanisms"]
+            out.append(f"   способ розыгрыша: лототрон {m['L']}, ГСЧ {m['R']}, не определено {m['unknown']}")
+        out.append(f"   правила: {r['rules']}")
         if r["api_keys"]:
             out.append(f"   поля ответа API: {', '.join(r['api_keys'])}")
         for line in r["lines"]:
@@ -791,6 +879,10 @@ def main() -> None:
     p.add_argument("--every", type=float, default=0.0, help="повторять каждые N часов (для Docker)")
     p.add_argument("--skip-fetch", action="store_true")
     p.add_argument("--skip-scan", action="store_true")
+    p = sub.add_parser("rules", help="правила игр со stoloto.ru: как проходят розыгрыши, таблица выигрышей")
+    p.add_argument("--game", action="append")
+    p = sub.add_parser("nextdraw", help="ожидаемый возврат ближайших тиражей")
+    p.add_argument("--game", action="append")
     p = sub.add_parser("odds", help="шансы и ожидаемый возврат")
     p.add_argument("--game")
     p.add_argument("--set-prizes", help="JSON-файл {price, prizes: {\"4+4\": 1000000, ...}}")
@@ -807,7 +899,8 @@ def main() -> None:
     args = parser.parse_args()
     handlers = {"fetch": cmd_fetch, "scan": cmd_scan, "analyze": cmd_analyze, "godmode": cmd_godmode,
                 "info": cmd_info, "journal": cmd_journal, "auto": cmd_auto, "odds": cmd_odds,
-                "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram}
+                "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
+                "rules": cmd_rules, "nextdraw": cmd_nextdraw}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

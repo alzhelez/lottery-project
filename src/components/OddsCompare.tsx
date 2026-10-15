@@ -16,7 +16,7 @@ export function OddsCompare() {
       setRows(Object.entries(d.odds as Record<string, Odds & { active: boolean }>).map(([slug, o]) => ({ ...o, slug })))
     })
   }, [])
-  const ok = (rows ?? []).filter((r) => r.supported).sort((a, b) => Number(b.active) - Number(a.active) || a.jackpot!.one_in - b.jackpot!.one_in)
+  const ok = (rows ?? []).filter((r) => r.supported).sort((a, b) => Number(b.active) - Number(a.active) || (b.next_draw?.return ?? 0) - (a.next_draw?.return ?? 0) || a.jackpot!.one_in - b.jackpot!.one_in)
   const byArchive = (rows ?? []).filter((r) => !r.supported && r.archive)
     .sort((a, b) => Number(b.active) - Number(a.active) || b.archive!.return - a.archive!.return)
   const skipped = (rows ?? []).filter((r) => !r.supported && !r.archive)
@@ -35,7 +35,7 @@ export function OddsCompare() {
         <div className="table-wrap">
           <table className="data" data-testid="odds-compare">
             <thead>
-              <tr><th>Игра</th><th>Формат</th><th className="r">Главный приз</th><th className="r">Разных билетов</th><th className="r">Цена, ₽</th><th className="r">Возврат с рубля</th><th className="r">По архиву</th></tr>
+              <tr><th>Игра</th><th>Формат</th><th className="r">Главный приз</th><th className="r">Разных билетов</th><th className="r">Цена, ₽</th><th className="r">Возврат с рубля</th><th className="r">По архиву</th><th className="r" title="Ожидаемый возврат ближайшего тиража с учётом текущего суперприза">Ближайший тираж</th></tr>
             </thead>
             <tbody>
               {ok.map((r) => (
@@ -47,6 +47,7 @@ export function OddsCompare() {
                   <td className="r num">{r.price ?? '—'}</td>
                   <td className="r num">{ret(r.return_per_ruble)}</td>
                   <td className="r num">{ret(r.archive?.return)}</td>
+                  <td className={`r num ${(r.next_draw?.return ?? 0) >= 1 ? 'warn' : ''}`}>{ret(r.next_draw?.return)}</td>
                 </tr>
               ))}
             </tbody>

@@ -162,14 +162,15 @@ def test_odds(api):
         assert round(odds["jackpot"]["one_in"]) == comb(20, 4) ** 2
         # Сумма вероятностей всех исходов — 1.
         assert abs(sum(p["p"] for p in odds["patterns"]) - 1) < 1e-12
-    with allure.step("Без своих данных используются выплаты из архива"):
+    with allure.step("Без своих данных используется официальная таблица выигрышей"):
         # Сбрасываем свои призы, если их ввёл другой набор тестов.
         api.put("/api/games/4x20/odds", json={"price": None, "prizes": {}})
         odds = api.get("/api/games/4x20/odds").json()["odds"]
         # Находим исход 2+2.
         row = next(p for p in odds["patterns"] if p["key"] == "2+2")
-        # Мок платит за 2+2 300 ₽ — это медиана архива.
-        assert row["prize"] == 300 and row["prize_source"] == "archive"
+        # 2+2 — 300 ₽ по таблице выигрышей тиража (загружается вместе с тиражами);
+        # она важнее медианы архива.
+        assert row["prize"] == 300 and row["prize_source"] == "rules"
         # Цена билета тоже из архива.
         assert odds["price"] == 150 and odds["price_source"] == "archive"
     with allure.step("Свои призы важнее архива, лишние ключи отбрасываются"):

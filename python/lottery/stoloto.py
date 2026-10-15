@@ -259,25 +259,66 @@ def _api_title(game: dict) -> str | None:
     return None
 
 
-def discover_games(log=print) -> list[str]:
-    """Активные игры по данным API; при ошибке — пустой список. Список с названиями
-    сохраняется в data/api_games.json (его читают реестр игр и интерфейс)."""
+_DRAW_KEYS = ("number", "date", "superPrize", "jackpots", "betCost", "tvShow", "winnersDistribitionPers",
+              "jackpotGuaranteed", "rollover", "status", "stopSalesDate")
+
+
+def games_info(log=print) -> list[dict]:
+    """Ответ games/info-new: все игры с ближайшим тиражом (draw) и последним (completedDraw).
+    Сохраняется в data/api_games.json — его читают реестр игр, интерфейс и расчёт ближайшего тиража."""
     headers = dict(HEADERS)
     headers["gosloto-token"] = GAMES_TOKEN
-    try:
-        data = _get(f"{API_BASE}/games/info-new", {}, headers=headers, retries=2, log=log)
-    except ApiUnavailable as exc:
-        log(f"Список игр из API не получен: {exc}")
-        return []
+    data = _get(f"{API_BASE}/games/info-new", {}, headers=headers, retries=2, log=log)
     games = (data or {}).get("games", []) if isinstance(data, dict) else []
-    active = [g for g in games if isinstance(g, dict) and g.get("active") and g.get("name")]
+    games = [g for g in games if isinstance(g, dict) and g.get("name")]
+    active = [g for g in games if g.get("active")]
     if active:
         payload = {
             "fetched_at": datetime.now().isoformat(timespec="seconds"),
-            "games": [{"name": g["name"], "title": _api_title(g), "keys": sorted(g.keys())} for g in active],
+            "games": [{"name": g["name"], "title": _api_title(g), "keys": sorted(g.keys()),
+                       "draw": {k: (g.get("draw") or {}).get(k) for k in _DRAW_KEYS} if g.get("draw") else None,
+                       "completedDraw": {k: v for k, v in (g.get("completedDraw") or {}).items() if k != "combination"}
+                       or None}
+                      for g in active],
         }
         write_text(data_dir() / "api_games.json", json.dumps(payload, ensure_ascii=False, indent=1))
-    return [g["name"] for g in active]
+    return games
+
+
+def discover_games(log=print) -> list[str]:
+    """Активные игры по данным API; при ошибке — пустой список."""
+    try:
+        games = games_info(log=log)
+    except ApiUnavailable as exc:
+        log(f"Список игр из API не получен: {exc}")
+        return []
+    return [g["name"] for g in games if g.get("active")]
+
+
+def games_api_base() -> str:
+    """…/api/v35/service → …/api/v35 (там таблицы выигрышей: games/<игра>/winning-table)."""
+    return API_BASE[: -len("/service")] if API_BASE.endswith("/service") else API_BASE
+
+
+def cms_base() -> str:
+    """CMS страниц stoloto.ru (тексты правил). Для мока — тот же адрес, что у API."""
+    if API_BASE.startswith("https://www.stoloto.ru/"):
+        return "https://api.stoloto.ru/cms/api"
+    return API_BASE + "/cms/api"
+
+
+def winning_table(slug: str, draw_no: int, log=print) -> dict | None:
+    """Официальная таблица выигрышей тиража (фиксированные призы, доли фонда, суперприз)."""
+    data = _get(f"{games_api_base()}/games/{slug}/winning-table", {"drawNumber": draw_no}, retries=2, log=log)
+    return data if isinstance(data, dict) else None
+
+
+def cms_get(url: str, log=print) -> dict | None:
+    """Публичная CMS stoloto.ru: без токенов, только платформа и сегмент."""
+    headers = {"accept": "application/json", "user-agent": HEADERS.get("user-agent", "Mozilla/5.0"),
+               "origin": "https://www.stoloto.ru", "referer": "https://www.stoloto.ru/"}
+    data = _get(url, {"platform": "MS", "user-segment": "ALL"}, headers=headers, retries=2, log=log)
+    return data if isinstance(data, dict) else None
 
 
 # ── Обновление файла игры ───────────────────────────────────────────────────

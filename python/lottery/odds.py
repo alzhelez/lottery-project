@@ -59,7 +59,7 @@ def supported(data: GameData) -> tuple[bool, str]:
     return True, ""
 
 
-def keno_variants(data: GameData, price: float | None) -> list[dict] | None:
+def keno_variants(data: GameData, price: float | None, rules: dict | None = None) -> list[dict] | None:
     """Кено: игрок выбирает K чисел (1…10), выпадает 20 из 80. Для каждого K — точное
     распределение совпадений и выплаты из архива (медиана по подписи «k из K»)."""
     specs = [s for s in data.fmt.blocks if s.drawn and s.drawn > s.count]
@@ -68,6 +68,10 @@ def keno_variants(data: GameData, price: float | None) -> list[dict] | None:
     from .prizes import typical_by_label
     spec = specs[0]
     prizes = typical_by_label(data.game.slug, last=500)   # у Кено призы фиксированные — берём окно шире
+    # официальная таблица: g1 — сколько чисел в ставке, g2 — сколько угадано
+    for r in (rules or {}).get("table") or []:
+        if r["g1"] and r["g1"] <= spec.count and r["g2"] is not None and r["prize"] > 0 and not r["superprize"]:
+            prizes[f"{r['g2']} из {r['g1']}"] = r["prize"]
     out = []
     for k_pick in range(1, spec.count + 1):
         pmf = sps.hypergeom(spec.size, spec.drawn, k_pick).pmf(np.arange(k_pick + 1))
@@ -127,14 +131,22 @@ def odds_table(data: GameData) -> dict:
     if not any(s.mode == "position" for s in specs):
         from .prizes import typical_prizes
         archive = typical_prizes(data.game.slug, [s.count for s in specs])
+    from .rules import load_rules, official_prizes
+    rules = load_rules(data.game.slug)
+    official = official_prizes(rules, len(specs), [s.count for s in specs])
     ev = None
     win_p = 0.0
     any_prize = False
     for r in rows:
-        # приоритет у введённого вами; иначе — медиана реальных выплат из архива
+        # приоритет: введённое вами → фиксированный приз из официальной таблицы → медиана из архива
         prize, source = user["prizes"].get(r["key"]), "user"
+        if not prize and r["key"] in official["prizes"]:
+            prize, source = official["prizes"][r["key"]], "rules"
         if not prize and r["key"] in archive["prizes"]:
             prize, source = archive["prizes"][r["key"]], "archive"
+        r["official_prize"] = official["prizes"].get(r["key"])
+        r["fund_share"] = official["shares"].get(r["key"])
+        r["superprize"] = r["key"] in official["super"]
         r["prize"] = prize
         r["prize_source"] = source if prize else None
         r["archive_prize"] = archive["prizes"].get(r["key"])
@@ -142,7 +154,8 @@ def odds_table(data: GameData) -> dict:
             any_prize = True
             win_p += r["p"]
             ev = (ev or 0.0) + r["p"] * prize
-    price = user["price"] or archive["price"]
+    nxt = (rules or {}).get("next_draw") or {}
+    price = user["price"] or archive["price"] or nxt.get("price")
     return {
         **base,
         "supported": True,
@@ -157,5 +170,17 @@ def odds_table(data: GameData) -> dict:
         "p_any_prize": win_p if any_prize else None,
         "prizes_entered": len(user["prizes"]),
         "archive_draws": archive["draws"],
-        "variants": keno_variants(data, price),
+        "variants": keno_variants(data, price, rules),
+        "rules": None if not rules else {"prize_fund_pct": nxt.get("prize_fund_pct"), "min_prize": rules.get("min_prize"),
+                                         "jackpot_guaranteed": nxt.get("jackpot_guaranteed"),
+                                         "super_prize": nxt.get("super_prize")},
+        "next_draw": _next_draw(data.game.slug),
     }
+
+
+def _next_draw(slug: str) -> dict | None:
+    from .games import results_dir
+    try:
+        return json.loads((results_dir() / "nextdraw.json").read_text(encoding="utf-8"))["games"].get(slug)
+    except (OSError, ValueError, KeyError):
+        return None

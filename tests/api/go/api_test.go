@@ -272,9 +272,9 @@ func TestAPI08Odds(t *testing.T) {
 	if math.Abs(total-1) > 1e-12 {
 		t.Errorf("сумма вероятностей %v", total)
 	}
-	// Выплата за 2+2 из архива мока — 300 ₽.
-	if p := pattern(t, odds, "2+2"); num(p["prize"]) != 300 || p["prize_source"] != "archive" {
-		t.Errorf("2+2 из архива: %v", p)
+	// Выплата за 2+2 — 300 ₽ по официальной таблице выигрышей (она важнее архива).
+	if p := pattern(t, odds, "2+2"); num(p["prize"]) != 300 || p["prize_source"] != "rules" {
+		t.Errorf("2+2 из таблицы выигрышей: %v", p)
 	}
 	// Свои цена и приз; мусорный ключ должен быть отброшен.
 	odds = put(t, "/api/games/4x20/odds", map[string]any{"price": 200, "prizes": map[string]any{"2+2": 500, "bad key": 1}}).JSON(t)["odds"].(map[string]any)

@@ -75,6 +75,28 @@ test('анализ: тесты случайности и сравнение ме
   await page.getByTestId('tab-methods').click()
   await expect(page.getByTestId('methods-prediction')).toContainText('Прогноз на тираж №13896')
   await expect(page.getByTestId('models-table')).toContainText('Случайный выбор (контроль)')
+  await expect(page.getByTestId('method-edge')).toContainText('Что исключено')
+  await expect(page.getByTestId('methods-by-mechanism')).toContainText('лототрон')
+  await page.getByTestId('tab-overview').click()
+  // лототрон в ровный час (есть видео), ГСЧ — «с секундами»: в моке 4 из 10 слотов — ровный час
+  await expect(page.getByTestId('mechanisms')).toContainText('Лототрон — 600 тиражей')
+  await expect(page.getByTestId('mechanisms')).toContainText('ГСЧ — 899 тиражей')
+  await expect(page.getByTestId('detectable')).toContainText('чаще нормы')
+  await expect(page.getByTestId('drift')).toContainText('Дрейфа нет')
+})
+
+test('правила игры со stoloto.ru и ожидаемый возврат ближайшего тиража', async ({ page }) => {
+  await page.goto('/games/4x20')
+  await page.getByTestId('tab-rules').click()
+  const rules = page.getByTestId('rules')
+  await expect(rules).toContainText('10:00 (лототрон)')
+  await expect(page.getByTestId('rules-mechanism')).toContainText('лототрон и генератор случайных чисел')
+  await expect(page.getByTestId('rules-table')).toContainText('Суперприз')
+  await expect(page.getByTestId('rules-table')).toContainText('4 + 3')
+  await expect(page.getByTestId('rules-superprize')).toContainText('300 000 000 ₽')
+  await expect(page.getByTestId('rules-return')).toHaveText(/\d,\d+/)
+  await page.getByTestId('tab-odds').click()
+  await expect(page.getByTestId('next-draw-return')).toContainText('Ближайший тираж №13896')
 })
 
 test('режим Бога: запуск, промежуточный и итоговый результат', async ({ page }) => {

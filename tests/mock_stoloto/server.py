@@ -22,6 +22,13 @@ STALE = {"duel"}
 # played — {"played": [...], "notPlayed": [остаток диапазона]}
 FORMATS = {"ruslotto": "not_played", "bingo75": "played"}
 RANGES = {"bingo75": 75}
+LOTOTRON = {"4x20"}           # смешанная игра: лототрон в :00, остальное — ГСЧ
+HOW = {"4x20": "<p>Тиражи лотереи проходят каждый день в 10:00 (лототрон), 12:07:30 (ГСЧ), 13:00 (лототрон), "
+               "13:52:30 (ГСЧ), 16:07:30 (ГСЧ), 16:22:30 (ГСЧ), 18:00 (лототрон), 20:07:30 (ГСЧ), "
+               "22:00 (лототрон), 23:22:30 (ГСЧ) мск. Продажи билетов заканчиваются за 5 минут до начала.</p>"
+               "<p>Розыгрыши проводят на&nbsp;лототроне, а также с помощью ГСЧ (генератор случайных чисел).</p>",
+       "6x45plus": "<p>Розыгрыши проходят каждые 15 минут с помощью генератора случайных чисел.</p>"}
+SUPER = {"4x20": 300_000_000, "6x45plus": 45_000_000}
 
 
 def structured(game: str, nums: list[int]):
@@ -69,8 +76,13 @@ def load():
         draws = []
         for dt, no, nums in rows:
             dt = dt + shift
-            draws.append({"number": no, "date": dt.strftime("%Y-%m-%dT%H:%M:00.000+03:00"),
+            # как в реальном API: у тиражей на лототроне есть видео, тиражи ГСЧ идут «с секундами»
+            lototron = f.stem in LOTOTRON and dt.minute == 0
+            sec = "00" if f.stem not in LOTOTRON or lototron else "30"
+            draws.append({"number": no, "date": dt.strftime(f"%Y-%m-%dT%H:%M:{sec}.000+03:00"),
                           "combination": {"structured": structured(f.stem, nums)}, "_dt": dt,
+                          "videoLink": "https://vkvideo.ru/video_ext.php?id=1" if lototron else None,
+                          "betsCount": 20000 + (no * 7919) % 5000, "status": "COMPLETED",
                           **prize_block(f.stem, no, nums)})
         games[f.stem] = draws
     return games
@@ -122,8 +134,41 @@ class Handler(BaseHTTPRequestHandler):
             # закрытая игра по-прежнему числится «активной» в API, но тиражей давно нет
             names = sorted(GAMES) + ACTIVE_WITHOUT_ARCHIVE
             titles = {"top-3": "Топ-3"}   # как в реальном API: название есть не у всех полей
-            return self.send(200, {"games": [{"name": n, "active": True, **({"title": titles[n]} if n in titles else {})}
+            def next_draw(n):
+                if n not in GAMES or n in STALE or not GAMES[n]:
+                    return None
+                last = max(GAMES[n], key=lambda d: d["number"])
+                dt = last["_dt"] + timedelta(hours=2)
+                return {"number": last["number"] + 1, "date": int(dt.timestamp()), "superPrize": SUPER.get(n, 10_000_000),
+                        "betCost": PRIZES.get(n, ({}, 100))[1], "tvShow": n in LOTOTRON and dt.minute == 0,
+                        "winnersDistribitionPers": 50, "jackpotGuaranteed": 10_000_000, "status": "WAITING"}
+            return self.send(200, {"games": [{"name": n, "active": True, "draw": next_draw(n),
+                                              **({"title": titles[n]} if n in titles else {})}
                                              for n in names]})
+        if url.path.endswith("/winning-table"):
+            game = url.path.split("/")[-2]
+            if game not in PRIZES or not q.get("drawNumber"):
+                return self.send(200, {"requestStatus": "error", "errors": ["not valid request"], "winningTable": []})
+            rows = []
+            for i, (key, amount) in enumerate(PRIZES[game][0].items()):
+                g1, g2 = (int(v) for v in key.split("+"))
+                rows.append({"guessNumber1": g1, "guessNumber2": g2, "prize": 0 if i == 0 else amount,
+                             "superprize": i == 0, "percentprize": None, "wcnumber": i + 1})
+            return self.send(200, {"requestStatus": "success", "errors": [], "minPrize": PRIZES[game][1],
+                                   "winningTable": rows})
+        if "/cms/api/about-lottery-categories/" in url.path:
+            game = url.path.rsplit("/", 1)[-1]
+            contents = [{"collection": "how_draws_work", "item": {"title": "Как проходят розыгрыши",
+                                                                  "text": HOW.get(game), "content": []}},
+                        {"collection": "faq", "item": {"rulesFaqs": [
+                            {"question": "Как копится суперприз?",
+                             "answer": "<p>В призовой фонд уходит {{lottery_winners_distribution_pers}}. "
+                                       "Минимальный суперприз — {{lottery_jackpot_guaranteed}}.</p>"}]}},
+                        {"collection": "about_prize", "item": {"cards": [{"title": "Призовой фонд",
+                                                                          "text": "{{lottery_winners_distribution_pers}}"}]}}]
+            return self.send(200, {"data": [{"contents": contents}]})
+        if "/cms/api/winning-table-superprize/" in url.path:
+            return self.send(200, {"data": []})
         if url.path.endswith("/draws/archive"):
             draws = GAMES.get(q.get("game"), [])
             d_from = datetime.strptime(q["date_from"], "%d.%m.%Y")

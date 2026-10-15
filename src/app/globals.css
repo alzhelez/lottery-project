@@ -190,3 +190,10 @@ tbody tr:last-child td { border-bottom: 0; }
 .topnav a { color: #fff; text-decoration: none; font-size: .95rem; opacity: .85; }
 .topnav a:hover { opacity: 1; text-decoration: underline; }
 code { font-size: .9em; background: #eef1f5; padding: 0 .25rem; border-radius: 4px; }
+ul.plain { padding-left: 1.2rem; margin: .4rem 0 .8rem; }
+ul.plain li { margin: .2rem 0; }
+details.faq { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-s); padding: .5rem .8rem; margin: .4rem 0; max-width: 85ch; }
+details.faq summary { cursor: pointer; font-weight: 600; }
+.mech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .8rem; margin: .6rem 0; }
+.mech-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-s); padding: .7rem .9rem; }
+.mech-card h4 { margin: 0 0 .3rem; }
