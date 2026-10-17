@@ -7,11 +7,13 @@
 """
 from __future__ import annotations
 
+import zlib
 from dataclasses import dataclass, field
 from typing import Callable
 
 import numpy as np
 from scipy.signal import lfilter
+from scipy.special import ndtri
 
 
 class Features:
@@ -59,6 +61,33 @@ class Features:
             norm = np.concatenate([[1.0], norm])[:, None]
             return (s / norm / self.p - 1.0).astype(np.float32)
         return self.memo(("ewma", half_life), calc)
+
+    def sampled(self, kind: str, param, seed: int) -> np.ndarray:
+        """Сэмплирование Томпсона для частотных методов.
+
+        Частота числа за окно — лишь оценка вероятности его выпадения с погрешностью
+        ±√(p(1−p)/n). Если брать k чисел с наибольшей оценкой, прогноз определяется
+        шумом и не меняется неделями: разница частот за тысячи тиражей почти вся — шум,
+        а новые тиражи её почти не сдвигают. Вместо этого для каждого тиража берётся
+        правдоподобное значение вероятности из её распределения (нормальное приближение
+        бета-распределения): числа, чьё преимущество в пределах шума, честно меняются
+        местами, а выделяющиеся сильнее шума остаются. Значение для тиража t зависит только
+        от тиражей < t и от (t, число, seed) — прогнозы воспроизводимы.
+
+        kind: 'window' (param — окно или None) или 'ewma' (param — полураспад)."""
+        def calc():
+            if kind == "window":
+                n = self.t_index if param is None else np.minimum(self.t_index, param)
+                mean = (self.window(param) + self.p) / (n + 1.0)
+            else:
+                lam = 0.5 ** (1.0 / param)
+                n = np.minimum(self.t_index, (1 + lam) / (1 - lam))
+                mean = np.clip((self.ewma(param) + 1.0) * self.p, 0.0, 1.0)
+                mean = (mean * n + self.p) / (n + 1.0)
+            sd = np.sqrt(np.clip(mean * (1 - mean), 1e-9, None) / (n + 2.0))
+            u = np.clip(tie_noise((self.T + 1, self.N), seed), 1e-12, 1 - 1e-12)
+            return (mean + sd * ndtri(u)).astype(np.float32)
+        return self.memo(("sampled", kind, param, seed), calc)
 
     def gap(self) -> np.ndarray:
         """Сколько тиражей число не выпадало к моменту t."""
@@ -218,25 +247,43 @@ def _rand(seed: int) -> Callable[[Features], np.ndarray]:
     return lambda f: tie_noise((f.T + 1, f.N), seed).astype(np.float32)
 
 
+def _seed(key: str) -> int:
+    return zlib.crc32(key.encode("utf-8")) & 0x7FFFFFFF
+
+
+def _hot(w, key: str) -> Callable[[Features], np.ndarray]:
+    return lambda f: f.sampled("window", w, _seed(key))
+
+
+def _cold(w, key: str) -> Callable[[Features], np.ndarray]:
+    return lambda f: -f.sampled("window", w, _seed(key))
+
+
+def _ewma(h, key: str, sign: float = 1.0) -> Callable[[Features], np.ndarray]:
+    return lambda f: sign * f.sampled("ewma", h, _seed(key))
+
+
 def standard_models() -> list[Model]:
-    """Набор методов для сравнения на странице игры."""
+    """Набор методов для сравнения на странице игры. Частотные методы (горячие, холодные,
+    экспоненциальная частота) выбирают числа сэмплированием Томпсона — см. Features.sampled."""
     m: list[Model] = [Model("random", "Случайный выбор (контроль)", "control", _rand(7), control=True)]
-    m.append(Model("hot_all", "Горячие за всю историю", "hot", lambda f: f.window(None)))
+    m.append(Model("hot_all", "Горячие за всю историю", "hot", _hot(None, "hot_all")))
     for w in (10, 25, 50, 100, 200, 500):
-        m.append(Model(f"hot_{w}", f"Горячие, окно {w}", "hot", (lambda w: lambda f: f.window(w))(w), params={"window": w}))
-    m.append(Model("cold_all", "Холодные за всю историю", "cold", lambda f: -f.window(None)))
+        m.append(Model(f"hot_{w}", f"Горячие, окно {w}", "hot", _hot(w, f"hot_{w}"), params={"window": w}))
+    m.append(Model("cold_all", "Холодные за всю историю", "cold", _cold(None, "cold_all")))
     for w in (25, 100):
-        m.append(Model(f"cold_{w}", f"Холодные, окно {w}", "cold", (lambda w: lambda f: -f.window(w))(w), params={"window": w}))
+        m.append(Model(f"cold_{w}", f"Холодные, окно {w}", "cold", _cold(w, f"cold_{w}"), params={"window": w}))
     for h in (10, 50, 200):
         m.append(Model(f"ewma_{h}", f"Экспоненциальная частота, полураспад {h}", "ewma",
-                       (lambda h: lambda f: f.ewma(h))(h), params={"half_life": h}))
+                       _ewma(h, f"ewma_{h}"), params={"half_life": h}))
     m.append(Model("overdue", "Давно не выпадавшие", "gap", lambda f: f.gap()))
     m.append(Model("repeat", "Недавно выпадавшие", "gap", lambda f: -f.gap()))
     m.append(Model("markov", "Марковская цепь переходов", "markov", lambda f: f.markov()))
     m.append(Model("pairs", "Пары с числами прошлого тиража", "pairs", lambda f: f.pairs()))
     for a in (0.5, 1.0):
         m.append(Model(f"mix_{a}", f"Частота-100 + давность (α={a})", "mix",
-                       (lambda a: lambda f: f.zscore(f.window(100)) + a * f.zscore(f.gap()))(a), params={"alpha": a}))
+                       (lambda a: lambda f: f.zscore(f.sampled("window", 100, _seed(f"mix_{a}"))) + a * f.zscore(f.gap()))(a),
+                       params={"alpha": a}))
     m.append(Model("logreg", "Онлайн-логистическая регрессия", "ml", lambda f: online_logreg(f)))
     return m
 
@@ -249,12 +296,13 @@ def expert_grid(level: int) -> list[Model]:
     windows = (5, 10, 20, 50, 100, 200, 500, None) if level == 1 else (3, 7, 15, 30, 40, 75, 150, 300, 750, 1000)
     for w in windows:
         tag = "all" if w is None else w
-        out.append(Model(f"hot_{tag}", f"Горячие, окно {tag}", "hot", (lambda w: lambda f: f.window(w))(w)))
-        out.append(Model(f"cold_{tag}", f"Холодные, окно {tag}", "cold", (lambda w: lambda f: -f.window(w))(w)))
+        out.append(Model(f"hot_{tag}", f"Горячие, окно {tag}", "hot", _hot(w, f"g_hot_{tag}")))
+        out.append(Model(f"cold_{tag}", f"Холодные, окно {tag}", "cold", _cold(w, f"g_cold_{tag}")))
     halves = (5, 20, 80, 300) if level == 1 else (2, 3, 8, 13, 34, 55, 144, 600)
     for h in halves:
-        out.append(Model(f"ewma_{h}", f"Экспоненциальная частота, полураспад {h}", "ewma", (lambda h: lambda f: f.ewma(h))(h)))
-        out.append(Model(f"ewmacold_{h}", f"Экспоненциально холодные, полураспад {h}", "ewma", (lambda h: lambda f: -f.ewma(h))(h)))
+        out.append(Model(f"ewma_{h}", f"Экспоненциальная частота, полураспад {h}", "ewma", _ewma(h, f"g_ewma_{h}")))
+        out.append(Model(f"ewmacold_{h}", f"Экспоненциально холодные, полураспад {h}", "ewma",
+                         _ewma(h, f"g_ewmacold_{h}", -1.0)))
     if level == 1:
         out += [
             Model("overdue", "Давно не выпадавшие", "gap", lambda f: f.gap()),
@@ -271,7 +319,8 @@ def expert_grid(level: int) -> list[Model]:
         for w in (20, 50, 200):
             for a in (-1.0, -0.5, 0.5, 1.0, 2.0):
                 out.append(Model(f"mix_{w}_{a}", f"Частота-{w} + давность (α={a})", "mix",
-                                 (lambda w, a: lambda f: f.zscore(f.window(w)) + a * f.zscore(f.gap()))(w, a)))
+                                 (lambda w, a: lambda f: f.zscore(f.sampled("window", w, _seed(f"g_mix_{w}_{a}")))
+                                  + a * f.zscore(f.gap()))(w, a)))
         for lr in (0.01, 0.2):
             out.append(Model(f"logreg_{lr}", f"Онлайн-логрегрессия (шаг {lr})", "ml",
                              (lambda lr: lambda f: online_logreg(f, lr=lr))(lr)))

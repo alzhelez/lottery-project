@@ -138,7 +138,8 @@ class Handler(BaseHTTPRequestHandler):
                 if n not in GAMES or n in STALE or not GAMES[n]:
                     return None
                 last = max(GAMES[n], key=lambda d: d["number"])
-                dt = last["_dt"] + timedelta(hours=2)
+                # как в реальном API: ближайший тираж всегда впереди (ровный час — для лототрона)
+                dt = (datetime.now() + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
                 return {"number": last["number"] + 1, "date": int(dt.timestamp()), "superPrize": SUPER.get(n, 10_000_000),
                         "betCost": PRIZES.get(n, ({}, 100))[1], "tvShow": n in LOTOTRON and dt.minute == 0,
                         "winnersDistribitionPers": 50, "jackpotGuaranteed": 10_000_000, "status": "WAITING"}

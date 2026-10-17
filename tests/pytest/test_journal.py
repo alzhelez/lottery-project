@@ -1,4 +1,5 @@
 """Журнал прогнозов и проверка актуальности игр."""
+import json
 from datetime import datetime, timedelta
 
 from lottery import journal
@@ -87,8 +88,60 @@ def test_cli_records_only_for_active_games(data_dir):
                    env=env, check=True, capture_output=True, timeout=300)
     entries = journal.load("5x36")["entries"]
     assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos"}
-    assert all(e["draw_no"] == 401 for e in entries)
+    # тиражи раз в час, последний — час назад: №401 приходится на «сейчас», прогноз — на №402
+    assert all(e["draw_no"] == 402 for e in entries)
     out = subprocess.run([sys.executable, str(ROOT / "python" / "lp.py"), "journal", "--game", "5x36"],
                          env=env, check=True, capture_output=True, text=True, encoding="utf-8").stdout
     res = json.loads([l for l in out.splitlines() if l.startswith("@@")][-1][2:])
     assert len(res["journals"]["5x36"]["entries"]) == 3
+
+
+# ── ближайший будущий тираж ─────────────────────────────────────────────────
+
+def _fast_game(minutes=15, count=300, last_ago_min=20):
+    from conftest import random_lotto  # noqa: F401
+    now = datetime(2026, 10, 17, 3, 20)
+    last = now - timedelta(minutes=last_ago_min)
+    write_draws(draws_path("5x36"), [Draw(i + 1, (last - timedelta(minutes=minutes * (count - 1 - i))).strftime("%d.%m.%Y %H:%M"),
+                                          (tuple(range(1 + i % 30, 6 + i % 30)),)) for i in range(count)])
+    from lottery.drawfile import load_game_data
+    return load_game_data(get_game("5x36")), now
+
+
+def _rules_next(slug, number, date, times=None):
+    from lottery import rules
+    rules.rules_dir().mkdir(parents=True, exist_ok=True)
+    rules.rules_path(slug).write_text(json.dumps({"next_draw": {"number": number, "date": date},
+                                                  "schedule": {"times": times or {}}}), encoding="utf-8")
+
+
+def test_target_skips_draws_that_already_happened():
+    """Тираж каждые 15 минут, последний загружен 20 минут назад: №301 уже прошёл (5 минут
+    назад), прогноз пишется на №302 — через 10 минут."""
+    data, now = _fast_game()
+    t = journal.target_draw(data, now)
+    assert t["no"] == 302 and t["date"] == datetime(2026, 10, 17, 3, 30)
+
+
+def test_target_uses_api_next_draw():
+    data, now = _fast_game()
+    _rules_next("5x36", 305, "2026-10-17T03:45:30")
+    assert journal.target_draw(data, now)["no"] == 305
+    # ближайший по API уже прошёл (данные устарели) — счёт от него по интервалу
+    _rules_next("5x36", 301, "2026-10-17T03:05:00")
+    t = journal.target_draw(data, now)
+    assert t["no"] == 303 and t["date"] > now
+
+
+def test_target_follows_schedule():
+    data, now = _fast_game(minutes=60 * 24, count=50, last_ago_min=60 * 3)   # последний — вчера в 00:20
+    _rules_next("5x36", 50, "2026-10-16T10:00:00", {"10:00": "L", "11:07": "R", "22:00": "L"})
+    t = journal.target_draw(data, datetime(2026, 10, 17, 10, 30))
+    # 10:00 (№50, прошёл) → 11:07 → … : ближайший будущий — сегодня 11:07
+    assert t["date"] == datetime(2026, 10, 17, 11, 7) and "расписанию" in t["how"]
+
+
+def test_target_for_stale_archive_is_next():
+    data, _ = _fast_game()
+    t = journal.target_draw(data, datetime(2026, 11, 30, 12, 0))
+    assert t["no"] == 301 and t["date"] is None

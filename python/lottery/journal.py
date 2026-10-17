@@ -47,12 +47,77 @@ def save(slug: str, journal: dict) -> None:
     write_text(journal_path(slug), json.dumps(journal, ensure_ascii=False, indent=1))
 
 
-def record(data: GameData, source: str, numbers: list[list[int]], detail: str = "",
-           now: datetime | None = None) -> dict:
-    """Записывает прогноз на следующий тираж. Повторный прогноз того же источника на тот же
-    тираж заменяет прежний, пока тираж не сыгран."""
+TARGET_MARGIN_S = 90      # прогноз должен быть записан хотя бы за полторы минуты до тиража
+STALE_DAYS = 3            # архив старше — номер тиража по времени не угадать
+
+
+def target_draw(data: GameData, now: datetime | None = None) -> dict:
+    """Ближайший тираж, который точно ещё не прошёл к моменту записи прогноза.
+
+    У быстрых игр (тираж каждые несколько минут) «последний загруженный + 1» обычно уже
+    сыгран, пока идёт анализ всех игр, — такие прогнозы журнал не засчитывает. Поэтому:
+      1. если API знает ближайший тираж (номер и время) и до него больше TARGET_MARGIN_S — он;
+      2. иначе номер считается от последнего известного тиража (из API или архива): по
+         расписанию игры, если оно есть в правилах («10:00, 11:07, …»), или с шагом —
+         10-й процентиль интервалов между последними тиражами (чтобы скорее перескочить
+         вперёд, чем опоздать; ночной перерыв даёт лишь более далёкий, но будущий тираж).
+    Возвращает {no, date (ожидаемое время или None), how}."""
+    import math
+    from datetime import timedelta
     now = now or datetime.now()
-    draw_no = data.draws[-1].no + 1
+    edge = now + timedelta(seconds=TARGET_MARGIN_S)
+    last = data.draws[-1]
+    anchor_no, anchor_dt = last.no, last.dt
+    stale = {"no": last.no + 1, "date": None,
+             "how": "архив давно не обновлялся — следующий за последним загруженным"}
+    try:
+        from .rules import load_rules
+        rules_rec = load_rules(data.game.slug) or {}
+    except Exception:  # noqa: BLE001 — правила необязательны
+        rules_rec = {}
+    nd = rules_rec.get("next_draw") or {}
+    if nd.get("number") and nd.get("date") and int(nd["number"]) > last.no:
+        try:
+            dt = datetime.fromisoformat(str(nd["date"])[:19])
+        except ValueError:
+            dt = None
+        if dt is not None:
+            if dt >= edge:
+                return {"no": int(nd["number"]), "date": dt, "how": "ближайший тираж по данным Столото"}
+            anchor_no, anchor_dt = int(nd["number"]), dt
+    if anchor_dt is None:
+        return {"no": last.no + 1, "date": None, "how": "следующий за последним загруженным"}
+    if anchor_dt < now - timedelta(days=STALE_DAYS):
+        return stale
+    sched = sorted(((rules_rec.get("schedule") or {}).get("times") or {}))
+    if sched:
+        no, dt = anchor_no, anchor_dt
+        for _ in range(5000):
+            hhmm = dt.strftime("%H:%M")
+            nxt = next((t for t in sched if t > hhmm), None)
+            day = dt if nxt else dt + timedelta(days=1)
+            h, m = map(int, (nxt or sched[0]).split(":"))
+            dt = day.replace(hour=h, minute=m, second=0, microsecond=0)
+            no += 1
+            if dt >= edge:
+                return {"no": no, "date": dt, "how": "ближайший будущий тираж по расписанию"}
+    times = [d.dt for d in data.draws[-61:]]
+    gaps = [(b - a).total_seconds() for a, b in zip(times, times[1:]) if a and b and b > a]
+    if not gaps:
+        return {"no": last.no + 1, "date": None, "how": "следующий за последним загруженным"}
+    step = float(np.percentile(gaps, 10))
+    k = max(1, math.ceil((edge - anchor_dt).total_seconds() / step))
+    return {"no": anchor_no + k, "date": anchor_dt + timedelta(seconds=k * step),
+            "how": "ближайший будущий тираж по интервалу между тиражами"}
+
+
+def record(data: GameData, source: str, numbers: list[list[int]], detail: str = "",
+           now: datetime | None = None, draw_no: int | None = None) -> dict:
+    """Записывает прогноз на тираж draw_no (по умолчанию — ближайший будущий, target_draw).
+    Повторный прогноз того же источника на тот же тираж заменяет прежний, пока тираж не
+    сыгран."""
+    now = now or datetime.now()
+    draw_no = draw_no or target_draw(data, now)["no"]
     journal = load(data.game.slug)
     entry = {
         "id": uuid.uuid4().hex[:12],

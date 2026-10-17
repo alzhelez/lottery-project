@@ -42,7 +42,7 @@ h4 { font-size: 1rem; margin: 1.2rem 0 .3rem; }
   color: var(--ink); background: radial-gradient(circle at 35% 30%, #fff6cf 0 18%, var(--ball) 55%, var(--ball-dark) 100%); }
 .version { font-size: .8rem; opacity: .7; }
 
-.page { max-width: 1120px; margin: 0 auto; padding: 1.8rem clamp(1rem, 4vw, 2.5rem) 4rem; }
+.page { max-width: 1480px; margin: 0 auto; padding: 1.8rem clamp(1rem, 4vw, 2.5rem) 4rem; }
 .hero { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1.2rem; margin-bottom: 1rem; }
 .lead { font-size: 1.1rem; margin: 0; color: var(--muted); }
 .hero-actions, .modal-actions, .run-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
@@ -197,3 +197,12 @@ details.faq summary { cursor: pointer; font-weight: 600; }
 .mech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .8rem; margin: .6rem 0; }
 .mech-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-s); padding: .7rem .9rem; }
 .mech-card h4 { margin: 0 0 .3rem; }
+
+/* журнал: строка тиража раскрывается по источникам */
+.data tr.group-row { cursor: pointer; }
+.data tr.group-row:hover td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.data tr.group-row[aria-expanded="true"] td { background: color-mix(in srgb, var(--accent) 8%, transparent); font-weight: 600; }
+.data tr.sub-row td { background: color-mix(in srgb, var(--line) 25%, transparent); }
+.data tr.sub-row td:first-child { padding-left: 2rem; }
+.caret { display: inline-block; width: 1rem; color: var(--muted); }
+.hit-chip { display: inline-block; margin-left: .35rem; padding: .05rem .4rem; border-radius: 999px; background: var(--paper); font-size: .82rem; white-space: nowrap; }

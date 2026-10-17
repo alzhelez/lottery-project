@@ -42,6 +42,7 @@ export interface Analysis {
     next_prediction: { model: string; numbers: number[][] }
     money?: { available: boolean; reason?: string; price?: number; price_source?: string; draws_with_prizes?: number } | null
     detectable_edge_pct?: number | null
+    target?: { no: number; how: string; date: string | null }
     by_mechanism?: Record<string, { title: string; draws: number; baseline: { mean: number }; conclusion?: string
       best: { title: string; selection: { excess_pct: number; mean_hits: number }; holdout: { excess_pct: number; mean_hits: number; p_adjusted?: number } } | null }>
     distribution: { observed: number[]; expected: number[] }
@@ -172,7 +173,8 @@ export function AnalysisMethods({ a, nextNo }: { a: Analysis; nextNo: number | n
       <div className="callout">{e.conclusion}</div>
 
       <div className="predict-card" data-testid="methods-prediction">
-        <h3>Прогноз на тираж №{nextNo}</h3>
+        <h3>Прогноз на тираж №{e.target?.no ?? nextNo}</h3>
+        {e.target?.how && <p className="muted small">{e.target.how}{e.target.date ? ` — ${e.target.date.replace('T', ' ')}` : ''}</p>}
         <p className="muted">Метод, лучший на отрезке отбора: «{e.next_prediction.model}»</p>
         <BlockBalls blocks={e.next_prediction.numbers} size="lg" />
         <h4>Наиболее часто повторяющиеся предсказания</h4>

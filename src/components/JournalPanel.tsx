@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { BlockBalls } from './Balls'
-import { nf, num, pct, pval } from './format'
+import { nf, num, pct, plural, pval } from './format'
 import type { Info } from './GameView'
 
 interface Entry {
@@ -36,6 +36,12 @@ interface Summary {
   money_checked?: number
 }
 
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б' }
+const SOURCE_TITLE: Record<string, string> = {
+  analysis_best: 'лучший метод', analysis_consensus: 'консенсус', chaos: 'порядок из хаоса', godmode: 'режим Бога',
+}
+const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode']
+
 const STATUS: Record<Entry['status'], string> = {
   pending: 'ждёт тиража',
   checked: 'сверен',
@@ -46,6 +52,13 @@ const STATUS: Record<Entry['status'], string> = {
 export function JournalPanel({ info }: { info: Info }) {
   const [data, setData] = useState<{ entries: Entry[]; summary: Summary[]; byMechanism?: Array<{ mechanism: string; title: string; summary: Summary[] }> } | null>(null)
   const [source, setSource] = useState('all')
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const toggle = (no: number) => setExpanded((prev) => {
+    const next = new Set(prev)
+    if (next.has(no)) next.delete(no)
+    else next.add(no)
+    return next
+  })
   const load = useCallback(async () => {
     const r = await fetch(`/api/games/${info.slug}/journal`, { cache: 'no-store' })
     setData(await r.json())
@@ -54,6 +67,17 @@ export function JournalPanel({ info }: { info: Info }) {
 
   if (!data) return null
   const entries = data.entries.filter((e) => source === 'all' || e.source === source)
+  // «Все»: одна строка на тираж, прогнозы источников раскрываются по нажатию
+  const groups: Array<{ no: number; items: Entry[] }> = []
+  const byNo = new Map<number, Entry[]>()
+  for (const e of entries) {
+    if (!byNo.has(e.draw_no)) {
+      byNo.set(e.draw_no, [])
+      groups.push({ no: e.draw_no, items: byNo.get(e.draw_no)! })
+    }
+    byNo.get(e.draw_no)!.push(e)
+  }
+  for (const g of groups) g.items.sort((a, b) => (ORDER.indexOf(a.source) + 9) % 9 - (ORDER.indexOf(b.source) + 9) % 9)
   const lastNo = info.last?.no ?? 0
 
   return (
@@ -123,29 +147,90 @@ export function JournalPanel({ info }: { info: Info }) {
           </div>
 
           <div className="table-wrap">
-            <table className="data" data-testid="journal-entries">
-              <thead>
-                <tr><th>Тираж</th><th>Источник</th><th>Прогноз</th><th>Выпало</th><th className="r">Угадано</th><th className="r">Ожидалось</th><th className="r">Выигрыш, ₽</th><th>Статус</th></tr>
-              </thead>
-              <tbody>
-                {entries.slice(0, 200).map((e) => (
-                  <tr key={e.id}>
-                    <td>№{e.draw_no}{e.mechanism && <span className="sub">{e.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}<span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
-                    <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
-                    <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" /></td>
-                    <td>{e.actual ? <BlockBalls blocks={e.actual} tone="actual" size="sm" /> : <span className="muted">—</span>}</td>
-                    <td className="r num">{e.hits ?? '—'}</td>
-                    <td className="r num">{e.expected != null ? num(e.expected, 2) : '—'}</td>
-                    <td className="r num">{e.won != null ? nf.format(e.won) : '—'}</td>
-                    <td>
-                      <span className={`status-tag st-${e.status}`}>{STATUS[e.status]}</span>
-                      {e.status === 'pending' && lastNo >= e.draw_no && <span className="sub">тиража нет в архиве</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {source === 'all' ? (
+              <table className="data" data-testid="journal-entries">
+                <thead>
+                  <tr><th>Тираж</th><th>Прогнозы</th><th>Выпало</th><th className="r">Угадано по источникам</th><th className="r">Ожидалось</th><th className="r">Выигрыш, ₽</th><th>Статус</th></tr>
+                </thead>
+                <tbody>
+                  {groups.slice(0, 200).flatMap((g) => {
+                    const open = expanded.has(g.no)
+                    const head = g.items[0]
+                    const actual = g.items.find((e) => e.actual)?.actual
+                    const won = g.items.reduce((acc, e) => (e.won != null ? (acc ?? 0) + e.won : acc), null as number | null)
+                    const status = g.items.some((e) => e.status === 'pending') ? 'pending'
+                      : g.items.some((e) => e.status === 'checked') ? 'checked' : head.status
+                    const rows = [
+                      <tr key={`g${g.no}`} className="group-row" data-testid="journal-draw" aria-expanded={open}
+                        onClick={() => toggle(g.no)}>
+                        <td>
+                          <span className="caret">{open ? '▾' : '▸'}</span> №{g.no}
+                          {head.mechanism && <span className="sub">{head.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}
+                          {head.draw_date && <span className="sub">тираж {head.draw_date}</span>}
+                        </td>
+                        <td>{g.items.length} {plural(g.items.length, 'источник', 'источника', 'источников')}
+                          <span className="sub">{g.items.map((e) => e.source_title).join(', ')}</span></td>
+                        <td>{actual ? <BlockBalls blocks={actual} tone="actual" size="sm" /> : <span className="muted">—</span>}</td>
+                        <td className="r num">
+                          {g.items.map((e) => (
+                            <span key={e.id} className="hit-chip" title={e.source_title}>{SHORT[e.source] ?? e.source_title.slice(0, 1)} {e.hits ?? '—'}</span>
+                          ))}
+                        </td>
+                        <td className="r num">{head.expected != null ? num(head.expected, 2) : '—'}</td>
+                        <td className="r num">{won != null ? nf.format(won) : '—'}</td>
+                        <td><span className={`status-tag st-${status}`}>{STATUS[status]}</span></td>
+                      </tr>,
+                    ]
+                    if (open) {
+                      for (const e of g.items) {
+                        rows.push(
+                          <tr key={e.id} className="sub-row" data-testid="journal-source-row">
+                            <td><span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
+                            <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
+                            <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" /></td>
+                            <td className="r num">{e.hits ?? '—'}</td>
+                            <td className="r num">{e.expected != null ? num(e.expected, 2) : '—'}</td>
+                            <td className="r num">{e.won != null ? nf.format(e.won) : '—'}</td>
+                            <td>
+                              <span className={`status-tag st-${e.status}`}>{STATUS[e.status]}</span>
+                              {e.status === 'pending' && lastNo >= e.draw_no && <span className="sub">тиража нет в архиве</span>}
+                            </td>
+                          </tr>,
+                        )
+                      }
+                    }
+                    return rows
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <table className="data" data-testid="journal-entries">
+                <thead>
+                  <tr><th>Тираж</th><th>Источник</th><th>Прогноз</th><th>Выпало</th><th className="r">Угадано</th><th className="r">Ожидалось</th><th className="r">Выигрыш, ₽</th><th>Статус</th></tr>
+                </thead>
+                <tbody>
+                  {entries.slice(0, 200).map((e) => (
+                    <tr key={e.id}>
+                      <td>№{e.draw_no}{e.mechanism && <span className="sub">{e.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}<span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
+                      <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
+                      <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" /></td>
+                      <td>{e.actual ? <BlockBalls blocks={e.actual} tone="actual" size="sm" /> : <span className="muted">—</span>}</td>
+                      <td className="r num">{e.hits ?? '—'}</td>
+                      <td className="r num">{e.expected != null ? num(e.expected, 2) : '—'}</td>
+                      <td className="r num">{e.won != null ? nf.format(e.won) : '—'}</td>
+                      <td>
+                        <span className={`status-tag st-${e.status}`}>{STATUS[e.status]}</span>
+                        {e.status === 'pending' && lastNo >= e.draw_no && <span className="sub">тиража нет в архиве</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
+          {source === 'all' && groups.length > 0 && (
+            <p className="muted small">Нажмите на тираж, чтобы увидеть прогноз каждого источника. Угадано: {Object.entries(SHORT).map(([k, v]) => `${v} — ${SOURCE_TITLE[k]}`).join(', ')}.</p>
+          )}
         </>
       )}
     </section>

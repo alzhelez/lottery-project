@@ -127,9 +127,19 @@ test('журнал прогнозов: запись до тиража и све�
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   const entries = page.getByTestId('journal-entries')
-  await expect(entries.locator('tbody tr')).toHaveCount(4)
+  // «Все»: одна строка на тираж, по нажатию — прогнозы четырёх источников
+  await expect(page.getByTestId('journal-draw')).toHaveCount(1)
   await expect(entries).toContainText('ждёт тиража')
   await expect(entries).toContainText('№13896')
+  await expect(entries).toContainText('4 источника')
+  await page.getByTestId('journal-draw').click()
+  await expect(page.getByTestId('journal-source-row')).toHaveCount(4)
+  await expect(entries).toContainText('Порядок из хаоса')
+  await page.getByTestId('journal-draw').click()
+  await expect(page.getByTestId('journal-source-row')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Порядок из хаоса' }).click()
+  await expect(entries.locator('tbody tr')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Все', exact: true }).click()
 
   // тираж №13896 «состоялся» — загружаем его
   expect((await (await request.get(`${MOCK}/__release`)).json()).released).toEqual([13896])
@@ -141,6 +151,8 @@ test('журнал прогнозов: запись до тиража и све�
   await page.getByTestId('tab-journal').click()
   await expect(entries).toContainText('сверен')
   await expect(entries).not.toContainText('ждёт тиража')
+  await page.getByTestId('journal-draw').click()
+  await expect(page.getByTestId('journal-source-row').filter({ hasText: 'сверен' })).toHaveCount(4)
   const summary = page.getByTestId('journal-summary')
   for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Режим Бога', 'Порядок из хаоса']) {
     await expect(summary.locator('tr', { hasText: title }).locator('td').nth(1)).toHaveText('1')

@@ -58,7 +58,8 @@ def test_auto_cycle_predicts_active_games_only(data_dir):
     assert status["status"] == "done"
     assert status["games"]["5x36"]["analyzed"] and status["games"]["6x45"]["skipped"] == "игра устарела"
     journal = json.loads((data_dir / "journal" / "5x36.json").read_text(encoding="utf-8"))
-    assert {e["draw_no"] for e in journal["entries"]} == {301}
+    # тираж №301 по интервалу приходится на «сейчас» — прогноз пишется на ближайший будущий
+    assert {e["draw_no"] for e in journal["entries"]} == {302}
     assert "Автозапуск: готово" in (data_dir / "logs" / "auto.log").read_text(encoding="utf-8")
     assert not (data_dir / "auto.lock").exists()
 

@@ -162,11 +162,12 @@ def game_activity(data) -> dict:
     return activity(data.draws[-1].dt if data.draws else None, read_meta(data.game.slug).get("checked_at"))
 
 
-def journal_record(data, source: str, numbers, detail: str) -> None:
-    """Прогноз в журнал — только для активной игры (иначе тираж не наступит)."""
+def journal_record(data, source: str, numbers, detail: str, draw_no: int | None = None) -> None:
+    """Прогноз в журнал — только для активной игры (иначе тираж не наступит). Номер тиража —
+    ближайший будущий (journal.target_draw), если не задан."""
     from lottery.journal import record
     if data.draws and game_activity(data)["active"]:
-        record(data, source, numbers, detail)
+        record(data, source, numbers, detail, draw_no=draw_no)
 
 
 def game_info(slug: str) -> dict:
@@ -270,10 +271,14 @@ def analyze_game(slug: str, progress=None) -> dict:
         notify.send(notify.drift_message(data.game.title, drift["new_alarms"]), "drift")
     reconcile(data.game)
     evaluation = evaluate_game(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
+    from lottery.journal import target_draw
+    target = target_draw(data)
     if evaluation.get("status") == "ok":
+        evaluation["target"] = {"no": target["no"], "how": target["how"],
+                                "date": target["date"].isoformat(timespec="minutes") if target["date"] else None}
         journal_record(data, "analysis_best", evaluation["next_prediction"]["numbers"],
-                       evaluation["next_prediction"]["model"])
-        journal_record(data, "analysis_consensus", evaluation["next_consensus"], "")
+                       evaluation["next_prediction"]["model"], draw_no=target["no"])
+        journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"])
     from lottery.popularity import fit as fit_popularity
     popularity = fit_popularity(data)
     if popularity.get("available"):
@@ -284,7 +289,7 @@ def analyze_game(slug: str, progress=None) -> dict:
             if progress:
                 progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
             evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
-    chaos_res = run_chaos(data, progress)
+    chaos_res = run_chaos(data, progress, target)
     payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
                "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity,
                "chaos": chaos_res}
@@ -292,13 +297,16 @@ def analyze_game(slug: str, progress=None) -> dict:
     return payload
 
 
-def run_chaos(data, progress=None) -> dict:
-    """«Порядок из хаоса» по способам розыгрыша; прогноз на ближайший тираж — в журнал."""
+def run_chaos(data, progress=None, target: dict | None = None) -> dict:
+    """«Порядок из хаоса» по способам розыгрыша; прогноз на ближайший будущий тираж — в журнал."""
     from lottery import chaos
-    res = chaos.analyze(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
+    from lottery.journal import target_draw
+    target = target or target_draw(data)
+    res = chaos.analyze(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None,
+                        target=target)
     nxt = res.get("next") or {}
     if nxt.get("numbers"):
-        journal_record(data, "chaos", nxt["numbers"], f"{nxt['model']} · {nxt['title']}")
+        journal_record(data, "chaos", nxt["numbers"], f"{nxt['model']} · {nxt['title']}", draw_no=nxt["draw_no"])
     return res
 
 
@@ -332,7 +340,8 @@ def cmd_analyze(args) -> None:
     say(f"\n{payload['title']}: {payload['format']}\nСлучайность: {randomness['verdict']}")
     if evaluation.get("status") == "ok":
         say(f"Методы: {evaluation['conclusion']}")
-        say(f"Прогноз на тираж №{payload['last_draw_no'] + 1} («{evaluation['next_prediction']['model']}»): "
+        say(f"Прогноз на тираж №{(evaluation.get('target') or {}).get('no') or payload['last_draw_no'] + 1} "
+            f"(«{evaluation['next_prediction']['model']}»): "
             f"{balls(evaluation['next_prediction']['numbers'])}")
         say(f"Консенсус методов: {balls(evaluation['next_consensus'])}")
     ch = (payload.get("chaos") or {}).get("next") or {}
@@ -425,7 +434,7 @@ def auto_once(args) -> dict:
             payload = analyze_game(slug)
             ev = payload["evaluation"]
             g["analyzed"] = ev.get("status") == "ok"
-            g["next_no"] = data.draws[-1].no + 1
+            g["next_no"] = (ev.get("target") or {}).get("no") or data.draws[-1].no + 1
             if g["analyzed"]:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
                                      "numbers": ev["next_prediction"]["numbers"]}

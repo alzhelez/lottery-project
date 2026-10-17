@@ -343,13 +343,21 @@ def _groups(data: GameData) -> dict[str, GameData]:
     return parts or {"all": data}
 
 
-def next_mechanism(data: GameData, available: list[str]) -> tuple[str | None, str]:
-    """Способ розыгрыша ближайшего тиража и откуда это известно."""
+def next_mechanism(data: GameData, available: list[str], target: dict | None = None) -> tuple[str | None, str]:
+    """Способ розыгрыша тиража, на который пишется прогноз (target — journal.target_draw),
+    и откуда это известно."""
     from .mechanics import mechanism_of_draw
     from .rules import load_rules
     if len(available) == 1:
         return available[0], "в игре один способ розыгрыша" if available[0] != "all" else "способ розыгрыша не определён"
     rules = load_rules(data.game.slug) or {}
+    if target and target.get("date") and target.get("no"):
+        dt = target["date"]
+        if dt.second:
+            return "R", f"тираж №{target['no']} в {dt:%H:%M:%S} — время с секундами, ГСЧ"
+        m = mechanism_of_draw(data.game.slug, target["no"], dt.strftime("%d.%m.%Y %H:%M"), rules)
+        if m and "интервал" not in target.get("how", ""):
+            return m, f"тираж №{target['no']} в {dt:%H:%M} по расписанию"
     nd = rules.get("next_draw") or {}
     last = data.draws[-1]
     if nd.get("number") == last.no + 1 and nd.get("date"):
@@ -380,9 +388,9 @@ def evaluate_group(sub: GameData, progress=None) -> dict:
     return evaluate_game(sub, progress=progress, models=chaos_models())
 
 
-def analyze(data: GameData, progress=None) -> dict:
+def analyze(data: GameData, progress=None, target: dict | None = None) -> dict:
     """Проверки и методы «порядка из хаоса» отдельно по каждому способу розыгрыша, прогноз на
-    ближайший тираж из набора его способа."""
+    тираж target (по умолчанию — следующий) из набора его способа."""
     groups = {k: g for k, g in _groups(data).items() if g.T >= MIN_DRAWS}
     out: dict = {"groups": {}, "min_draws": MIN_DRAWS, "max_draws": MAX_DRAWS}
     for gi, (k, sub) in enumerate(groups.items()):
@@ -413,18 +421,19 @@ def analyze(data: GameData, progress=None) -> dict:
                               "holdout": {kk: best["holdout"].get(kk) for kk in
                                           ("mean_hits", "baseline", "excess_pct", "p_better", "p_adjusted", "n")}},
         }
-    mech, why = next_mechanism(data, list(out["groups"]))
+    mech, why = next_mechanism(data, list(out["groups"]), target)
+    draw_no = (target or {}).get("no") or data.draws[-1].no + 1
     g = out["groups"].get(mech) if mech else None
     if g is None and len(out["groups"]) == 1:
         g = next(iter(out["groups"].values()))
         why += f"; для другого способа тиражей мало — прогноз по набору «{g['title']}»"
     if g and g["evaluation"].get("status") == "ok":
         ev = g["evaluation"]
-        out["next"] = {"draw_no": data.draws[-1].no + 1, "mechanism": g["key"], "title": g["title"],
+        out["next"] = {"draw_no": draw_no, "mechanism": g["key"], "title": g["title"],
                        "reason": ru(why), "model": ev["next_prediction"]["model"],
                        "numbers": ev["next_prediction"]["numbers"], "consensus": ev["next_consensus"]}
     else:
-        out["next"] = {"draw_no": data.draws[-1].no + 1, "mechanism": mech, "reason": ru(why), "numbers": None}
+        out["next"] = {"draw_no": draw_no, "mechanism": mech, "reason": ru(why), "numbers": None}
     out["conclusion"] = ru(conclusion(out))
     return out
 

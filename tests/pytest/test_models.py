@@ -81,3 +81,26 @@ def test_logreg_learns_strong_signal():
     s = online_logreg(Features(x, 2), lr=0.2)
     h = hits(x, top_k(s, 2))[300:].mean()
     assert h > 1.3                      # случайный выбор дал бы 0.4
+
+
+def test_frequency_models_do_not_freeze():
+    """Частотные методы выбирают числа сэмплированием Томпсона: при честных тиражах прогноз
+    меняется от тиража к тиражу (раньше «горячие за всю историю» неделями повторяли одни и те
+    же числа), а число, которое действительно выпадает заметно чаще, остаётся в прогнозе."""
+    from lottery.models import Features, standard_models, top_k
+    x = random_lotto(6000, 36, 5, seed=11)
+    f = Features(x, 5)
+    hot = next(m for m in standard_models() if m.key == "hot_all")
+    picks = top_k(hot.scores(f), 5)[-60:]
+    same = sum(set(a) == set(b) for a, b in zip(picks, picks[1:]))
+    overlap = np.mean([len(set(a) & set(b)) / 5 for a, b in zip(picks, picks[1:])])
+    assert same <= 3 and overlap < 0.6
+    # число 7 выпадает в полтора раза чаще — устойчиво остаётся в прогнозе «горячих»
+    y = x.copy()
+    rng = np.random.default_rng(3)
+    for t in range(len(y)):
+        if y[t, 6] == 0 and rng.random() < 0.08:
+            y[t, np.nonzero(y[t])[0][0]] = 0
+            y[t, 6] = 1
+    picks = top_k(hot.scores(Features(y, 5)), 5)[-60:]
+    assert np.mean([6 in p for p in picks]) > 0.95
