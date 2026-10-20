@@ -501,18 +501,19 @@ def auto_log(text: str) -> None:
 
 
 def stop_stuck(pid: int) -> bool:
-    """Останавливает зависший цикл автозапуска — только если это процесс Python (номер
+    """Останавливает зависший цикл автозапуска — только если это действительно lp.py (номер
     процесса мог достаться другой программе)."""
     try:
         if os.name == "nt":
-            out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
-                                 capture_output=True, text=True, timeout=20).stdout.lower()
-            if "python" not in out:
+            cmd = (f"(Get-CimInstance Win32_Process -Filter 'ProcessId={pid}').CommandLine")
+            out = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", cmd],
+                                 capture_output=True, text=True, timeout=30).stdout
+            if "lp.py" not in out or " auto" not in out:
                 return False
             return subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True,
                                   timeout=20).returncode == 0
-        cmdline = Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace")
-        if "lp.py" not in cmdline:
+        cmdline = Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace").replace("\0", " ")
+        if "lp.py" not in cmdline or " auto" not in cmdline:
             return False
         os.kill(pid, 15)
         return True

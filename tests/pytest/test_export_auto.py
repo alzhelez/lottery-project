@@ -89,6 +89,23 @@ def test_auto_takes_over_stuck_cycle(data_dir):
         other.kill()
 
 
+def test_stop_stuck_kills_only_auto_cycle(tmp_path):
+    import subprocess
+    import sys
+    import time
+
+    import lp
+    fake = tmp_path / "lp.py"
+    fake.write_text("import time\ntime.sleep(60)\n", encoding="utf-8")
+    proc = subprocess.Popen([sys.executable, str(fake), "auto"])
+    try:
+        time.sleep(1)
+        assert lp.stop_stuck(proc.pid)
+        proc.wait(timeout=20)
+    finally:
+        proc.kill()
+
+
 def test_godmode_resume_continues_saved_state(data_dir, monkeypatch):
     import lottery.godmode as gm
     monkeypatch.setattr(gm, "MIN_BUDGET_S", 4.0)                 # короткий бюджет…
