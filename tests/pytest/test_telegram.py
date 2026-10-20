@@ -138,3 +138,57 @@ def test_fetch_notifies_about_checked_predictions(bot, monkeypatch, data_dir):
     res = stoloto.update_game(get_game("4x20"), log=lambda m: None)
     assert res["journal_checked"] == 1
     assert any("сверка прогнозов" in m["text"] and "Тираж №100" in m["text"] for m in bot.messages)
+
+
+def test_unreachable_telegram_queues_and_hides_token(bot, monkeypatch, data_dir):
+    """Telegram недоступен: сообщение ложится в очередь, токен в журнал не попадает, следующие
+    сообщения не ждут таймаутов; когда связь вернулась — очередь уходит по порядку."""
+    import socket
+    import time
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    dead = f"http://127.0.0.1:{s.getsockname()[1]}"
+    s.close()
+    monkeypatch.setattr(notify, "_down_until", None)
+    monkeypatch.setenv("TELEGRAM_API_BASE", dead)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "8619196155:AAG-secret_Token")
+    assert notify.send("первое", "journal") is False
+    t0 = time.time()
+    assert notify.send("второе", "auto") is False
+    assert time.time() - t0 < 1                                  # пауза: без новых попыток связи
+    queued = json.loads((data_dir / "telegram_outbox.json").read_text(encoding="utf-8"))
+    assert [q["text"] for q in queued] == ["первое", "второе"]
+    log = (data_dir / "logs" / "telegram.log").read_text(encoding="utf-8")
+    assert "secret_Token" not in log and "bot***" in log
+    # связь вернулась
+    monkeypatch.setattr(notify, "_down_until", None)
+    monkeypatch.setenv("TELEGRAM_API_BASE", bot.base)
+    assert notify.send("третье", "auto")
+    texts = [m["text"] for m in bot.messages]
+    assert "первое" in texts[0] and "Отложено" in texts[0] and "второе" in texts[1] and texts[2] == "третье\n"
+    assert not (data_dir / "telegram_outbox.json").exists()
+
+
+def test_old_log_with_token_is_scrubbed(bot, monkeypatch, data_dir):
+    log = data_dir / "logs" / "telegram.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text("2026-10-20 18:19:17 url: /bot8619196155:AAGwFxN_Kh-x/sendMessage\n", encoding="utf-8")
+    monkeypatch.setattr(notify, "_scrubbed", False)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "bad")
+    notify.send("x", "journal")
+    text = log.read_text(encoding="utf-8")
+    assert "AAGwFxN" not in text and "/bot***/sendMessage" in text
+
+
+def test_journal_digest_one_message_for_all_games():
+    e = lambda src, title, hits, won=None: {"status": "checked", "draw_no": 15882, "source": src,  # noqa: E731
+                                           "source_title": title, "actual": [[12, 3, 9, 17], [10, 12, 13, 4]],
+                                           "hits": hits, "expected": 1.6, "won": won}
+    text = notify.journal_digest([
+        ("4 из 20", [e("analysis_best", "Лучший", 1), e("chaos", "Хаос", 4, 985.0)]),
+        ("Охота", [{**e("analysis_best", "Лучший", 2), "draw_no": 46689}]),
+        ("Пусто", [])])
+    assert text.startswith("<b>Сверка прогнозов</b>: 3 шт., угадано 7 при ожидаемых 4,8, выиграно 985 ₽")
+    assert "<b>4 из 20</b> №15882 <code>12 3 9 17 | 10 12 13 4</code>: Л 1 · Х 4 (985 ₽)" in text
+    assert "<b>Охота</b> №46689" in text and "Пусто" not in text
+    assert notify.journal_digest([("x", [])]) is None

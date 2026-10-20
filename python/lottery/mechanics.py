@@ -36,7 +36,9 @@ def classify(data: GameData) -> list[str | None]:
       3. в смешанной игре время не на :00/:30 → ГСЧ (тиражи ГСЧ идут в 07, 22, 25, 37…),
          ровный час → лототрон;
       4. до первого тиража ГСЧ в смешанной игре — лототрон (ГСЧ появился позже: у «4 из 20» в 2025);
-      5. игра с одним способом — этот способ."""
+      5. игра с одним способом — этот способ; если в правилах способ не назван, а API у всех
+         размеченных тиражей показывает один и тот же способ, — он же и у остальных (иначе
+         в архиве оставался маленький «набор ГСЧ» из недавних тиражей, а старые терялись)."""
     from .prizes import mechanisms as stored
     from .rules import load_rules, mechanism_of_time
     rules = load_rules(data.game.slug)
@@ -62,6 +64,11 @@ def classify(data: GameData) -> list[str | None]:
         first_r = next((i for i, m in enumerate(out) if m == "R"), None)
         if first_r is not None:
             out = [("L" if m is None and i < first_r else m) for i, m in enumerate(out)]
+    elif single is None:
+        known = {m for m in out if m}
+        if len(known) == 1:
+            only = known.pop()
+            out = [m or only for m in out]
     return out
 
 

@@ -15,6 +15,15 @@ export async function GET() {
     status = null
   }
   const running = latestJob('auto', null)?.status === 'running'
-  if (status && status.status === 'running' && !running) status = { ...status, status: 'interrupted' }
-  return NextResponse.json({ status, running })
+  // цикл из Планировщика Windows идёт в отдельном процессе: жив ли он — по auto.lock
+  let external = false
+  try {
+    const lock = JSON.parse(fs.readFileSync(path.join(dataDir(), 'auto.lock'), 'utf-8'))
+    process.kill(Number(lock.pid), 0)
+    external = true
+  } catch {
+    external = false
+  }
+  if (status && status.status === 'running' && !running && !external) status = { ...status, status: 'interrupted' }
+  return NextResponse.json({ status, running: running || external })
 }

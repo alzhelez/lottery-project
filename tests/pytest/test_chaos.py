@@ -160,3 +160,18 @@ def test_too_few_draws():
     write_lotto_file(draws_path("5x36"), [random_lotto(120, 36, 5, seed=1)])
     res = chaos.analyze(load_game_data(get_game("5x36")))
     assert res["groups"] == {} and res["next"]["numbers"] is None and "300" in res["conclusion"]
+
+
+def test_single_mechanism_game_keeps_all_draws():
+    """В правилах способ не назван, API отметил ГСЧ только у последних 250 тиражей: весь архив —
+    один набор ГСЧ (раньше оставались 250 тиражей, меньше порога, и прогноза не было)."""
+    from conftest import write_lotto_file
+
+    from lottery import mechanics, prizes
+    write_lotto_file(draws_path("5x36"), [random_lotto(1200, 36, 5, seed=1)])
+    prizes.save("5x36", {no: {"no": no, "source": "w", "categories": [{"label": "5 из 5", "winners": 0, "prize": 0}],
+                              "m": "R"} for no in range(951, 1201)})
+    data = load_game_data(get_game("5x36"))
+    assert mechanics.mechanism_counts(data) == {"L": 0, "R": 1200, "unknown": 0}
+    res = chaos.analyze(data)
+    assert list(res["groups"]) == ["R"] and res["groups"]["R"]["draws"] == 1200 and res["next"]["numbers"]

@@ -392,6 +392,8 @@ def analyze(data: GameData, progress=None, target: dict | None = None) -> dict:
     """Проверки и методы «порядка из хаоса» отдельно по каждому способу розыгрыша, прогноз на
     тираж target (по умолчанию — следующий) из набора его способа."""
     groups = {k: g for k, g in _groups(data).items() if g.T >= MIN_DRAWS}
+    if not groups and data.T >= MIN_DRAWS:
+        groups = {"all": data}         # способы не определены или каждого слишком мало
     out: dict = {"groups": {}, "min_draws": MIN_DRAWS, "max_draws": MAX_DRAWS}
     for gi, (k, sub) in enumerate(groups.items()):
         title = MECH_TITLES[k]

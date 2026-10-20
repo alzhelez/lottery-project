@@ -534,8 +534,9 @@ def _gap_ranges(draws: list[Draw]) -> list[tuple[int, int, datetime, datetime]]:
     return out
 
 
-def update_game(game: Game, log=print, on_status=None) -> dict:
-    """Загружает или обновляет файл тиражей игры. Возвращает сводку."""
+def update_game(game: Game, log=print, on_status=None, notify_journal: bool = True) -> dict:
+    """Загружает или обновляет файл тиражей игры. Возвращает сводку (journal_entries — сверенные
+    прогнозы). notify_journal=False — не слать сообщение о сверке (fetch_all шлёт одно общее)."""
     t0 = time.time()
     legacy_added, legacy_conflicts = merge_legacy(game)
     existing = load_game_draws(game)
@@ -631,11 +632,12 @@ def update_game(game: Game, log=print, on_status=None) -> dict:
     from .journal import reconcile
     checked_entries: list[dict] = []
     journal_checked = reconcile(game, collect=checked_entries)
-    if checked_entries:
+    if checked_entries and notify_journal:
         msg = notify.journal_message(game.title, checked_entries)
         if msg:
             notify.send(msg, "journal")
     return {
+        "journal_entries": checked_entries,
         "journal_checked": journal_checked,
         "status": "done" if final else "no_data",
         "draws": len(final),
@@ -667,6 +669,7 @@ def fetch_all(slugs: list[str] | None, emit, workers: int = 2) -> dict:
               (f" (активных по API: {len(discovered)})" if discovered else " (список из реестра — API игр недоступно)")})
     emit({"type": "games", "games": slugs})
     results: dict[str, dict] = {}
+    checked: dict[str, list[dict]] = {}
     down: list[str] = []
 
     def one(slug: str) -> None:
@@ -685,6 +688,7 @@ def fetch_all(slugs: list[str] | None, emit, workers: int = 2) -> dict:
         try:
             res = update_game(
                 game,
+                notify_journal=False,
                 log=lambda m: None,
                 on_status=lambda s: emit({"type": "game", "game": slug, "status": "running", **s}),
             )
@@ -694,11 +698,17 @@ def fetch_all(slugs: list[str] | None, emit, workers: int = 2) -> dict:
             res = {"status": "error", "message": str(exc), "draws": len(load_game_draws(game))}
         except Exception as exc:  # одна игра не должна ронять загрузку остальных
             res = {"status": "error", "message": f"{type(exc).__name__}: {exc}", "draws": len(load_game_draws(game))}
+        checked[slug] = res.pop("journal_entries", None) or []
         results[slug] = res
         emit({"type": "game", "game": slug, **res})
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         list(pool.map(one, slugs))
+    # одно сообщение о сверке прогнозов по всем играм вместо сообщения на каждую игру
+    from . import notify
+    digest = notify.journal_digest([(get_game(s).title, checked[s]) for s in slugs if checked.get(s)])
+    if digest:
+        notify.send(digest, "journal")
     from .games import results_dir
     from .godmode import cleanup_states
     cleanup_states(results_dir())

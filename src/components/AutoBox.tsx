@@ -7,6 +7,8 @@ interface AutoStatus {
   finished_at: string | null
   status: 'running' | 'done' | 'error' | 'interrupted'
   error?: string
+  seconds?: number
+  current?: { stage: string; game: string | null; since: string }
   games: Record<string, { analyzed?: boolean; added?: number; journal_checked?: number; skipped?: string }>
 }
 
@@ -52,7 +54,13 @@ export function AutoBox({ onDone }: { onDone: () => void }) {
         <p className="small" data-testid="auto-status">
           Последний цикл: {when(status.started_at)}
           {status.status === 'done' && <> — готово: прогнозы по {analyzed} {analyzed === 1 ? 'игре' : 'играм'}, сверено прогнозов: {checked}.</>}
-          {status.status === 'running' && ' — идёт.'}
+          {status.status === 'running' && (
+            <> — идёт{status.current && <>: {status.current.stage}{status.current.game && ` (${status.current.game})`} с {status.current.since.slice(11, 16)}</>}.
+              {status.current && Date.now() - new Date(status.current.since).getTime() > 30 * 60_000 &&
+                <span className="warn"> Этап идёт больше 30 минут — возможно, цикл завис (например, после сна компьютера); следующий запуск через 3 часа остановит его сам.</span>}
+            </>
+          )}
+          {status.status === 'done' && status.seconds != null && <span className="muted"> Цикл занял {Math.round(status.seconds / 60)} мин.</span>}
           {status.status === 'error' && <span className="error"> — ошибка: {status.error}</span>}
           {status.status === 'interrupted' && <span className="warn"> — прерван.</span>}
         </p>

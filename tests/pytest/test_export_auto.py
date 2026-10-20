@@ -70,6 +70,25 @@ def test_auto_skips_when_already_running(data_dir):
     assert rc == 0 and events[-1].get("skipped")
 
 
+def test_auto_takes_over_stuck_cycle(data_dir):
+    """Цикл «идёт» больше 3 часов (завис, например, после сна компьютера): новый запуск не ждёт
+    его вечно. Чужой процесс с тем же номером не трогаем."""
+    import subprocess
+    import sys
+    from datetime import datetime, timedelta
+    other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    try:
+        (data_dir / "auto.lock").write_text(json.dumps(
+            {"pid": other.pid, "started_at": (datetime.now() - timedelta(hours=5)).isoformat()}), encoding="utf-8")
+        rc, events = run(["auto", "--skip-fetch", "--skip-scan"], data_dir)
+        assert rc == 0 and not events[-1].get("skipped")
+        log = (data_dir / "logs" / "auto.log").read_text(encoding="utf-8")
+        assert "считаю зависшим, остановить не удалось" in log and "Автозапуск: готово" in log
+        assert other.poll() is None                         # это не lp.py — процесс жив
+    finally:
+        other.kill()
+
+
 def test_godmode_resume_continues_saved_state(data_dir, monkeypatch):
     import lottery.godmode as gm
     monkeypatch.setattr(gm, "MIN_BUDGET_S", 4.0)                 # короткий бюджет…

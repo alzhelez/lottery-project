@@ -107,7 +107,7 @@ def test_excluded_game_is_not_listed_or_loaded(monkeypatch):
     assert get_game("spec").excluded
     monkeypatch.setattr(stoloto, "discover_games", lambda log=None: ["spec", "6x45"])
     seen = []
-    monkeypatch.setattr(stoloto, "update_game", lambda game, log=None, on_status=None: seen.append(game.slug) or
+    monkeypatch.setattr(stoloto, "update_game", lambda game, log=None, on_status=None, **kw: seen.append(game.slug) or
                         {"status": "done", "draws": 0, "added": 0})
     stoloto.fetch_all(None, lambda e: None)
     assert seen == ["6x45"]

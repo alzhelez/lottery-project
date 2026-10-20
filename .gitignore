@@ -31,3 +31,4 @@ data/prizes/
 data/auto_status.json
 data/api_games.json
 data/draws/
+data/telegram_outbox.json

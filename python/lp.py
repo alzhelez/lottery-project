@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import os
 import sys
 import threading
@@ -397,7 +398,14 @@ def auto_once(args) -> dict:
     status = {"started_at": started, "finished_at": None, "status": "running", "pid": os.getpid(), "games": {}}
     save_json(status_path, status)
     log("Автозапуск: начало")
+
+    def stage(text: str, game: str | None = None) -> None:
+        """Что цикл делает сейчас — видно на главной и по auto_status.json, если цикл завис."""
+        status["current"] = {"stage": text, "game": game, "since": datetime.now().isoformat(timespec="seconds")}
+        save_json(status_path, status)
+
     try:
+        stage("загрузка тиражей")
         fetched = {} if args.skip_fetch else fetch_all(args.game or None, emit, workers=2)
         for slug, r in fetched.items():
             status["games"].setdefault(slug, {}).update(
@@ -405,6 +413,7 @@ def auto_once(args) -> dict:
             if r.get("status") == "error":
                 log(f"{slug}: ошибка загрузки — {r.get('message')}")
         if not args.skip_fetch:
+            stage("правила игр и ближайшие тиражи")
             nd = after_fetch(args.game or None, log=log)
             status["nextdraw"] = {s: round(r["return"], 3) for s, r in nd.items()}
         slugs = args.game or local_slugs()
@@ -431,9 +440,12 @@ def auto_once(args) -> dict:
             if prev and prev.get("last_draw_no") == data.draws[-1].no and prev.get("version") == __version__:
                 g["skipped"] = "новых тиражей нет — прогноз уже в журнале"
                 continue
+            stage("анализ", slug)
+            t_game = time.time()
             payload = analyze_game(slug)
             ev = payload["evaluation"]
             g["analyzed"] = ev.get("status") == "ok"
+            g["seconds"] = round(time.time() - t_game, 1)
             g["next_no"] = (ev.get("target") or {}).get("no") or data.draws[-1].no + 1
             if g["analyzed"]:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
@@ -441,7 +453,10 @@ def auto_once(args) -> dict:
                 ch = (payload.get("chaos") or {}).get("next") or {}
                 if ch.get("numbers"):
                     predictions[slug]["chaos"] = {"numbers": ch["numbers"], "title": ch["title"]}
-            log(f"{slug}: анализ готов, прогноз на тираж №{g['next_no']} записан в журнал")
+            if g["analyzed"]:
+                log(f"{slug}: анализ готов за {g['seconds']:.0f} с, прогноз на тираж №{g['next_no']} записан в журнал")
+            else:
+                log(f"{slug}: анализ готов, прогноза нет — {ev.get('message', 'мало тиражей')}")
             if args.godmode_budget > 0:
                 from lottery.godmode import run_godmode
                 folder = results_dir(slug)
@@ -455,7 +470,10 @@ def auto_once(args) -> dict:
                 g["godmode"] = True
                 notify.send(notify.godmode_message(data.game.title, gres), "godmode")
         if not args.skip_scan:
+            stage("проверка игр на случайность")
             cmd_scan_quiet()
+        status.pop("current", None)
+        status["seconds"] = round((datetime.now() - datetime.fromisoformat(started)).total_seconds())
         status["status"] = "done"
         log("Автозапуск: готово")
         notify.send(notify.auto_message(status, predictions), "auto")
@@ -471,16 +489,56 @@ def auto_once(args) -> dict:
     return status
 
 
+STUCK_HOURS = 3
+
+
+def auto_log(text: str) -> None:
+    from lottery.games import data_dir
+    path = data_dir() / "logs" / "auto.log"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S} {text}\n")
+
+
+def stop_stuck(pid: int) -> bool:
+    """Останавливает зависший цикл автозапуска — только если это процесс Python (номер
+    процесса мог достаться другой программе)."""
+    try:
+        if os.name == "nt":
+            out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
+                                 capture_output=True, text=True, timeout=20).stdout.lower()
+            if "python" not in out:
+                return False
+            return subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True,
+                                  timeout=20).returncode == 0
+        cmdline = Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace")
+        if "lp.py" not in cmdline:
+            return False
+        os.kill(pid, 15)
+        return True
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def cmd_auto(args) -> None:
     from lottery.games import data_dir
     lock = data_dir() / "auto.lock"
     try:
         held = json.loads(lock.read_text(encoding="utf-8"))
-        if pid_alive(int(held.get("pid", 0))):
-            say("Автозапуск уже выполняется — пропускаю.")
-            emit({"type": "result", "skipped": True})
-            return
-    except (OSError, ValueError):
+        pid = int(held.get("pid", 0))
+        if pid_alive(pid):
+            started = held.get("started_at")
+            age_h = (datetime.now() - datetime.fromisoformat(started)).total_seconds() / 3600 if started else 0.0
+            if age_h < STUCK_HOURS or args.every:
+                auto_log(f"Автозапуск: предыдущий цикл (процесс {pid}) ещё идёт — пропускаю")
+                say("Автозапуск уже выполняется — пропускаю.")
+                emit({"type": "result", "skipped": True})
+                return
+            # цикл идёт дольше STUCK_HOURS часов — завис (например, после сна компьютера)
+            stopped = stop_stuck(pid)
+            auto_log(f"Автозапуск: предыдущий цикл (процесс {pid}) идёт {age_h:.1f} ч — считаю зависшим"
+                     + (", процесс остановлен" if stopped else ", остановить не удалось"))
+    except (OSError, ValueError, KeyError):
         pass
     save_json(lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds")})
     try:
