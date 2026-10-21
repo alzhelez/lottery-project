@@ -163,12 +163,45 @@ def game_activity(data) -> dict:
     return activity(data.draws[-1].dt if data.draws else None, read_meta(data.game.slug).get("checked_at"))
 
 
-def journal_record(data, source: str, numbers, detail: str, draw_no: int | None = None) -> None:
+def ordered_prediction(data, numbers, draw_no: int, mechanism: str | None = None) -> list[list[int]]:
+    """Числа прогноза в предсказанном порядке выпадения (order.py); набор чисел не меняется."""
+    from lottery import order
+    try:
+        return order.order_all(data, numbers, draw_no, mechanism)
+    except Exception:  # noqa: BLE001 — порядок — эксперимент, прогноз важнее
+        return numbers
+
+
+def target_mechanism(data, target: dict) -> str | None:
+    from lottery.mechanics import mechanism_of_draw
+    if not target.get("date"):
+        return None
+    if target["date"].second:
+        return "R"
+    return mechanism_of_draw(data.game.slug, target["no"], target["date"].strftime("%d.%m.%Y %H:%M"))
+
+
+def godmode_target(data, res: dict) -> None:
+    """Прогноз режима Бога — на ближайший будущий тираж, числа — в порядке выпадения."""
+    from lottery.journal import target_draw
+    target = target_draw(data)
+    mech = target_mechanism(data, target)
+    res["next"].update({"no": target["no"], "mechanism": mech,
+                        "numbers": ordered_prediction(data, res["next"]["numbers"], target["no"], mech)})
+
+
+def journal_record(data, source: str, numbers, detail: str, draw_no: int | None = None,
+                   mechanism: str | None = None) -> None:
     """Прогноз в журнал — только для активной игры (иначе тираж не наступит). Номер тиража —
-    ближайший будущий (journal.target_draw), если не задан."""
-    from lottery.journal import record
+    ближайший будущий (journal.target_draw), если не задан; числа — в предсказанном порядке
+    выпадения."""
+    from lottery.journal import record, target_draw
     if data.draws and game_activity(data)["active"]:
-        record(data, source, numbers, detail, draw_no=draw_no)
+        if draw_no is None:
+            target = target_draw(data)
+            draw_no, mechanism = target["no"], mechanism or target_mechanism(data, target)
+        numbers = ordered_prediction(data, numbers, draw_no, mechanism)
+        record(data, source, numbers, detail, draw_no=draw_no, ordered=True)
 
 
 def game_info(slug: str) -> dict:
@@ -274,12 +307,18 @@ def analyze_game(slug: str, progress=None) -> dict:
     evaluation = evaluate_game(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
     from lottery.journal import target_draw
     target = target_draw(data)
+    mech_next = target_mechanism(data, target)
     if evaluation.get("status") == "ok":
-        evaluation["target"] = {"no": target["no"], "how": target["how"],
+        evaluation["target"] = {"no": target["no"], "how": target["how"], "mechanism": mech_next,
                                 "date": target["date"].isoformat(timespec="minutes") if target["date"] else None}
+        # прогнозы — в предсказанном порядке выпадения (тот же, что уйдёт в журнал)
+        evaluation["next_prediction"]["numbers"] = ordered_prediction(
+            data, evaluation["next_prediction"]["numbers"], target["no"], mech_next)
+        evaluation["next_consensus"] = ordered_prediction(data, evaluation["next_consensus"], target["no"], mech_next)
         journal_record(data, "analysis_best", evaluation["next_prediction"]["numbers"],
-                       evaluation["next_prediction"]["model"], draw_no=target["no"])
-        journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"])
+                       evaluation["next_prediction"]["model"], draw_no=target["no"], mechanism=mech_next)
+        journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"],
+                       mechanism=mech_next)
     from lottery.popularity import fit as fit_popularity
     popularity = fit_popularity(data)
     if popularity.get("available"):
@@ -291,9 +330,14 @@ def analyze_game(slug: str, progress=None) -> dict:
                 progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
             evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
     chaos_res = run_chaos(data, progress, target)
+    from lottery import order
+    try:
+        order_check = {m or "all": order.backtest(data, m) for m in (["L", "R"] if mech["mixed"] else [None])}
+    except Exception as exc:  # noqa: BLE001
+        order_check = {"error": str(exc)}
     payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
                "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity,
-               "chaos": chaos_res}
+               "chaos": chaos_res, "order_check": order_check}
     save_json(results_dir(slug) / "analysis.json", payload)
     return payload
 
@@ -307,7 +351,12 @@ def run_chaos(data, progress=None, target: dict | None = None) -> dict:
                         target=target)
     nxt = res.get("next") or {}
     if nxt.get("numbers"):
-        journal_record(data, "chaos", nxt["numbers"], f"{nxt['model']} · {nxt['title']}", draw_no=nxt["draw_no"])
+        mech = nxt.get("mechanism") if nxt.get("mechanism") in ("L", "R") else None
+        nxt["numbers"] = ordered_prediction(data, nxt["numbers"], nxt["draw_no"], mech)
+        if nxt.get("consensus"):
+            nxt["consensus"] = ordered_prediction(data, nxt["consensus"], nxt["draw_no"], mech)
+        journal_record(data, "chaos", nxt["numbers"], f"{nxt['model']} · {nxt['title']}", draw_no=nxt["draw_no"],
+                       mechanism=mech)
     return res
 
 
@@ -463,8 +512,10 @@ def auto_once(args) -> dict:
                 base = meta(data)
 
                 def checkpoint(res, data=data, folder=folder, base=base):
+                    godmode_target(data, res)
                     save_json(folder / "godmode.json", {**base, **res})
-                    journal_record(data, "godmode", res["next"]["numbers"], res["next"]["strategy"])
+                    journal_record(data, "godmode", res["next"]["numbers"], res["next"]["strategy"],
+                                   draw_no=res["next"]["no"], mechanism=res["next"].get("mechanism"))
                 gres = run_godmode(data, args.godmode_budget, on_checkpoint=checkpoint,
                                    state_path=folder / "godmode_state.npz")
                 g["godmode"] = True
@@ -669,9 +720,11 @@ def cmd_godmode(args) -> None:
     reconcile(data.game)
 
     def checkpoint(res: dict) -> None:
+        godmode_target(data, res)
         save_json(path, {**base, **res})
         journal_record(data, "godmode", res["next"]["numbers"],
-                       f"{res['next']['strategy']}" + (f" → {res['next']['model']}" if res["next"]["model"] else ""))
+                       f"{res['next']['strategy']}" + (f" → {res['next']['model']}" if res["next"]["model"] else ""),
+                       draw_no=res["next"]["no"], mechanism=res["next"].get("mechanism"))
         emit({"type": "checkpoint", "stage": res["stage"], "complete": res["complete"]})
 
     try:

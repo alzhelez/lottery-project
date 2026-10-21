@@ -9,7 +9,7 @@
 
     <groupId>ru.lottery</groupId>
     <artifactId>lottery-api-tests</artifactId>
-    <version>41.3.0</version>
+    <version>41.4.0</version>
     <name>Лотерейный анализатор — API-тесты (Java)</name>
 
     <properties>

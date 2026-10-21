@@ -112,7 +112,7 @@ def target_draw(data: GameData, now: datetime | None = None) -> dict:
 
 
 def record(data: GameData, source: str, numbers: list[list[int]], detail: str = "",
-           now: datetime | None = None, draw_no: int | None = None) -> dict:
+           now: datetime | None = None, draw_no: int | None = None, ordered: bool = False) -> dict:
     """Записывает прогноз на тираж draw_no (по умолчанию — ближайший будущий, target_draw).
     Повторный прогноз того же источника на тот же тираж заменяет прежний, пока тираж не
     сыгран."""
@@ -130,6 +130,7 @@ def record(data: GameData, source: str, numbers: list[list[int]], detail: str = 
         "blocks": [s.to_dict() for s in data.fmt.blocks],
         "numbers": [[int(v) for v in b] for b in numbers],
         "status": "pending",
+        **({"ordered": True} if ordered else {}),
     }
     entries = [e for e in journal["entries"]
                if not (e["draw_no"] == draw_no and e["source"] == source and e["status"] == "pending")]
@@ -158,11 +159,16 @@ def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = No
         return {**entry, "status": "invalid", "checked_at": now.isoformat(timespec="seconds"),
                 "note": "формат тиража не совпадает с форматом прогноза"}
     hits_by_block, expected, variance = [], 0.0, 0.0
+    in_place, in_place_exp = 0, 0.0
     for s, pred, act in zip(specs, entry["numbers"], actual):
         hits_by_block.append(len(set(pred) & set(act)))
         m, v = hypergeom_moments(s.size, len(act), len(pred))
         expected += float(m)
         variance += float(v)
+        if entry.get("ordered") and s.mode == "set":
+            # «на своём месте»: число прогноза на той же позиции, что и в тираже
+            in_place += sum(1 for a, b in zip(pred, act) if a == b)
+            in_place_exp += min(len(pred), len(act)) / s.size
     late = draw_dt is not None and made >= draw_dt
     return {
         **entry,
@@ -175,6 +181,7 @@ def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = No
         "expected": expected,
         "variance": variance,
         "won": _payout(entry, hits_by_block, prize_table),
+        **({"in_place": in_place, "in_place_expected": in_place_exp} if entry.get("ordered") else {}),
     }
 
 
@@ -238,6 +245,10 @@ def summary(entries: list[dict]) -> list[dict]:
                 "z": z,
                 "p_better": float(sps.norm.sf(z)) if len(done) >= MIN_FOR_P else None,
             })
+            ordered = [e for e in done if "in_place" in e]
+            if ordered:
+                row.update({"ordered_checked": len(ordered), "in_place": int(sum(e["in_place"] for e in ordered)),
+                            "in_place_expected": float(sum(e["in_place_expected"] for e in ordered))})
             paid = [e for e in done if e.get("won") is not None]
             if paid:
                 row.update({"money_checked": len(paid), "won": float(sum(e["won"] for e in paid))})

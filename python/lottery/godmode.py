@@ -378,7 +378,7 @@ def mixture_from_weights(w: np.ndarray, names: list[str], idx: int, note: str = 
     w = w / max(np.abs(w).sum(), 1e-9)
 
     def fn(f):
-        _, feats = f.feature_stack()
+        _, feats = f.feature_stack(sampled=True)
         return np.tensordot(feats, w, axes=([2], [0])).astype(np.float32)
 
     return Model(f"rmix_{idx}", f"Смесь признаков #{idx}", "search", fn,

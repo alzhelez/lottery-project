@@ -248,6 +248,7 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
     """Одно сообщение о сверке прогнозов по всем играм загрузки (вместо сообщения на игру):
     строка на тираж — выпавшие числа и сколько угадал каждый источник."""
     lines, n, hits, expected, won = [], 0, 0, 0.0, 0.0
+    placed, placed_exp = 0, 0.0
     for title, entries in games:
         checked = [e for e in entries if e.get("status") == "checked"]
         if not checked:
@@ -265,12 +266,15 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
                 hits += e["hits"]
                 expected += e["expected"]
                 won += e.get("won") or 0
+                placed += e.get("in_place") or 0
+                placed_exp += e.get("in_place_expected") or 0.0
             lines.append(f"<b>{esc(title)}</b> №{no} <code>{esc(fmt_blocks(group[0]['actual']))}</code>: "
                          f"{esc(' · '.join(parts))} (ожидание {_dec(group[0]['expected'], 2)})")
     if not lines:
         return None
     head = (f"<b>Сверка прогнозов</b>: {n} шт., угадано {hits} при ожидаемых {_dec(expected, 1)}"
-            + (f", выиграно {_rub(won)} ₽" if won else ""))
+            + (f", выиграно {_rub(won)} ₽" if won else "")
+            + (f"; на своём месте {placed} при ожидаемых {_dec(placed_exp, 1)}" if placed_exp else ""))
     legend = "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога"
     return "\n".join([head, *lines, f"<i>{legend}</i>"])
 

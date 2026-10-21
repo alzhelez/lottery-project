@@ -30,6 +30,9 @@ class Features:
         self._cache: dict = {}
         self.cum = np.vstack([np.zeros((1, self.N), np.float32), np.cumsum(self.x, axis=0, dtype=np.float32)])
         self.t_index = np.arange(self.T + 1, dtype=np.float32)[:, None]
+        # разброс частот N чисел у честной лотереи: доля дисперсии ≤ χ²(0,95; N−1)/(N−1)
+        from scipy.stats import chi2
+        self.chi_q = float(chi2.ppf(0.95, max(self.N - 1, 1)) / max(self.N - 1, 1))
 
     def memo(self, key, fn: Callable[[], np.ndarray]) -> np.ndarray:
         if key not in self._cache:
@@ -74,20 +77,61 @@ class Features:
         местами, а выделяющиеся сильнее шума остаются. Значение для тиража t зависит только
         от тиражей < t и от (t, число, seed) — прогнозы воспроизводимы.
 
+        Распределение — эмпирический Байес (сжатие Джеймса–Стейна): разброс частот между
+        числами сравнивается с тем, что даёт один случай (p(1−p)/n). Настоящая разница
+        вероятностей τ² = max(0, наблюдаемый разброс − случайный с запасом до 95-го процентиля
+        χ², т. е. разница засчитывается, только когда она статистически заметна); оценка числа сжимается к
+        общей частоте с коэффициентом B = τ²/(τ²+σ²). У честной лотереи τ² ≈ 0: частоты почти
+        ничего не говорят, и числа выбираются почти случайно, без «залипания» одних и тех же
+        чисел на десятки тиражей; если одно число действительно выпадает чаще, B растёт и
+        число остаётся в прогнозе.
+
         kind: 'window' (param — окно или None) или 'ewma' (param — полураспад)."""
         def calc():
             if kind == "window":
                 n = self.t_index if param is None else np.minimum(self.t_index, param)
-                mean = (self.window(param) + self.p) / (n + 1.0)
+                rate = self.window(param) / np.maximum(n, 1.0)
             else:
                 lam = 0.5 ** (1.0 / param)
                 n = np.minimum(self.t_index, (1 + lam) / (1 - lam))
-                mean = np.clip((self.ewma(param) + 1.0) * self.p, 0.0, 1.0)
-                mean = (mean * n + self.p) / (n + 1.0)
-            sd = np.sqrt(np.clip(mean * (1 - mean), 1e-9, None) / (n + 2.0))
+                rate = np.clip((self.ewma(param) + 1.0) * self.p, 0.0, 1.0)
+            p = self.p
+            sigma2 = p * (1 - p) / np.maximum(n, 1.0)                      # (T+1)×1
+            spread = rate.var(axis=1, keepdims=True)
+            tau2 = np.maximum(spread - sigma2 * self.chi_q, 0.0)
+            shrink = np.where(n > 0, tau2 / (tau2 + sigma2), 0.0)
+            mean = p + shrink * (rate - p)
+            # крошечная собственная случайность метода — чтобы при B = 0 методы не совпадали
+            sd = np.sqrt(shrink * sigma2 + (1e-3 * np.sqrt(sigma2)) ** 2)
             u = np.clip(tie_noise((self.T + 1, self.N), seed), 1e-12, 1 - 1e-12)
             return (mean + sd * ndtri(u)).astype(np.float32)
         return self.memo(("sampled", kind, param, seed), calc)
+
+    def eb_sample(self, rel: np.ndarray, sigma2: np.ndarray, seed: int) -> np.ndarray:
+        """То же сжатие с сэмплированием для любой относительной оценки rel ((T+1)×N, 0 — как у
+        честной лотереи) с известной случайной дисперсией sigma2 ((T+1)×1)."""
+        spread = rel.var(axis=1, keepdims=True)
+        tau2 = np.maximum(spread - sigma2 * self.chi_q, 0.0)
+        shrink = np.where(sigma2 > 0, tau2 / np.maximum(tau2 + sigma2, 1e-30), 0.0)
+        sd = np.sqrt(shrink * sigma2 + (1e-3 * np.sqrt(sigma2)) ** 2)
+        u = np.clip(tie_noise((self.T + 1, self.N), seed), 1e-12, 1 - 1e-12)
+        return (shrink * rel + sd * ndtri(u)).astype(np.float32)
+
+    def markov_sampled(self, seed: int, decay: float = 1.0) -> np.ndarray:
+        """Марковская цепь со сжатием: оценки переходов по счётчикам — тоже в основном шум
+        (дисперсия ≈ (1−p)/(k·t·p²)), без сжатия цепь неделями выбирает одни и те же числа."""
+        def calc():
+            t_eff = self.t_index if decay >= 1.0 else np.minimum(self.t_index, 1.0 / (1.0 - decay))
+            sigma2 = (1 - self.p) / (max(self.kbar, 1.0) * np.maximum(t_eff - 1.0, 1.0) * self.p ** 2)
+            return self.eb_sample(self.markov(decay) - 1.0, sigma2, seed)
+        return self.memo(("markov_s", decay, seed), calc)
+
+    def pairs_sampled(self, seed: int) -> np.ndarray:
+        def calc():
+            pp = max(self.kbar - 1, 1e-9) / max(self.N - 1, 1)
+            sigma2 = (1 - pp) / (max(self.kbar, 1.0) * np.maximum(self.t_index - 1.0, 1.0) * self.p * pp)
+            return self.eb_sample(self.pairs() - 1.0, sigma2, seed)
+        return self.memo(("pairs_s", seed), calc)
 
     def gap(self) -> np.ndarray:
         """Сколько тиражей число не выпадало к моменту t."""
@@ -153,15 +197,26 @@ class Features:
         sd = s.std(axis=1, keepdims=True)
         return np.where(sd > 0, (s - mu) / np.where(sd > 0, sd, 1), 0.0).astype(np.float32)
 
-    def feature_stack(self) -> tuple[list[str], np.ndarray]:
-        """Признаки для обучаемых моделей: (T+1)×N×F."""
+    def feature_stack(self, sampled: bool = False) -> tuple[list[str], np.ndarray]:
+        """Признаки для обучаемых моделей: (T+1)×N×F. sampled=True — частотные признаки
+        сэмплированием Томпсона (см. sampled): для смесей признаков режима Бога, иначе смесь с
+        весом на «частоту за всю историю» неделями выбирает одни и те же числа."""
         def calc():
             names = ["rate10", "rate50", "rate200", "rate_all", "ewma20", "gap", "last", "markov", "pairs"]
             gap = np.log1p(self.gap() * self.p)
-            feats = [self.window_rate(10), self.window_rate(50), self.window_rate(200), self.window_rate(None),
-                     self.ewma(20), gap, self.last(), self.markov() - 1.0, self.pairs() - 1.0]
+            if sampled:
+                rel = lambda kind, w, s: self.sampled(kind, w, s) / self.p - 1.0  # noqa: E731
+                rates = [rel("window", 10, 9101), rel("window", 50, 9102), rel("window", 200, 9103),
+                         rel("window", None, 9104), rel("ewma", 20, 9105)]
+            else:
+                rates = [self.window_rate(10), self.window_rate(50), self.window_rate(200), self.window_rate(None),
+                         self.ewma(20)]
+            if sampled:
+                feats = rates + [gap, self.last(), self.markov_sampled(9106), self.pairs_sampled(9107)]
+            else:
+                feats = rates + [gap, self.last(), self.markov() - 1.0, self.pairs() - 1.0]
             return names, np.stack(feats, axis=2).astype(np.float32)
-        return self.memo("stack", calc)
+        return self.memo(("stack", sampled), calc)
 
 
 @dataclass
@@ -182,8 +237,9 @@ def online_logreg(f: Features, lr: float = 0.05, l2: float = 1e-4, warmup: int =
 
     Вероятность выпадения числа зависит от признаков (частоты в окнах, давность, связи
     с прошлым тиражом). Прогноз на тираж t использует веса, обученные на тиражах < t.
+    Частотные признаки — со сжатием и сэмплированием (feature_stack(sampled=True)).
     """
-    _, feats = f.feature_stack()
+    _, feats = f.feature_stack(sampled=True)
     n_feat = feats.shape[2]
     w = np.zeros(n_feat)
     b = float(np.log(f.p / (1 - f.p))) if f.p < 1 else 0.0
@@ -206,7 +262,7 @@ def gbm_scores(f: Features, retrain_every: int = 500, max_rows: int = 150_000, s
     import time
     from sklearn.ensemble import HistGradientBoostingClassifier
 
-    _, feats = f.feature_stack()
+    _, feats = f.feature_stack(sampled=True)
     rng = np.random.default_rng(seed)
     s = np.zeros((f.T + 1, f.N), np.float32)
     s[:] = f.p
@@ -278,8 +334,8 @@ def standard_models() -> list[Model]:
                        _ewma(h, f"ewma_{h}"), params={"half_life": h}))
     m.append(Model("overdue", "Давно не выпадавшие", "gap", lambda f: f.gap()))
     m.append(Model("repeat", "Недавно выпадавшие", "gap", lambda f: -f.gap()))
-    m.append(Model("markov", "Марковская цепь переходов", "markov", lambda f: f.markov()))
-    m.append(Model("pairs", "Пары с числами прошлого тиража", "pairs", lambda f: f.pairs()))
+    m.append(Model("markov", "Марковская цепь переходов", "markov", lambda f: f.markov_sampled(_seed("markov"))))
+    m.append(Model("pairs", "Пары с числами прошлого тиража", "pairs", lambda f: f.pairs_sampled(_seed("pairs"))))
     for a in (0.5, 1.0):
         m.append(Model(f"mix_{a}", f"Частота-100 + давность (α={a})", "mix",
                        (lambda a: lambda f: f.zscore(f.sampled("window", 100, _seed(f"mix_{a}"))) + a * f.zscore(f.gap()))(a),
@@ -307,15 +363,15 @@ def expert_grid(level: int) -> list[Model]:
         out += [
             Model("overdue", "Давно не выпадавшие", "gap", lambda f: f.gap()),
             Model("repeat", "Недавно выпадавшие", "gap", lambda f: -f.gap()),
-            Model("markov", "Марковская цепь", "markov", lambda f: f.markov()),
-            Model("antimarkov", "Анти-марковская цепь", "markov", lambda f: -f.markov()),
-            Model("pairs", "Пары с прошлым тиражом", "pairs", lambda f: f.pairs()),
+            Model("markov", "Марковская цепь", "markov", lambda f: f.markov_sampled(_seed("g_markov"))),
+            Model("antimarkov", "Анти-марковская цепь", "markov", lambda f: -f.markov_sampled(_seed("g_antimarkov"))),
+            Model("pairs", "Пары с прошлым тиражом", "pairs", lambda f: f.pairs_sampled(_seed("g_pairs"))),
             Model("logreg", "Онлайн-логрегрессия", "ml", lambda f: online_logreg(f)),
         ]
     else:
         for d in (0.999, 0.995, 0.98):
             out.append(Model(f"markov_d{d}", f"Марковская цепь, забывание {d}", "markov",
-                             (lambda d: lambda f: f.markov(decay=d))(d)))
+                             (lambda d: lambda f: f.markov_sampled(_seed(f"g_markov_{d}"), decay=d))(d)))
         for w in (20, 50, 200):
             for a in (-1.0, -0.5, 0.5, 1.0, 2.0):
                 out.append(Model(f"mix_{w}_{a}", f"Частота-{w} + давность (α={a})", "mix",
@@ -333,7 +389,7 @@ def random_mixture(f_names: list[str], rng: np.random.Generator, idx: int) -> Mo
     weights /= np.abs(weights).sum()
 
     def fn(f: Features) -> np.ndarray:
-        _, feats = f.feature_stack()
+        _, feats = f.feature_stack(sampled=True)
         return np.tensordot(feats, weights, axes=([2], [0])).astype(np.float32)
 
     desc = ", ".join(f"{n}:{w:+.2f}" for n, w in zip(f_names, weights))

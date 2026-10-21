@@ -26,6 +26,7 @@ export interface Analysis {
   }
   drift?: { verdict: string; alarms: Array<{ title: string; block: string; check: string; p_adjusted: number; detail: string }>; checks: unknown[] }
   chaos?: ChaosResult
+  order_check?: Record<string, Array<{ block: string; draws: number; positions: number; rate: number; expected: number; p_value: number }>>
   popularity?: { available: boolean; significant?: boolean; verdict?: string; reason?: string; p_value?: number; draws?: number }
   descriptive: Array<{ block: string; numbers: number[]; frequency: number[]; recent100: number[]; gap: number[]; expected: number; expected_recent: number; count: number }>
   evaluation: {
@@ -231,6 +232,19 @@ export function AnalysisMethods({ a, nextNo }: { a: Analysis; nextNo: number | n
         </p>
       )}
       {e.money && !e.money.available && <p className="muted small">{e.money.reason}</p>}
+
+      {a.order_check && Object.values(a.order_check).some((v) => Array.isArray(v) && v.length > 0) && (
+        <div className="callout" data-testid="order-check">
+          <strong>Порядок выпадения.</strong> Прогноз показан в предсказанном порядке выпадения (по тому, на каких
+          позициях каждое число выходило раньше). Можно ли угадать порядок: для последних тиражей порядок выпавших
+          чисел предсказывался только по предыдущим —
+          {Object.entries(a.order_check).flatMap(([m, rows]) => (Array.isArray(rows) ? rows : []).map((r) => (
+            <span key={m + r.block}> {m === 'L' ? 'лототрон' : m === 'R' ? 'ГСЧ' : ''} {r.block}: на своём месте
+              {' '}{(r.rate * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}% при {(r.expected * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}% у случайного порядка (p={pval(r.p_value)});</span>
+          )))}
+          {' '}для выигрыша порядок не важен.
+        </div>
+      )}
 
       {e.detectable_edge_pct != null && (
         <p className="callout" data-testid="method-edge">

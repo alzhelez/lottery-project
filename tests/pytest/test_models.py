@@ -104,3 +104,27 @@ def test_frequency_models_do_not_freeze():
             y[t, 6] = 1
     picks = top_k(hot.scores(Features(y, 5)), 5)[-60:]
     assert np.mean([6 in p for p in picks]) > 0.95
+
+
+def test_godmode_mixtures_do_not_stick():
+    """Смеси признаков режима Бога: самая длинная серия одного числа в прогнозах подряд — как у
+    случайного выбора (раньше число держалось в прогнозе по 10–40 тиражей)."""
+    from lottery.godmode import mixture_from_weights
+    x = random_lotto(8000, 20, 4, seed=5)
+    f = Features(x, 4)
+    names, _ = f.feature_stack()
+
+    def longest(p):
+        best = 0
+        for v in range(20):
+            run = 0
+            for row in p:
+                run = run + 1 if v in row else 0
+                best = max(best, run)
+        return best
+    rng = np.random.default_rng(1)
+    gap_free = np.array([1, 1, 1, 1, 1, 0, 1, 1, 1], float)     # без «давно не выпадавших» — у них серия по смыслу
+    streaks = [longest(top_k(mixture_from_weights(rng.normal(size=len(names)) * gap_free, names, i).scores(f), 4)[-41:])
+               for i in range(30)]
+    # «холодные за последние тиражи» по смыслу похожи на «давно не выпадавшие» — допускаем редкие серии
+    assert np.median(streaks) <= 5 and np.percentile(streaks, 80) <= 7

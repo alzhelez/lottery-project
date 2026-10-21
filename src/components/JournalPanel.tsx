@@ -20,6 +20,9 @@ interface Entry {
   won?: number | null
   draw_date?: string
   mechanism?: 'L' | 'R' | null
+  ordered?: boolean
+  in_place?: number
+  in_place_expected?: number
 }
 
 interface Summary {
@@ -34,6 +37,9 @@ interface Summary {
   p_better?: number | null
   won?: number
   money_checked?: number
+  ordered_checked?: number
+  in_place?: number
+  in_place_expected?: number
 }
 
 const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б' }
@@ -100,6 +106,7 @@ export function JournalPanel({ info }: { info: Info }) {
                   <th>Источник</th><th className="r">Сверено</th><th className="r">Ждут</th>
                   <th className="r">Угадано в среднем</th><th className="r">Случайный выбор</th>
                   <th className="r">Разница</th><th className="r">p</th><th className="r" title="По реальным выплатам тиражей">Выиграно, ₽</th>
+                  <th className="r" title="Числа прогноза на той же позиции, что в тираже (порядок выпадения)">На своём месте</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,6 +120,7 @@ export function JournalPanel({ info }: { info: Info }) {
                     <td className="r num">{pct(s.excess_pct)}</td>
                     <td className="r num">{s.p_better == null && s.checked > 0 ? <span className="muted" title="p считается от 30 сверенных прогнозов">мало данных</span> : pval(s.p_better)}</td>
                     <td className="r num">{s.won != null ? `${nf.format(Math.round(s.won))} (${s.money_checked})` : '—'}</td>
+                    <td className="r num">{s.in_place != null ? <>{s.in_place}<span className="sub">ожидалось {num(s.in_place_expected, 1)}</span></> : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -120,7 +128,8 @@ export function JournalPanel({ info }: { info: Info }) {
           </div>
           <p className="muted small">
             p — вероятность, что случайный выбор угадал бы столько же или больше. Считается от 30 сверенных
-            прогнозов: на меньшем числе разница почти всегда объясняется удачей.
+            прогнозов: на меньшем числе разница почти всегда объясняется удачей. Числа прогноза записываются в
+            предсказанном порядке выпадения; «на своём месте» — сколько из них вышли именно на той позиции.
           </p>
           {(data.byMechanism?.length ?? 0) > 0 && (
             <div className="table-wrap">
@@ -187,7 +196,8 @@ export function JournalPanel({ info }: { info: Info }) {
                           <tr key={e.id} className="sub-row" data-testid="journal-source-row">
                             <td><span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
                             <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
-                            <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" /></td>
+                            <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" />
+                              {e.in_place != null && <span className="sub">на своём месте: {e.in_place}</span>}</td>
                             <td className="r num">{e.hits ?? '—'}</td>
                             <td className="r num">{e.expected != null ? num(e.expected, 2) : '—'}</td>
                             <td className="r num">{e.won != null ? nf.format(e.won) : '—'}</td>
