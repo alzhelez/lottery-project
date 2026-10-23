@@ -44,6 +44,7 @@ export interface Analysis {
     money?: { available: boolean; reason?: string; price?: number; price_source?: string; draws_with_prizes?: number } | null
     detectable_edge_pct?: number | null
     target?: { no: number; how: string; date: string | null }
+    limited_to?: number
     by_mechanism?: Record<string, { title: string; draws: number; baseline: { mean: number }; conclusion?: string
       best: { title: string; selection: { excess_pct: number; mean_hits: number }; holdout: { excess_pct: number; mean_hits: number; p_adjusted?: number } } | null }>
     distribution: { observed: number[]; expected: number[] }
@@ -195,6 +196,7 @@ export function AnalysisMethods({ a, nextNo }: { a: Analysis; nextNo: number | n
         Каждый тираж прогнозировался только по предыдущим. Отбор — тиражи №{e.test.from}–{e.test.split - 1}{' '}
         ({nf.format(e.test.selection_draws)}), контроль — №{e.test.split}–{e.test.to} ({nf.format(e.test.holdout_draws)}).
         Случайный выбор угадывает в среднем {num(e.baseline.mean)} чисел за тираж.
+        {e.limited_to && ` Методы проверяются на последних ${nf.format(e.limited_to)} тиражах — точности проверки этого хватает с запасом.`}
       </p>
       <div className="table-wrap">
         <table className="data" data-testid="models-table">

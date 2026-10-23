@@ -662,11 +662,14 @@ def fetch_all(slugs: list[str] | None, emit, workers: int = 2) -> dict:
         if discovered:
             # активные по данным API + уже скачанные (чтобы обновлялись и они)
             slugs = discovered + [s for s in local if s not in discovered]
+        elif local:
+            # API списка игр недоступно — обновляем только уже скачанные игры (в реестре
+            # есть и давно закрытые игры: перебирать их при сбое сети бессмысленно)
+            slugs = local
         else:
-            registry = [g.slug for g in all_games() if not g.excluded]
-            slugs = registry + [s for s in local if s not in registry]
+            slugs = [g.slug for g in all_games() if not g.excluded]
         emit({"type": "log", "message": f"Игр к загрузке: {len(slugs)}" +
-              (f" (активных по API: {len(discovered)})" if discovered else " (список из реестра — API игр недоступно)")})
+              (f" (активных по API: {len(discovered)})" if discovered else " (API игр недоступно — уже скачанные игры)")})
     emit({"type": "games", "games": slugs})
     results: dict[str, dict] = {}
     checked: dict[str, list[dict]] = {}

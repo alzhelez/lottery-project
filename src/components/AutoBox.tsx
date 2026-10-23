@@ -25,7 +25,7 @@ export function AutoBox({ onDone }: { onDone: () => void }) {
   }, [])
   useEffect(() => { load() }, [load])
   const job = useJob('auto', null, () => { load(); onDone() })
-  const [tg, setTg] = useState<{ configured: boolean; has_token: boolean } | null>(null)
+  const [tg, setTg] = useState<{ configured: boolean; has_token: boolean; proxy?: boolean; queued?: number; queued_since?: string | null } | null>(null)
   const [tgNote, setTgNote] = useState<string | null>(null)
   useEffect(() => {
     fetch('/api/telegram', { cache: 'no-store' }).then((r) => r.json()).then((d) => setTg(d.error ? null : d)).catch(() => {})
@@ -77,6 +77,12 @@ export function AutoBox({ onDone }: { onDone: () => void }) {
           <>не настроены (как включить — в README, раздел «Уведомления в Telegram»).</>
         )}
         {tgNote && <span className="sub">{tgNote}</span>}
+        {tg?.queued ? (
+          <span className="sub warn" data-testid="telegram-queue">
+            Telegram недоступен: {tg.queued} сообщ. ждут отправки с {when(tg.queued_since)}.
+            {!tg.proxy && ' Если так бывает часто, api.telegram.org блокируется провайдером — задайте TELEGRAM_PROXY в .env (docs/TELEGRAM.md).'}
+          </span>
+        ) : null}
       </p>
       <p className="small muted">
         Цикл: загрузка тиражей → сверка журнала → анализ активных игр с прогнозом на следующий тираж. Чтобы журнал

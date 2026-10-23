@@ -188,3 +188,36 @@ def test_cleanup_old_states(data_dir):
     os.utime(folder / "godmode_state.npz", (0, 0))
     assert cleanup_states(results_dir()) == 1
     assert not (folder / "godmode_state.npz").exists()
+
+
+def test_auto_reuses_heavy_checks_when_archive_barely_changed(data_dir, monkeypatch):
+    """Автозапуск каждый час: тесты случайности и проверки берутся из прошлого отчёта, пока
+    архив вырос меньше чем на 2%; прогноз и проверка методов — всегда заново."""
+    import lp
+    from lottery import stats
+    draws = fresh_draws(400)
+    write_draws(draws_path("5x36"), draws[:-1])
+    first = lp.analyze_game("5x36", full=False)
+    assert first["heavy"]["reused"] is False
+    calls = []
+    real = stats.game_randomness
+    monkeypatch.setattr(stats, "game_randomness", lambda d: calls.append(d.T) or real(d))
+    write_draws(draws_path("5x36"), draws)                     # +1 тираж
+    second = lp.analyze_game("5x36", full=False)
+    assert second["heavy"]["reused"] is True and not calls
+    assert second["randomness"] == first["randomness"] and second["last_draw_no"] == first["last_draw_no"] + 1
+    assert second["evaluation"]["draws"] == first["evaluation"]["draws"] + 1
+    third = lp.analyze_game("5x36", full=True)                 # «Пересчитать анализ» — всё заново
+    assert third["heavy"]["reused"] is False and calls
+
+
+def test_scan_skips_barely_changed_games(data_dir):
+    from lottery.scan import run_scan
+    draws = fresh_draws(400)
+    write_draws(draws_path("5x36"), draws[:-1])
+    assert run_scan(parallel=False)["recomputed"] == 1
+    write_draws(draws_path("5x36"), draws)
+    assert run_scan(parallel=False)["recomputed"] == 0
+    write_draws(draws_path("5x36"), draws + fresh_draws(30)[:0] + [Draw(401 + i, draws[-1].date, draws[i].blocks)
+                                                                    for i in range(30)])
+    assert run_scan(parallel=False)["recomputed"] == 1

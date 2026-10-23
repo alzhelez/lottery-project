@@ -145,3 +145,11 @@ def test_target_for_stale_archive_is_next():
     data, _ = _fast_game()
     t = journal.target_draw(data, datetime(2026, 11, 30, 12, 0))
     assert t["no"] == 301 and t["date"] is None
+
+
+def test_summary_counts_money_spent_and_return():
+    base = {"source": "analysis_best", "status": "checked", "hits": 2, "expected": 1.6, "variance": 1.0}
+    rows = journal.summary([{**base, "won": 300.0, "spent": 150.0}, {**base, "won": 0.0, "spent": 150.0},
+                            {**base, "won": 0.0}])
+    r = rows[0]
+    assert r["money_checked"] == 3 and r["spent"] == 300.0 and r["won_priced"] == 300.0 and r["return"] == 1.0

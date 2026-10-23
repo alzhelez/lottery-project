@@ -40,6 +40,9 @@ interface Summary {
   ordered_checked?: number
   in_place?: number
   in_place_expected?: number
+  spent?: number
+  return?: number
+  p_sequential?: number | null
 }
 
 const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б' }
@@ -119,7 +122,8 @@ export function JournalPanel({ info }: { info: Info }) {
                     <td className="r num">{num(s.expected)}</td>
                     <td className="r num">{pct(s.excess_pct)}</td>
                     <td className="r num">{s.p_better == null && s.checked > 0 ? <span className="muted" title="p считается от 30 сверенных прогнозов">мало данных</span> : pval(s.p_better)}</td>
-                    <td className="r num">{s.won != null ? `${nf.format(Math.round(s.won))} (${s.money_checked})` : '—'}</td>
+                    <td className="r num">{s.won != null ? `${nf.format(Math.round(s.won))} (${s.money_checked})` : '—'}
+                      {s.return != null && <span className="sub">потрачено {nf.format(Math.round(s.spent ?? 0))}, возврат {num(s.return, 2)}</span>}</td>
                     <td className="r num">{s.in_place != null ? <>{s.in_place}<span className="sub">ожидалось {num(s.in_place_expected, 1)}</span></> : '—'}</td>
                   </tr>
                 ))}
@@ -128,7 +132,8 @@ export function JournalPanel({ info }: { info: Info }) {
           </div>
           <p className="muted small">
             p — вероятность, что случайный выбор угадал бы столько же или больше. Считается от 30 сверенных
-            прогнозов: на меньшем числе разница почти всегда объясняется удачей. Числа прогноза записываются в
+            прогнозов: на меньшем числе разница почти всегда объясняется удачей. Сводка по всем играм — на странице
+            «Итоги прогнозов». Числа прогноза записываются в
             предсказанном порядке выпадения; «на своём месте» — сколько из них вышли именно на той позиции.
           </p>
           {(data.byMechanism?.length ?? 0) > 0 && (

@@ -149,6 +149,14 @@ def _payout(entry: dict, hits_by_block: list[int], prize_table: dict | None) -> 
     return float(c["prize"]) if c and c.get("prize") else 0.0
 
 
+def _price(prize_table: dict | None) -> float | None:
+    """Цена билета (одной ставки) в этом тираже — чтобы сравнить выигрыш с затратами."""
+    try:
+        return float(prize_table["price"]) if prize_table and prize_table.get("price") else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = None) -> dict:
     specs = [BlockSpec.from_dict(b) for b in entry["blocks"]]
     made = datetime.fromisoformat(entry["made_at"])
@@ -181,6 +189,7 @@ def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = No
         "expected": expected,
         "variance": variance,
         "won": _payout(entry, hits_by_block, prize_table),
+        "spent": _price(prize_table),
         **({"in_place": in_place, "in_place_expected": in_place_exp} if entry.get("ordered") else {}),
     }
 
@@ -211,12 +220,19 @@ def reconcile(game: Game, now: datetime | None = None, collect: list | None = No
             if collect is not None:
                 collect.append(journal["entries"][i])
             changed += 1
+        elif e["status"] in ("checked", "late") and e.get("won") is not None and "spent" not in e:
+            # записи до 41.5.0: цены билета не было — дописываем из архива выплат
+            if tables is None:
+                tables = prizes_mod.keyed_history(game.slug, [b["count"] for b in e["blocks"]])
+            journal["entries"][i] = {**e, "spent": _price(tables.get(e["draw_no"]))}
+            changed += 1
         elif e["status"] in ("checked", "late") and e.get("won") is None:
             # выплаты могли появиться в архиве позже самого тиража
             if tables is None:
                 tables = prizes_mod.keyed_history(game.slug, [b["count"] for b in e["blocks"]])
             if e["draw_no"] in tables and e.get("hits_by_block") is not None:
-                journal["entries"][i] = {**e, "won": _payout(e, e["hits_by_block"], tables[e["draw_no"]])}
+                journal["entries"][i] = {**e, "won": _payout(e, e["hits_by_block"], tables[e["draw_no"]]),
+                                         "spent": _price(tables[e["draw_no"]])}
                 changed += 1
     if changed:
         save(game.slug, journal)
@@ -252,6 +268,11 @@ def summary(entries: list[dict]) -> list[dict]:
             paid = [e for e in done if e.get("won") is not None]
             if paid:
                 row.update({"money_checked": len(paid), "won": float(sum(e["won"] for e in paid))})
+                priced = [e for e in paid if e.get("spent")]
+                if priced:
+                    spent = float(sum(e["spent"] for e in priced))
+                    row.update({"spent": spent, "won_priced": float(sum(e["won"] for e in priced)),
+                                "return": float(sum(e["won"] for e in priced)) / spent if spent else None})
         out.append(row)
     return out
 

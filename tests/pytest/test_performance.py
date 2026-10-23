@@ -31,7 +31,7 @@ def test_parallel_scan_matches_sequential(data_dir):
     seq = run_scan(parallel=False)
     (results_dir() / "scan.json").unlink()
     par = run_scan(parallel=True)
-    strip = lambda g: {k: v for k, v in g.items() if k != "signature"}  # noqa: E731
+    strip = lambda g: {k: v for k, v in g.items() if k not in ("signature", "computed_at")}  # noqa: E731
     assert [strip(g) for g in seq["games"]] == [strip(g) for g in par["games"]]
 
 

@@ -74,6 +74,8 @@ test('анализ: тесты случайности и сравнение ме
   await expect(page.getByTestId('overview')).toContainText('Равномерность частот')
   await page.getByTestId('tab-methods').click()
   await expect(page.getByTestId('methods-prediction')).toContainText('Прогноз на тираж №13896')
+  // в таблице сначала 10 лучших методов — контроль может оказаться ниже
+  await page.getByRole('button', { name: /Показать все методы/ }).click()
   await expect(page.getByTestId('models-table')).toContainText('Случайный выбор (контроль)')
   await expect(page.getByTestId('method-edge')).toContainText('Что исключено')
   await expect(page.getByTestId('methods-by-mechanism')).toContainText('лототрон')
@@ -158,6 +160,19 @@ test('журнал прогнозов: запись до тиража и све�
     await expect(summary.locator('tr', { hasText: title }).locator('td').nth(1)).toHaveText('1')
   }
   await page.screenshot({ path: 'tests/e2e/.data/journal.png', fullPage: true })
+})
+
+test('итоги прогнозов по всем играм', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Итоги прогнозов' }).click()
+  const summary = page.getByTestId('overview-summary')
+  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Порядок из хаоса', 'Режим Бога']) {
+    await expect(summary.locator('tr', { hasText: title }).locator('td').nth(1)).toHaveText('1')
+  }
+  await expect(summary).toContainText('в пределах случайности')
+  await expect(page.getByTestId('curve-chaos')).toBeVisible()
+  await expect(page.getByTestId('overview-games')).toContainText('4 из 20')
+  await page.screenshot({ path: 'tests/e2e/.data/overview.png', fullPage: true })
 })
 
 test('шансы: точные вероятности и возврат по введённым призам', async ({ page }) => {

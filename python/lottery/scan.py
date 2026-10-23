@@ -48,7 +48,26 @@ def scan_game(slug: str) -> dict:
     """Тесты одной игры (запускается и в отдельном процессе)."""
     res = game_randomness(load_game_data(get_game(slug)))
     res["signature"] = signature(slug)
+    res["computed_at"] = datetime.now().isoformat(timespec="seconds")
     return res
+
+
+MAX_AGE_H = 12
+GROWTH = 0.02
+
+
+def _fresh_enough(old: dict, slug: str) -> bool:
+    """Архив вырос меньше чем на 2%, тесты моложе 12 часов, версия та же — несколько новых
+    тиражей к десяткам тысяч результат не меняют, пересчёт каждый час не нужен."""
+    sig = old.get("signature") or {}
+    if sig.get("version") != __version__ or not old.get("computed_at") or not sig.get("size"):
+        return False
+    try:
+        age_h = (datetime.now() - datetime.fromisoformat(old["computed_at"])).total_seconds() / 3600
+        size = draws_path(slug).stat().st_size
+    except (OSError, ValueError):
+        return False
+    return age_h <= MAX_AGE_H and sig["size"] <= size <= sig["size"] * (1 + GROWTH)
 
 
 def workers() -> int:
@@ -66,7 +85,7 @@ def run_scan(progress=None, parallel: bool = True) -> dict:
     todo = []
     for slug in slugs:
         old = previous.get(slug)
-        if old and old.get("signature") == signature(slug):
+        if old and (old.get("signature") == signature(slug) or _fresh_enough(old, slug)):
             results[slug] = old
         else:
             todo.append(slug)

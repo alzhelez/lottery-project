@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <nav className="topnav">
             <Link href="/">Игры</Link>
             <Link href="/odds">Шансы игр</Link>
+            <Link href="/journal">Итоги прогнозов</Link>
             <span className="version">версия {APP_VERSION}</span>
           </nav>
         </header>

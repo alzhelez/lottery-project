@@ -134,6 +134,12 @@ def _deliver(cfg: dict, item: dict) -> None:
               disable_web_page_preview=True)
 
 
+def outbox_info() -> dict:
+    """Сколько сообщений ждёт отправки и с какого времени — для главной страницы."""
+    items = _load_outbox()
+    return {"queued": len(items), "queued_since": items[0]["queued_at"] if items else None}
+
+
 def flush(cfg: dict | None = None) -> int:
     """Отправляет очередь неотправленных сообщений. Возвращает, сколько осталось."""
     global _down_until

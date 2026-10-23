@@ -19,6 +19,8 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+
+import numpy as np
 import os
 import sys
 import threading
@@ -283,8 +285,32 @@ def cmd_scan(args) -> None:
     say(f"Пересчитано игр: {payload['recomputed']} (остальные без изменений, взяты из прошлой проверки)")
 
 
-def analyze_game(slug: str, progress=None) -> dict:
-    """Тесты случайности + сравнение методов + прогноз в журнал. Возвращает сохранённый отчёт."""
+EVAL_MAX = 60_000
+HEAVY_MAX_AGE_H = 12      # тесты случайности и проверки — не чаще, если архив почти не изменился
+HEAVY_GROWTH = 0.02       # …и вырос меньше чем на 2%
+
+
+def heavy_cache(slug: str, data) -> dict | None:
+    """Прошлый отчёт, из которого можно взять тяжёлые проверки (тесты случайности, лототрон/ГСЧ,
+    порядок, популярность, проверки хаоса): несколько новых тиражей к десяткам тысяч их не
+    меняют, а пересчёт занимал до 2/3 времени анализа. Прогнозы считаются заново всегда."""
+    prev = _read_json(results_dir(slug) / "analysis.json")
+    heavy = (prev or {}).get("heavy") or {}
+    if not prev or prev.get("version") != __version__ or not heavy.get("at"):
+        return None
+    try:
+        age_h = (datetime.now() - datetime.fromisoformat(heavy["at"])).total_seconds() / 3600
+    except ValueError:
+        return None
+    if age_h > HEAVY_MAX_AGE_H or not heavy["draws"] <= data.T <= heavy["draws"] * (1 + HEAVY_GROWTH):
+        return None
+    return prev
+
+
+def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
+    """Тесты случайности + сравнение методов + прогноз в журнал. Возвращает сохранённый отчёт.
+    full=False (автозапуск) — тяжёлые проверки берутся из прошлого отчёта, если архив почти
+    не изменился (heavy_cache); прогнозы и их проверка на истории считаются всегда."""
     from lottery.evaluate import evaluate_game
     from lottery.journal import reconcile
     from lottery.stats import descriptive, finalize_scan, game_randomness
@@ -294,17 +320,29 @@ def analyze_game(slug: str, progress=None) -> dict:
     t0 = time.time()
     if progress:
         progress({"type": "progress", "stage": "tests", "done": 0, "total": 1})
-    randomness = finalize_scan([game_randomness(data)])[0]
+    cache = None if full else heavy_cache(slug, data)
     from lottery import mechanics
-    mech = mechanics.mechanism_report(data)
-    randomness["mechanisms"] = mech
-    randomness["detectable"] = mechanics.detectable(data)
+    if cache:
+        randomness = cache["randomness"]
+        mech = randomness["mechanisms"]
+        heavy = {**cache["heavy"], "reused": True}
+    else:
+        randomness = finalize_scan([game_randomness(data)])[0]
+        mech = mechanics.mechanism_report(data)
+        randomness["mechanisms"] = mech
+        randomness["detectable"] = mechanics.detectable(data)
+        heavy = {"draws": data.T, "at": datetime.now().isoformat(timespec="seconds"), "reused": False}
     drift = mechanics.save_drift(data)
     if drift.get("new_alarms"):
         from lottery import notify
         notify.send(notify.drift_message(data.game.title, drift["new_alarms"]), "drift")
     reconcile(data.game)
-    evaluation = evaluate_game(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
+    # у быстрых игр до 190 тыс. тиражей: методы проверяются на последних EVAL_MAX — точности
+    # проверки хватает с запасом (контрольный отрезок — 20 тыс. тиражей), а анализ втрое быстрее
+    eval_data = data if data.T <= EVAL_MAX else mechanics.subset(data, np.arange(data.T - EVAL_MAX, data.T))
+    evaluation = evaluate_game(eval_data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None)
+    if eval_data is not data:
+        evaluation["limited_to"] = EVAL_MAX
     from lottery.journal import target_draw
     target = target_draw(data)
     mech_next = target_mechanism(data, target)
@@ -319,36 +357,45 @@ def analyze_game(slug: str, progress=None) -> dict:
                        evaluation["next_prediction"]["model"], draw_no=target["no"], mechanism=mech_next)
         journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"],
                        mechanism=mech_next)
-    from lottery.popularity import fit as fit_popularity
-    popularity = fit_popularity(data)
-    if popularity.get("available"):
-        save_json(results_dir(slug) / "popularity.json", popularity)
+    if cache:
+        popularity = cache.get("popularity") or {}
+    else:
+        from lottery.popularity import fit as fit_popularity
+        popularity = fit_popularity(data)
+        if popularity.get("available"):
+            save_json(results_dir(slug) / "popularity.json", popularity)
     if evaluation.get("status") == "ok":
         evaluation["detectable_edge_pct"] = mechanics.method_edge(data, evaluation)
         if mech["mixed"]:
-            if progress:
-                progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
-            evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
-    chaos_res = run_chaos(data, progress, target)
+            if cache and (cache.get("evaluation") or {}).get("by_mechanism") is not None:
+                evaluation["by_mechanism"] = cache["evaluation"]["by_mechanism"]
+            else:
+                if progress:
+                    progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
+                evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
+    chaos_res = run_chaos(data, progress, target, reuse=(cache or {}).get("chaos"))
     from lottery import order
-    try:
-        order_check = {m or "all": order.backtest(data, m) for m in (["L", "R"] if mech["mixed"] else [None])}
-    except Exception as exc:  # noqa: BLE001
-        order_check = {"error": str(exc)}
+    if cache and cache.get("order_check") is not None:
+        order_check = cache["order_check"]
+    else:
+        try:
+            order_check = {m or "all": order.backtest(data, m) for m in (["L", "R"] if mech["mixed"] else [None])}
+        except Exception as exc:  # noqa: BLE001
+            order_check = {"error": str(exc)}
     payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
                "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity,
-               "chaos": chaos_res, "order_check": order_check}
+               "chaos": chaos_res, "order_check": order_check, "heavy": heavy}
     save_json(results_dir(slug) / "analysis.json", payload)
     return payload
 
 
-def run_chaos(data, progress=None, target: dict | None = None) -> dict:
+def run_chaos(data, progress=None, target: dict | None = None, reuse: dict | None = None) -> dict:
     """«Порядок из хаоса» по способам розыгрыша; прогноз на ближайший будущий тираж — в журнал."""
     from lottery import chaos
     from lottery.journal import target_draw
     target = target or target_draw(data)
     res = chaos.analyze(data, progress=(lambda p: progress({"type": "progress", **p})) if progress else None,
-                        target=target)
+                        target=target, reuse=reuse)
     nxt = res.get("next") or {}
     if nxt.get("numbers"):
         mech = nxt.get("mechanism") if nxt.get("mechanism") in ("L", "R") else None
@@ -491,7 +538,7 @@ def auto_once(args) -> dict:
                 continue
             stage("анализ", slug)
             t_game = time.time()
-            payload = analyze_game(slug)
+            payload = analyze_game(slug, full=False)
             ev = payload["evaluation"]
             g["analyzed"] = ev.get("status") == "ok"
             g["seconds"] = round(time.time() - t_game, 1)
@@ -956,7 +1003,7 @@ def cmd_telegram(args) -> None:
     from lottery import notify
     cfg = notify.config()
     status = {"configured": cfg["configured"], "has_token": bool(cfg["token"]), "has_chat": bool(cfg["chat_id"]),
-              "events": sorted(cfg["events"]), "proxy": bool(cfg["proxy"])}
+              "events": sorted(cfg["events"]), "proxy": bool(cfg["proxy"]), **notify.outbox_info()}
     if args.action == "status":
         emit({"type": "result", "telegram": status})
         say("Telegram: " + ("настроен" if cfg["configured"] else

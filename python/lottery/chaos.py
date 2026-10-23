@@ -388,7 +388,7 @@ def evaluate_group(sub: GameData, progress=None) -> dict:
     return evaluate_game(sub, progress=progress, models=chaos_models())
 
 
-def analyze(data: GameData, progress=None, target: dict | None = None) -> dict:
+def analyze(data: GameData, progress=None, target: dict | None = None, reuse: dict | None = None) -> dict:
     """Проверки и методы «порядка из хаоса» отдельно по каждому способу розыгрыша, прогноз на
     тираж target (по умолчанию — следующий) из набора его способа."""
     groups = {k: g for k, g in _groups(data).items() if g.T >= MIN_DRAWS}
@@ -400,7 +400,11 @@ def analyze(data: GameData, progress=None, target: dict | None = None) -> dict:
         cb = (lambda p, title=title: progress({**p, "model": f"{title}: {p.get('model', '')}"})) if progress else None
         if progress:
             progress({"stage": "chaos", "done": 0, "total": 1, "model": f"{title}: проверки порядка"})
-        checks = diagnostics(sub)
+        old = ((reuse or {}).get("groups") or {}).get(k)
+        if old and old.get("checks") and old["draws"] <= sub.T <= old["draws"] * 1.02:
+            checks = old["checks"]          # проверки «есть ли порядок» — из прошлого отчёта (см. lp.heavy_cache)
+        else:
+            checks = diagnostics(sub)
         ev = evaluate_group(sub, cb)
         found = [c for c in checks if c["significant"]]
         noise = [c for c in checks if c["p_adjusted"] < 0.05 and not c["significant"]]
