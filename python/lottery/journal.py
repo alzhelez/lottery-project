@@ -287,3 +287,30 @@ def view(slug: str) -> dict:
             by_mech[m] = {"title": title, "summary": summary(part)}
     return {"game": slug, "entries": entries, "summary": summary(entries),
             "by_mechanism": by_mech if len(by_mech) > 1 else {}}
+
+
+def sequential_p(entries: list[dict]) -> float | None:
+    """«Всегда верное» p (смесь Роббинса), как в приложении (src/lib/journalStats.ts): его
+    можно смотреть после каждого тиража, ложной тревоги всё равно не чаще заявленного."""
+    done = [e for e in entries if e.get("status") == "checked"]
+    if len(done) < MIN_FOR_P:
+        return None
+    s = float(sum(e["hits"] - e["expected"] for e in done))
+    v = float(sum(e["variance"] for e in done))
+    if v <= 0 or s <= 0:
+        return 1.0
+    rho = 1.0 / (500 * v / len(done))
+    log_lambda = -0.5 * math.log(1 + rho * v) + rho * s * s / (2 * (1 + rho * v))
+    return float(min(1.0, math.exp(-log_lambda)))
+
+
+def proven_source(slug: str) -> dict | None:
+    """Источник, который по журналу этой игры устойчиво лучше случайного выбора
+    (последовательное p < 0,05); None — такого нет."""
+    entries = load(slug)["entries"]
+    best = None
+    for source, title in SOURCES.items():
+        p = sequential_p([e for e in entries if e["source"] == source])
+        if p is not None and p < 0.05 and (best is None or p < best["p"]):
+            best = {"source": source, "title": title, "p": p}
+    return best

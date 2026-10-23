@@ -221,3 +221,48 @@ def test_scan_skips_barely_changed_games(data_dir):
     write_draws(draws_path("5x36"), draws + fresh_draws(30)[:0] + [Draw(401 + i, draws[-1].date, draws[i].blocks)
                                                                     for i in range(30)])
     assert run_scan(parallel=False)["recomputed"] == 1
+
+
+def test_auto_runs_godmode_then_reuses_leader(data_dir):
+    """Автозапуск: режим Бога для игры с новыми тиражами (прогноз Б в журнал); в следующем
+    цикле, пока не прошло 3 часа, — прогноз лидера прошлого запуска без перебора."""
+    draws = fresh_draws(420)
+    write_draws(draws_path("5x36"), draws[:-1])
+    rc, _ = run(["auto", "--skip-fetch", "--skip-scan", "--godmode-budget", "1"], data_dir)
+    assert rc == 0
+    gm = json.loads((results_dir("5x36") / "godmode.json").read_text(encoding="utf-8"))
+    assert gm["auto"] and gm["chosen"] == "leader_all" and gm["next"]["leader"]["key"]
+    entries = json.loads((data_dir / "journal" / "5x36.json").read_text(encoding="utf-8"))["entries"]
+    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos", "godmode"}
+    write_draws(draws_path("5x36"), draws)
+    rc, _ = run(["auto", "--skip-fetch", "--skip-scan", "--godmode-budget", "1"], data_dir)
+    assert rc == 0
+    assert json.loads((results_dir("5x36") / "godmode.json").read_text(encoding="utf-8"))["generated_at"] == gm["generated_at"]
+    entries = json.loads((data_dir / "journal" / "5x36.json").read_text(encoding="utf-8"))["entries"]
+    # тиражи раз в час: ближайший будущий тираж тот же — прогноз Б для него заменён прогнозом лидера
+    latest = max((e for e in entries if e["source"] == "godmode"), key=lambda e: e["made_at"])
+    assert latest["draw_no"] >= gm["next"]["no"] and "лидер за всю историю" in latest["detail"]
+    log = (data_dir / "logs" / "auto.log").read_text(encoding="utf-8")
+    assert "режим Бога за" in log
+
+
+def test_auto_skips_games_with_few_draws(data_dir):
+    write_draws(draws_path("5x36"), fresh_draws(150))
+    rc, _ = run(["auto", "--skip-fetch", "--skip-scan", "--godmode-budget", "0"], data_dir)
+    status = json.loads((data_dir / "auto_status.json").read_text(encoding="utf-8"))
+    assert rc == 0 and status["games"]["5x36"]["skipped"].startswith("мало тиражей")
+    assert not (data_dir / "journal" / "5x36.json").exists()
+
+
+def test_recommend_uses_expected_return_and_proven_source(data_dir):
+    import lp
+    from lottery.fsutil import write_text
+    write_draws(draws_path("5x36"), fresh_draws(400))
+    results_dir().mkdir(parents=True, exist_ok=True)
+    write_text(results_dir() / "nextdraw.json", json.dumps({"games": {
+        "5x36": {"return": 0.71, "usual_return": 0.5, "p_win": 0.1}, "6x45": {"return": 0.4}}}))
+    preds = {"5x36": {"title": "5 из 36", "next_no": 401, "numbers": [[1, 2, 3, 4, 5]],
+                      "consensus": [[7, 13, 22, 29, 34]]}}
+    recs = lp.recommend(preds)
+    assert len(recs) == 1 and recs[0]["return"] == 0.71 and recs[0]["source"] == "analysis_consensus"
+    assert recs[0]["numbers"] == [[7, 13, 22, 29, 34]] and recs[0]["proven"] is None

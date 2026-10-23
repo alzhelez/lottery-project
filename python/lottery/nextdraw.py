@@ -92,6 +92,7 @@ def compute(data: GameData) -> dict | None:
         "slug": slug, "title": data.game.title, "number": nxt.get("number"), "date": nxt.get("date"),
         "lototron": nxt.get("lototron"), "price": price, "super_prize": sp, "expected_sales": sales,
         "p_super": p_top, "share": float(share),
+        "p_win": float(p_top + sum(r["p"] for r in rows)),
         "ev_base": ev_base, "ev_super": ev_jack, "expected_value": ev_base + ev_jack,
         "return": (ev_base + ev_jack) / price, "return_without_super": ev_base / price,
         "usual_return": arch["return"] if arch else None,

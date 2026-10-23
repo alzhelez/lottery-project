@@ -382,9 +382,19 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
             order_check = {m or "all": order.backtest(data, m) for m in (["L", "R"] if mech["mixed"] else [None])}
         except Exception as exc:  # noqa: BLE001
             order_check = {"error": str(exc)}
+    from lottery import repeats
+    if cache and cache.get("repeats") is not None:
+        repeats_res = cache["repeats"]
+    else:
+        if progress:
+            progress({"type": "progress", "stage": "repeats", "done": 0, "total": 1, "model": "повторы по позициям"})
+        try:
+            repeats_res = repeats.analyze(data)
+        except Exception as exc:  # noqa: BLE001 — эксперимент не должен ронять анализ
+            repeats_res = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
     payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
                "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity,
-               "chaos": chaos_res, "order_check": order_check, "heavy": heavy}
+               "chaos": chaos_res, "order_check": order_check, "repeats": repeats_res, "heavy": heavy}
     save_json(results_dir(slug) / "analysis.json", payload)
     return payload
 
@@ -427,6 +437,35 @@ def cmd_chaos(args) -> None:
             f"{balls(nxt['numbers'])}")
     else:
         say(f"Прогноз на тираж №{nxt.get('draw_no')}: нет — {nxt.get('reason', '')}")
+
+
+def cmd_repeats(args) -> None:
+    """Гипотезы о повторах по позициям выпадения (все задержки и сдвиги)."""
+    from lottery import repeats
+    data = load_game_data(get_game(args.game))
+    res = repeats.analyze(data)
+    path = results_dir(args.game) / "analysis.json"
+    payload = _read_json(path)
+    if payload:
+        payload["repeats"] = res
+        save_json(path, payload)
+    emit({"type": "result", "repeats": res})
+    say(f"\n{data.game.title} — повторы по позициям выпадения")
+    if not res.get("available"):
+        say(res.get("reason", ""))
+        return
+    titles = {"L": "лототрон", "R": "ГСЧ", "all": "все тиражи"}
+    for m, rows in res["groups"].items():
+        for r in rows:
+            say(f"  {titles[m]}, {r['block']}: {r['draws']} тиражей, проверено {r['tests']:,} пар (задержка, сдвиг)"
+                .replace(",", " "))
+            for h in r["hypotheses"]:
+                shift = (f", сдвиг позиции {h['shift_pos']:+d}" if h["shift_pos"] else "") + \
+                        (f", сдвиг числа {h['shift_num']:+d}" if h["shift_num"] else "")
+                say(f"    {h['title']}: лучшая задержка {h['lag']}{shift} — {h['observed']} при ожидаемых "
+                    f"{h['expected']:.1f}, p с поправкой {h['p_adjusted']:.3g}"
+                    + (" — ПОВТОРЯЕТСЯ" if h["replicated"] else ""))
+    say(res["verdict"])
 
 
 def cmd_analyze(args) -> None:
@@ -532,6 +571,10 @@ def auto_once(args) -> dict:
             if not game_activity(data)["active"]:
                 g["skipped"] = "игра устарела"
                 continue
+            if data.T < MIN_AUTO_DRAWS:
+                # прогнозы всех методов (Л, К, Х, Б) нужны хотя бы 300 тиражей — игру не анализируем
+                g["skipped"] = f"мало тиражей ({data.T} < {MIN_AUTO_DRAWS})"
+                continue
             prev = _read_json(results_dir(slug) / "analysis.json")
             if prev and prev.get("last_draw_no") == data.draws[-1].no and prev.get("version") == __version__:
                 g["skipped"] = "новых тиражей нет — прогноз уже в журнале"
@@ -545,7 +588,8 @@ def auto_once(args) -> dict:
             g["next_no"] = (ev.get("target") or {}).get("no") or data.draws[-1].no + 1
             if g["analyzed"]:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
-                                     "numbers": ev["next_prediction"]["numbers"]}
+                                     "numbers": ev["next_prediction"]["numbers"],
+                                     "consensus": ev["next_consensus"]}
                 ch = (payload.get("chaos") or {}).get("next") or {}
                 if ch.get("numbers"):
                     predictions[slug]["chaos"] = {"numbers": ch["numbers"], "title": ch["title"]}
@@ -553,20 +597,8 @@ def auto_once(args) -> dict:
                 log(f"{slug}: анализ готов за {g['seconds']:.0f} с, прогноз на тираж №{g['next_no']} записан в журнал")
             else:
                 log(f"{slug}: анализ готов, прогноза нет — {ev.get('message', 'мало тиражей')}")
-            if args.godmode_budget > 0:
-                from lottery.godmode import run_godmode
-                folder = results_dir(slug)
-                base = meta(data)
-
-                def checkpoint(res, data=data, folder=folder, base=base):
-                    godmode_target(data, res)
-                    save_json(folder / "godmode.json", {**base, **res})
-                    journal_record(data, "godmode", res["next"]["numbers"], res["next"]["strategy"],
-                                   draw_no=res["next"]["no"], mechanism=res["next"].get("mechanism"))
-                gres = run_godmode(data, args.godmode_budget, on_checkpoint=checkpoint,
-                                   state_path=folder / "godmode_state.npz")
-                g["godmode"] = True
-                notify.send(notify.godmode_message(data.game.title, gres), "godmode")
+        if args.godmode_budget > 0 and predictions:
+            auto_godmode(args, predictions, stage, log)
         if not args.skip_scan:
             stage("проверка игр на случайность")
             cmd_scan_quiet()
@@ -574,7 +606,7 @@ def auto_once(args) -> dict:
         status["seconds"] = round((datetime.now() - datetime.fromisoformat(started)).total_seconds())
         status["status"] = "done"
         log("Автозапуск: готово")
-        notify.send(notify.auto_message(status, predictions), "auto")
+        notify.send(notify.auto_message(status, predictions, recommend(predictions)), "auto")
     except Exception as exc:  # статус ошибки должен попасть в файл, иначе интерфейс покажет «идёт»
         status["status"] = "error"
         status["error"] = f"{type(exc).__name__}: {exc}"
@@ -588,6 +620,101 @@ def auto_once(args) -> dict:
 
 
 STUCK_HOURS = 3
+from lottery.games import MIN_FORECAST_DRAWS as MIN_AUTO_DRAWS  # noqa: E402
+GODMODE_PER_CYCLE = 6       # режим Бога: не больше стольких игр за цикл (по 2 одновременно)
+GODMODE_MAX_DRAWS = 60_000
+
+
+def auto_godmode(args, predictions: dict, stage, log) -> None:
+    """Режим Бога в автозапуске: для игр с новыми тиражами, у которых прошлый запуск старше
+    args.godmode_every часов (самые давние — первыми, не больше GODMODE_PER_CYCLE за цикл, по
+    два процесса одновременно), args.godmode_budget минут на игру. Для остальных — прогноз
+    модели-лидера прошлого запуска на новые тиражи (без перебора), чтобы у каждой игры был
+    прогноз Б."""
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
+    from lottery.godmode import auto_run, predict_leader
+    from lottery.mechanics import subset
+    due = []
+    now = datetime.now()
+    for slug in predictions:
+        gm = _read_json(results_dir(slug) / "godmode.json") or {}
+        try:
+            age_h = (now - datetime.fromisoformat(gm["generated_at"])).total_seconds() / 3600
+        except (KeyError, ValueError, TypeError):
+            age_h = float("inf")
+        if age_h >= args.godmode_every or gm.get("version") != __version__:
+            due.append((age_h, slug))
+    run_now = [s for _, s in sorted(due, reverse=True)[:GODMODE_PER_CYCLE]]
+    results: dict[str, dict] = {}
+    if run_now:
+        stage("режим Бога", ", ".join(run_now))
+        with ProcessPoolExecutor(max_workers=2) as pool:
+            futures = {pool.submit(auto_run, s, args.godmode_budget, GODMODE_MAX_DRAWS): s for s in run_now}
+            for fut in as_completed(futures):
+                slug = futures[fut]
+                try:
+                    results[slug] = fut.result()
+                except Exception as exc:  # noqa: BLE001 — одна игра не должна ронять цикл
+                    log(f"{slug}: режим Бога — ошибка {type(exc).__name__}: {exc}")
+    for slug, p in predictions.items():
+        data = load_game_data(get_game(slug))
+        res = results.get(slug)
+        if res:
+            numbers, detail = res["next"]["numbers"], (f"{res['next']['strategy']}"
+                                                        + (f" → {res['next']['model']}" if res["next"]["model"] else ""))
+            log(f"{slug}: режим Бога за {res['elapsed_seconds']:.0f} с, экспертов {res['experts']}, "
+                f"прогноз на тираж №{p['next_no']} записан в журнал")
+        else:
+            gm = _read_json(results_dir(slug) / "godmode.json") or {}
+            leader = (gm.get("next") or {}).get("leader")
+            part = data if data.T <= GODMODE_MAX_DRAWS else subset(data, np.arange(data.T - GODMODE_MAX_DRAWS, data.T))
+            try:
+                numbers = predict_leader(part, leader)
+            except Exception:  # noqa: BLE001
+                numbers = None
+            if not numbers:
+                continue
+            detail = f"лидер за всю историю «{leader['title']}» (режим Бога {gm['generated_at'][5:16].replace('T', ' ')})"
+        target = {"no": p["next_no"]}
+        mech = (_read_json(results_dir(slug) / "analysis.json") or {}).get("evaluation", {}).get("target", {}).get("mechanism")
+        numbers = ordered_prediction(data, numbers, target["no"], mech)
+        if res:
+            res["next"].update({"no": target["no"], "numbers": numbers, "mechanism": mech})
+            save_json(results_dir(slug) / "godmode.json", {**meta(data), **res, "auto": True})
+        journal_record(data, "godmode", numbers, detail, draw_no=target["no"], mechanism=mech)
+        p["godmode"] = numbers
+
+
+def recommend(predictions: dict, top: int = 3) -> list[dict]:
+    """Рекомендации для рассылки: игры с лучшим ожидаемым возвратом ближайшего тиража (и шанс
+    выиграть хоть что-то), числа — метода, который по журналу этой игры устойчиво лучше
+    случайного выбора (последовательное p < 0,05), иначе консенсус; проверка на непопулярность."""
+    from lottery import journal, tickets
+    nd = (_read_json(results_dir() / "nextdraw.json") or {}).get("games", {})
+    rows = []
+    for slug, p in predictions.items():
+        r = nd.get(slug)
+        if not r:
+            continue
+        rows.append((r["return"], slug, r))
+    out = []
+    for ret, slug, r in sorted(rows, reverse=True)[:top]:
+        p = predictions[slug]
+        best = journal.proven_source(slug)
+        key = best["source"] if best else "analysis_consensus"
+        numbers = {"analysis_best": p.get("numbers"), "analysis_consensus": p.get("consensus"),
+                   "chaos": (p.get("chaos") or {}).get("numbers"), "godmode": p.get("godmode")}.get(key) \
+            or p.get("consensus") or p.get("numbers")
+        try:
+            check = tickets.check(load_game_data(get_game(slug)), [sorted(b) for b in numbers])
+            popular = bool(check.get("valid") and check.get("score", 0) > 0)
+        except Exception:  # noqa: BLE001
+            popular = None
+        out.append({"slug": slug, "title": p["title"], "next_no": p["next_no"], "return": ret,
+                    "usual_return": r.get("usual_return"), "p_win": r.get("p_win"), "source": key,
+                    "proven": best, "numbers": numbers, "popular": popular})
+    return out
 
 
 def auto_log(text: str) -> None:
@@ -741,12 +868,15 @@ def _write_json_quiet(path: Path, payload: dict) -> None:
         pass
 
 
+MAX_GODMODE_MIN = 480.0     # режим Бога работает до исчерпания перебора, но не дольше 8 часов
+
+
 def cmd_godmode(args) -> None:
     from lottery.godmode import run_godmode
     data = load_game_data(get_game(args.game))
     if not data.fmt.supported:
         raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
-    budget = min(max(args.budget, 1.0), 480.0)
+    budget = min(max(args.budget, 1.0), MAX_GODMODE_MIN)
     folder = results_dir(args.game)
     path = folder / "godmode.json"
     lock = folder / "godmode.lock"
@@ -1067,11 +1197,14 @@ def main() -> None:
     sub.add_parser("scan")
     p = sub.add_parser("analyze")
     p.add_argument("--game", required=True)
+    p = sub.add_parser("repeats", help="повторы по позициям выпадения: все задержки и сдвиги")
+    p.add_argument("--game", required=True)
     p = sub.add_parser("chaos", help="порядок из хаоса: динамика тиражей отдельно по лототрону и ГСЧ")
     p.add_argument("--game", required=True)
     p = sub.add_parser("godmode")
     p.add_argument("--game", required=True)
-    p.add_argument("--budget", type=float, default=30.0, help="бюджет времени, минут (1–480)")
+    p.add_argument("--budget", type=float, default=480.0,
+                   help="предел времени, минут (1–480); по умолчанию — до исчерпания перебора, не дольше 8 ч")
     p.add_argument("--resume", action="store_true", help="продолжить с сохранённого состояния")
     p = sub.add_parser("info")
     p.add_argument("--game", required=True)
@@ -1085,7 +1218,8 @@ def main() -> None:
     p.add_argument("--api", action="store_true", help="сохранить по 2 сырых ответа API на игру")
     p = sub.add_parser("auto", help="загрузка + анализ активных игр + журнал (для Планировщика)")
     p.add_argument("--game", action="append")
-    p.add_argument("--godmode-budget", type=float, default=0.0, help="минут режима Бога на игру (0 — не запускать)")
+    p.add_argument("--godmode-budget", type=float, default=5.0, help="минут режима Бога на игру (0 — не запускать)")
+    p.add_argument("--godmode-every", type=float, default=3.0, help="часов между запусками режима Бога для игры")
     p.add_argument("--every", type=float, default=0.0, help="повторять каждые N часов (для Docker)")
     p.add_argument("--skip-fetch", action="store_true")
     p.add_argument("--skip-scan", action="store_true")
@@ -1110,7 +1244,8 @@ def main() -> None:
     handlers = {"fetch": cmd_fetch, "scan": cmd_scan, "analyze": cmd_analyze, "godmode": cmd_godmode,
                 "info": cmd_info, "journal": cmd_journal, "auto": cmd_auto, "odds": cmd_odds,
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
-                "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos}
+                "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos,
+                "repeats": cmd_repeats}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

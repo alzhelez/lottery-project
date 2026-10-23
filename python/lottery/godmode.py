@@ -11,11 +11,13 @@
   • «Hedge» — экспоненциальные веса по накопленному выигрышу над случайным
     (с забыванием γ), прогноз — взвешенное голосование экспертов.
 
-Честность: мета-стратегия тоже выбирается — по первой половине отрезка, а её
-результат показывается по второй половине, которая на выбор не влияла.
+Прогноз даёт стратегия «лидер за всю историю» (выбрана заранее); остальные мета-стратегии
+считаются для сравнения. Честность: эксперты отбираются по первой половине отрезка, а
+результат показывается по второй половине, которая на отбор не влияла.
 
-Пул экспертов расширяется по стадиям, пока не кончится бюджет времени; после
-каждой стадии результат сохраняется (можно смотреть промежуточный итог).
+Пул экспертов расширяется по стадиям, пока перебор не исчерпан (40 пачек смесей подряд без
+улучшения) или не прошло 8 часов; после каждой стадии результат сохраняется (можно смотреть
+промежуточный итог).
 """
 from __future__ import annotations
 
@@ -229,7 +231,11 @@ def summarize(pool: ExpertPool, strategies: list[dict], stage: str, complete: bo
         s["m_first"] = metrics(s["hits"][:half], m1, v1)
         s["m_second"] = metrics(s["hits"][half:], m2, v2)
         s["m_all"] = metrics(s["hits"], mean0, var0)
-    chosen = max(strategies, key=lambda s: s["m_first"]["mean_hits"])
+    # прогноз даёт всегда «лидер за всю историю»: на каждый тираж — эксперт, лучший по всем
+    # предыдущим тиражам. Стратегия задана заранее, поэтому её результат на второй половине
+    # честный; остальные стратегии показываются для сравнения.
+    chosen = next((s for s in strategies if s["key"] == "leader_all"),
+                  max(strategies, key=lambda s: s["m_first"]["mean_hits"]))
 
     hmat = np.stack(pool.hits).astype(np.float32)
     first = hmat[:, :half].mean(axis=1)
@@ -266,6 +272,11 @@ def summarize(pool: ExpertPool, strategies: list[dict], stage: str, complete: bo
     next_row = r0
     next_numbers = [sorted(int(v) + s.lo for v in p[next_row]) for p, s in zip(chosen["picks"], data.fmt.blocks)]
     next_model = None if active is None else ru(pool.models[int(active[next_row])].title)
+    leader = None
+    if active is not None:
+        lm = pool.models[int(active[next_row])]
+        leader = {"key": lm.key, "title": ru(lm.title),
+                  "params": {k: v for k, v in lm.params.items() if k in ("w", "window", "half_life", "alpha")}}
 
     second = chosen["m_second"]
     if second["p_better"] < 0.05:
@@ -304,7 +315,7 @@ def summarize(pool: ExpertPool, strategies: list[dict], stage: str, complete: bo
         "switches": switches,
         "timeline": timeline,
         "next": {"no": data.draws[-1].no + 1, "numbers": next_numbers, "model": next_model,
-                 "strategy": chosen["title"]},
+                 "strategy": chosen["title"], "leader": leader},
         "verdict": ru(verdict),
     }
 
@@ -512,3 +523,42 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     if exhausted and state_path is not None:
         drop_state(state_path, keep_summary=True)   # продолжать нечего — 50+ МБ не храним
     return result
+
+
+# ── Автозапуск ─────────────────────────────────────────────────────────────
+
+def model_by_key(key: str, params: dict | None = None) -> Model | None:
+    """Эксперт по ключу — чтобы лидер прошлого запуска давал прогноз на новые тиражи без
+    повторного перебора. Бустинг не восстанавливается (дорого) — None."""
+    params = params or {}
+    if key.startswith("rmix_") and params.get("w"):
+        idx = int(key.split("_", 1)[1]) if key.split("_", 1)[1].isdigit() else 0
+        return mixture_from_weights(np.asarray(params["w"], float), [], idx)
+    for m in expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2):
+        if m.key == key:
+            return m
+    return None
+
+
+def predict_leader(data: GameData, leader: dict | None) -> list[list[int]] | None:
+    """Прогноз модели-лидера (из прошлого запуска режима Бога) на следующий тираж."""
+    if not leader:
+        return None
+    m = model_by_key(leader.get("key", ""), leader.get("params"))
+    if m is None:
+        return None
+    ev = Evaluator(data)
+    return ev.numbers(ev.picks(m), data.T)
+
+
+def auto_run(slug: str, budget_minutes: float, max_draws: int) -> dict:
+    """Режим Бога для автозапуска (запускается в отдельном процессе): последние max_draws
+    тиражей, без сохранения состояния для продолжения."""
+    from .drawfile import load_game_data
+    from .games import get_game
+    from .mechanics import subset
+    data = load_game_data(get_game(slug))
+    if data.T > max_draws:
+        data = subset(data, np.arange(data.T - max_draws, data.T))
+    res = run_godmode(data, budget_minutes, state_path=None)
+    return json.loads(json.dumps(res, default=float))

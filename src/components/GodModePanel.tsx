@@ -34,12 +34,11 @@ interface GodResult {
 
 interface GodState { resumable: boolean; exhausted: boolean; elapsed: number; experts: number }
 
-const PRESETS = [5, 30, 120, 480]
+const MAX_S = 8 * 3600
 
 export function GodModePanel({ info }: { info: Info }) {
   const [res, setRes] = useState<GodResult | null>(null)
   const [state, setState] = useState<GodState | null>(null)
-  const [budget, setBudget] = useState(30)
   const [rows, setRows] = useState(30)
   const load = useCallback(async () => {
     const r = await fetch(`/api/games/${info.slug}/results?kind=godmode`, { cache: 'no-store' })
@@ -56,42 +55,28 @@ export function GodModePanel({ info }: { info: Info }) {
   useEffect(() => { if (checkpointStage) load() }, [checkpointStage, load])
 
   const elapsed = Number(prog?.elapsed ?? 0)
-  const budgetS = Number(prog?.budget ?? budget * 60)
+  const budgetS = Number(prog?.budget ?? MAX_S)
 
   return (
     <section className="panel" data-testid="godmode">
       <p>
-        Потиражный режим: для каждого тиража по порядку все модели делают прогноз, результат сверяется с
-        выпавшими числами, точность моделей обновляется — и на следующий тираж мета-стратегия может выбрать
-        другую модель. Пул моделей расширяется (сетка параметров, бустинг, поиск комбинаций признаков), пока
-        не кончится бюджет времени. Если перебор закончится раньше, режим завершится досрочно.
-      </p>
-      <p className="muted small" data-testid="budget-note">
-        Бюджет — это ширина перебора, а не точность: за большее время проверяется больше комбинаций признаков.
-        Если в тиражах нет закономерности, лишние комбинации находят только удачу на первой половине истории,
-        а вторая (проверочная) половина это показывает. Для честной лотереи хватает 5–30 минут.
+        Потиражный режим: для каждого тиража по порядку все модели делают прогноз только по предыдущим тиражам,
+        результат сверяется с выпавшими числами. Прогноз даёт стратегия «лидер за всю историю»: на каждый тираж
+        берётся модель, которая угадала больше всех за все предыдущие тиражи. Пул моделей расширяется (сетка
+        параметров, бустинг, поиск комбинаций признаков), пока перебор не исчерпан — обычно минуты, — но не
+        дольше 8 часов.
       </p>
       <div className="run-bar">
-        <label className="budget">
-          Бюджет, минут
-          <input type="number" min={1} max={480} value={budget} data-testid="budget"
-            onChange={(e) => setBudget(Math.min(480, Math.max(1, Number(e.target.value) || 1)))} disabled={job.running} />
-        </label>
-        {PRESETS.map((p) => (
-          <button key={p} className={`chip ${budget === p ? 'on' : ''}`} onClick={() => setBudget(p)} disabled={job.running}>
-            {p < 60 ? `${p} мин` : `${p / 60} ч`}
-          </button>
-        ))}
         {job.running
           ? <button className="btn btn-ghost" onClick={job.cancel} data-testid="stop-god">Остановить</button>
           : (
             <>
-              <button className="btn" onClick={() => job.start({ budget })} data-testid="run-god">
+              <button className="btn" onClick={() => job.start({})} data-testid="run-god">
                 {state?.resumable ? 'Начать заново' : 'Запустить режим Бога'}
               </button>
               {state?.resumable && !state.exhausted && (
-                <button className="btn btn-ghost" onClick={() => job.start({ budget, resume: true })} data-testid="resume-god">
-                  Продолжить ещё {budget < 60 ? `${budget} мин` : `${+(budget / 60).toFixed(1)} ч`}
+                <button className="btn btn-ghost" onClick={() => job.start({ resume: true })} data-testid="resume-god">
+                  Продолжить поиск
                 </button>
               )}
             </>
@@ -110,7 +95,7 @@ export function GodModePanel({ info }: { info: Info }) {
           <div className="progress"><span style={{ width: `${Math.min(100, (elapsed / budgetS) * 100)}%` }} /></div>
           <p className="muted">
             {prog?.stage ?? 'Подготовка'}{prog?.note ? `: ${prog.note}` : ''}. Экспертов: {prog?.experts ?? 0}.
-            Прошло {duration(elapsed)} из {duration(budgetS)}.
+            Прошло {duration(elapsed)} (предел — {duration(budgetS)}).
           </p>
         </div>
       )}
@@ -137,14 +122,15 @@ function GodResultView({ r, info, rows, setRows }: { r: GodResult; info: Info; r
 
       <div className="predict-card">
         <h3>Прогноз на тираж №{r.next.no}</h3>
-        <p className="muted">Стратегия «{r.next.strategy}»{r.next.model ? `, сейчас ведёт модель «${r.next.model}»` : ''}</p>
+        <p className="muted">Стратегия «{r.next.strategy}»{r.next.model ? `: больше всех за всю историю угадала модель «${r.next.model}»` : ''}</p>
         <BlockBalls blocks={r.next.numbers} size="lg" />
       </div>
 
       <h3>Мета-стратегии</h3>
       <p className="muted small">
-        Стратегия выбирается по первой половине (тиражи №{r.evaluation.from}–{r.evaluation.split - 1}), её честный результат —
-        вторая половина (№{r.evaluation.split}–{r.evaluation.to}). Случайный выбор: {num(r.baseline.mean)} за тираж.
+        Прогноз даёт «лидер за всю историю» (выделен), остальные стратегии — для сравнения. Модели отбираются по первой
+        половине (тиражи №{r.evaluation.from}–{r.evaluation.split - 1}), честный результат — вторая половина
+        (№{r.evaluation.split}–{r.evaluation.to}). Случайный выбор: {num(r.baseline.mean)} за тираж.
         Активная модель менялась {r.switches} раз.
       </p>
       <div className="table-wrap">

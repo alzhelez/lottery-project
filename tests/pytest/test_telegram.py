@@ -183,12 +183,32 @@ def test_old_log_with_token_is_scrubbed(bot, monkeypatch, data_dir):
 def test_journal_digest_one_message_for_all_games():
     e = lambda src, title, hits, won=None: {"status": "checked", "draw_no": 15882, "source": src,  # noqa: E731
                                            "source_title": title, "actual": [[12, 3, 9, 17], [10, 12, 13, 4]],
+                                           "numbers": [[1, 2, 3, 4], [5, 6, 7, 8]],
                                            "hits": hits, "expected": 1.6, "won": won}
     text = notify.journal_digest([
-        ("4 из 20", [e("analysis_best", "Лучший", 1), e("chaos", "Хаос", 4, 985.0)]),
+        ("4 из 20", [e("chaos", "Хаос", 4, 985.0), e("analysis_best", "Лучший", 1)]),
         ("Охота", [{**e("analysis_best", "Лучший", 2), "draw_no": 46689}]),
         ("Пусто", [])])
-    assert text.startswith("<b>Сверка прогнозов</b>: 3 шт., угадано 7 при ожидаемых 4,8, выиграно 985 ₽")
-    assert "<b>4 из 20</b> №15882 <code>12 3 9 17 | 10 12 13 4</code>: Л 1 · Х 4 (985 ₽)" in text
-    assert "<b>Охота</b> №46689" in text and "Пусто" not in text
+    head, *blocks = text.split("\n\n")
+    assert head == ("<b>Сверка прогнозов</b>: 3 шт., угадано 7 при ожидаемых 4,8; выиграно 985 ₽\n"
+                    "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога")
+    assert blocks[0] == ("<b>4 из 20</b> №15882 (выпало <code>12 3 9 17 | 10 12 13 4</code>)\n"
+                         "  Л: 1 из 8\n  Х: 4 из 8 — выигрыш 985 ₽")
+    assert blocks[1].startswith("<b>Охота</b> №46689") and "Пусто" not in text
     assert notify.journal_digest([("x", [])]) is None
+
+
+def test_auto_message_lists_methods_and_recommendations():
+    status = {"started_at": "2026-10-23T20:05:01", "games": {"4x20": {"added": 3, "journal_checked": 4}}}
+    preds = {"4x20": {"title": "4 из 20", "next_no": 15944, "numbers": [[6, 14], [2, 12]],
+                      "consensus": [[1, 2], [3, 4]], "chaos": {"title": "ГСЧ", "numbers": [[9, 1], [7, 8]]},
+                      "godmode": [[5, 6], [7, 8]]}}
+    recs = [{"title": "4 из 20", "next_no": 15944, "return": 0.62, "usual_return": 0.47, "p_win": 0.14,
+             "source": "analysis_consensus", "proven": None, "numbers": [[1, 2], [3, 4]], "popular": False}]
+    text = notify.auto_message(status, preds, recs)
+    assert ("Новых тиражей: 3, сверено прогнозов: 4\nЛ — лучший метод, К — консенсус, Х — порядок из хаоса, "
+            "Б — режим Бога\nПрогнозы на следующие тиражи:") in text
+    assert ("<b>4 из 20</b> №15944\n  Л: <code>6 14 | 2 12</code>\n  К: <code>1 2 | 3 4</code>\n"
+            "  Х (ГСЧ): <code>9 1 | 7 8</code>\n  Б: <code>5 6 | 7 8</code>") in text
+    assert "1. <b>4 из 20</b> №15944: 0,62 ₽ с рубля (обычно 0,47), выигрыш хоть что-то — 1 из 7" in text
+    assert "К: <code>1 2 | 3 4</code> — ни один метод пока не лучше случайного выбора" in text

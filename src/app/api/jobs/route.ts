@@ -33,7 +33,8 @@ export async function POST(req: Request) {
   if (typeof p === 'string') return NextResponse.json({ error: p }, { status: 400 })
   const params: Record<string, unknown> = {}
   if (p.kind === 'godmode') {
-    const budget = Number(body.budget ?? 30)
+    // без бюджета — до исчерпания перебора, не дольше 8 часов
+    const budget = Number(body.budget ?? 480)
     if (!Number.isFinite(budget) || budget < 1 || budget > 480) {
       return NextResponse.json({ error: 'Бюджет — от 1 до 480 минут' }, { status: 400 })
     }

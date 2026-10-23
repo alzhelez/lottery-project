@@ -709,7 +709,9 @@ def fetch_all(slugs: list[str] | None, emit, workers: int = 2) -> dict:
         list(pool.map(one, slugs))
     # одно сообщение о сверке прогнозов по всем играм вместо сообщения на каждую игру
     from . import notify
-    digest = notify.journal_digest([(get_game(s).title, checked[s]) for s in slugs if checked.get(s)])
+    from .games import MIN_FORECAST_DRAWS
+    digest = notify.journal_digest([(get_game(s).title, checked[s]) for s in slugs
+                                    if checked.get(s) and results[s].get("draws", 0) >= MIN_FORECAST_DRAWS])
     if digest:
         notify.send(digest, "journal")
     from .games import results_dir

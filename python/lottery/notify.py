@@ -250,11 +250,15 @@ def _dec(v: float, digits: int) -> str:
 SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б"}
 
 
+LEGEND = "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога"
+ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode")
+
+
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
-    """Одно сообщение о сверке прогнозов по всем играм загрузки (вместо сообщения на игру):
-    строка на тираж — выпавшие числа и сколько угадал каждый источник."""
-    lines, n, hits, expected, won = [], 0, 0, 0.0, 0.0
-    placed, placed_exp = 0, 0.0
+    """Одно сообщение о сверке прогнозов по всем играм загрузки: шапка с итогом и легендой,
+    затем по каждой игре и тиражу — выпавшие числа и подпункт на каждый метод: сколько чисел
+    угадано из скольких и выигрыш."""
+    blocks, n, hits, expected, won = [], 0, 0, 0.0, 0.0
     for title, entries in games:
         checked = [e for e in entries if e.get("status") == "checked"]
         if not checked:
@@ -263,26 +267,22 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
         for e in checked:
             by_draw.setdefault(e["draw_no"], []).append(e)
         for no in sorted(by_draw):
-            group = by_draw[no]
-            parts = []
+            group = sorted(by_draw[no], key=lambda e: ORDER.index(e["source"]) if e["source"] in ORDER else 9)
+            lines = [f"<b>{esc(title)}</b> №{no} (выпало <code>{esc(fmt_blocks(group[0]['actual']))}</code>)"]
             for e in group:
-                w = f" ({_rub(e['won'])} ₽)" if e.get("won") else ""
-                parts.append(f"{SHORT.get(e['source'], e['source_title'][:1])} {e['hits']}{w}")
+                total = sum(len(b) for b in e["numbers"])
+                w = f" — выигрыш {_rub(e['won'])} ₽" if e.get("won") else ""
+                lines.append(f"  {SHORT.get(e['source'], esc(e['source_title']))}: {e['hits']} из {total}{w}")
                 n += 1
                 hits += e["hits"]
                 expected += e["expected"]
                 won += e.get("won") or 0
-                placed += e.get("in_place") or 0
-                placed_exp += e.get("in_place_expected") or 0.0
-            lines.append(f"<b>{esc(title)}</b> №{no} <code>{esc(fmt_blocks(group[0]['actual']))}</code>: "
-                         f"{esc(' · '.join(parts))} (ожидание {_dec(group[0]['expected'], 2)})")
-    if not lines:
+            blocks.append("\n".join(lines))
+    if not blocks:
         return None
     head = (f"<b>Сверка прогнозов</b>: {n} шт., угадано {hits} при ожидаемых {_dec(expected, 1)}"
-            + (f", выиграно {_rub(won)} ₽" if won else "")
-            + (f"; на своём месте {placed} при ожидаемых {_dec(placed_exp, 1)}" if placed_exp else ""))
-    legend = "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога"
-    return "\n".join([head, *lines, f"<i>{legend}</i>"])
+            + (f"; выиграно {_rub(won)} ₽" if won else ""))
+    return "\n\n".join([f"{head}\n{LEGEND}", *blocks])
 
 
 def journal_message(title: str, entries: list[dict]) -> str | None:
@@ -304,23 +304,45 @@ def journal_message(title: str, entries: list[dict]) -> str | None:
     return "\n".join(lines)
 
 
-def auto_message(status: dict, predictions: dict[str, dict]) -> str:
+def auto_message(status: dict, predictions: dict[str, dict], recommendations: list[dict] | None = None) -> str:
+    """Итог автозапуска: по каждой игре и тиражу — подпункты Л, К, Х, Б с числами, в конце —
+    рекомендации."""
     games = status.get("games", {})
     added = sum(g.get("added", 0) or 0 for g in games.values())
     checked = sum(g.get("journal_checked", 0) or 0 for g in games.values())
     errors = [s for s, g in games.items() if g.get("fetch") == "error"]
-    lines = [f"<b>Автозапуск</b> {esc(status.get('started_at', '').replace('T', ' ')[:16])}",
-             f"Новых тиражей: {added}, сверено прогнозов: {checked}"]
+    head = [f"<b>Автозапуск</b> {esc(status.get('started_at', '').replace('T', ' ')[:16])}",
+            f"Новых тиражей: {added}, сверено прогнозов: {checked}"]
     if errors:
-        lines.append(f"Ошибки загрузки: {esc(', '.join(errors))}")
-    if predictions:
-        lines.append("\nПрогнозы на следующие тиражи:")
-        for slug, p in predictions.items():
-            lines.append(f"• {esc(p['title'])} №{p['next_no']}: <code>{esc(fmt_blocks(p['numbers']))}</code>")
-            if p.get("chaos"):
-                lines.append(f"  порядок из хаоса ({esc(p['chaos']['title'])}): "
-                             f"<code>{esc(fmt_blocks(p['chaos']['numbers']))}</code>")
-    return "\n".join(lines)
+        head.append(f"Ошибки загрузки: {len(errors)} игр" if len(errors) > 5 else f"Ошибки загрузки: {esc(', '.join(errors))}")
+    head.append(LEGEND)
+    if not predictions:
+        return "\n".join(head)
+    head.append("Прогнозы на следующие тиражи:")
+    parts = ["\n".join(head)]
+    for p in predictions.values():
+        lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
+        for label, nums in (("Л", p.get("numbers")), ("К", p.get("consensus")),
+                            (f"Х ({esc(p['chaos']['title'])})" if p.get("chaos") else "Х",
+                             (p.get("chaos") or {}).get("numbers")), ("Б", p.get("godmode"))):
+            if nums:
+                lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
+        parts.append("\n".join(lines))
+    if recommendations:
+        rec = ["<b>Рекомендации</b> — игры с лучшим ожидаемым возвратом ближайшего тиража:"]
+        for i, r in enumerate(recommendations, 1):
+            usual = f" (обычно {_dec(r['usual_return'], 2)})" if r.get("usual_return") else ""
+            win = f", выигрыш хоть что-то — 1 из {max(1, round(1 / r['p_win']))}" if r.get("p_win") else ""
+            rec.append(f"{i}. <b>{esc(r['title'])}</b> №{r['next_no']}: {_dec(r['return'], 2)} ₽ с рубля{usual}{win}")
+            label = SHORT.get(r["source"], "К")
+            why = (f"метод {label} по журналу этой игры устойчиво лучше случайного (p={_dec(r['proven']['p'], 3)})"
+                   if r.get("proven") else "ни один метод пока не лучше случайного выбора — числа консенсуса")
+            pop = ("; комбинация похожа на популярную — при выигрыше приз чаще делят" if r.get("popular")
+                   else "; комбинация не похожа на популярную" if r.get("popular") is False else "")
+            rec.append(f"   {label}: <code>{esc(fmt_blocks(r['numbers']))}</code> — {why}{pop}")
+        rec.append("<i>Возврат меньше 1 — в среднем билет возвращает меньше, чем стоит; почти все билеты проигрывают.</i>")
+        parts.append("\n".join(rec))
+    return "\n\n".join(parts)
 
 
 def godmode_message(title: str, res: dict) -> str:

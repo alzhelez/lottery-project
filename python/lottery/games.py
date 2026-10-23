@@ -8,6 +8,8 @@ from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
+MIN_FORECAST_DRAWS = 300   # меньше — нет прогнозов всех методов: игры нет в автозапуске и рассылке
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SLUG_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789-_")
 

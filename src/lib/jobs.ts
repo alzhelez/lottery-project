@@ -123,7 +123,7 @@ function argsFor(kind: JobKind, game: string | null, params: Record<string, unkn
     case 'analyze':
       return ['analyze', '--game', game!]
     case 'godmode':
-      return ['godmode', '--game', game!, '--budget', String(params.budget ?? 30), ...(params.resume ? ['--resume'] : [])]
+      return ['godmode', '--game', game!, '--budget', String(params.budget ?? 480), ...(params.resume ? ['--resume'] : [])]
     case 'auto':
       return ['auto']
     case 'rules':

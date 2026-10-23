@@ -26,6 +26,7 @@ export interface Analysis {
   }
   drift?: { verdict: string; alarms: Array<{ title: string; block: string; check: string; p_adjusted: number; detail: string }>; checks: unknown[] }
   chaos?: ChaosResult
+  repeats?: Repeats
   order_check?: Record<string, Array<{ block: string; draws: number; positions: number; rate: number; expected: number; p_value: number }>>
   popularity?: { available: boolean; significant?: boolean; verdict?: string; reason?: string; p_value?: number; draws?: number }
   descriptive: Array<{ block: string; numbers: number[]; frequency: number[]; recent100: number[]; gap: number[]; expected: number; expected_recent: number; count: number }>
@@ -60,6 +61,53 @@ interface MechReport {
 }
 
 const MECH: Record<string, string> = { L: 'Лототрон', R: 'ГСЧ' }
+
+interface Hypothesis {
+  key: string; title: string; lag: number; shift_pos: number; shift_num: number; observed: number; expected: number
+  ratio: number | null; p_adjusted: number; replicated: boolean; next?: Array<number | null>
+}
+interface Repeats {
+  available: boolean; reason?: string; verdict?: string
+  groups?: Record<string, Array<{ block: string; draws: number; tests: number; detectable_ratio?: number; hypotheses: Hypothesis[] }>>
+}
+
+/** Гипотезы о повторах по позициям выпадения: все задержки и сдвиги, свои для каждой игры. */
+function RepeatsBlock({ r }: { r: Repeats }) {
+  if (!r.available) return <p className="muted small" data-testid="repeats">Повторы по позициям: {r.reason}</p>
+  const found = Object.values(r.groups ?? {}).some((rows) => rows.some((b) => b.hypotheses.some((h) => h.replicated)))
+  return (
+    <section data-testid="repeats">
+      <h3>Повторы по позициям выпадения (эксперимент)</h3>
+      <p className="muted small">
+        Проверено: выходит ли через L тиражей (L — от 1 до всего архива) на той же позиции то же число, то же число на
+        сдвинутой позиции, сдвинутое число на той же позиции или сдвинутое число на сдвинутой позиции. Для каждой игры и способа розыгрыша ищутся свои задержка
+        и сдвиг; показана самая сильная находка каждого вида. Поправка — на число всех проверенных пар, находка
+        засчитывается, если повторяется в обеих половинах истории.
+      </p>
+      <div className={`callout ${found ? 'lv-signal' : 'lv-random'}`}>{r.verdict}</div>
+      <div className="table-wrap">
+        <table className="data compact">
+          <thead><tr><th>Способ, поле</th><th>Гипотеза</th><th className="r">Задержка</th><th className="r">Сдвиг</th>
+            <th className="r">Совпадений</th><th className="r">Ожидалось</th><th className="r">p с поправкой</th><th>Повторяется</th></tr></thead>
+          <tbody>
+            {Object.entries(r.groups ?? {}).flatMap(([m, rows]) => rows.flatMap((b) => b.hypotheses.map((h, i) => (
+              <tr key={m + b.block + h.key} className={h.replicated ? 'sig' : ''}>
+                <td>{i === 0 ? <>{MECH[m] ?? 'Все тиражи'}, {b.block}<span className="sub">{nf.format(b.draws)} тиражей, {nf.format(b.tests)} проверок{b.detectable_ratio ? `; заметен перекос от ×${num(b.detectable_ratio, 2)}` : ''}</span></> : ''}</td>
+                <td>{h.title}</td>
+                <td className="r num">{nf.format(h.lag)}</td>
+                <td className="r num">{[h.shift_pos ? `позиция ${h.shift_pos > 0 ? '+' : ''}${h.shift_pos}` : '', h.shift_num ? `число ${h.shift_num > 0 ? '+' : ''}${h.shift_num}` : ''].filter(Boolean).join(', ') || '—'}</td>
+                <td className="r num">{nf.format(h.observed)}</td>
+                <td className="r num">{num(h.expected, 1)}</td>
+                <td className="r num">{pval(h.p_adjusted)}</td>
+                <td>{h.replicated ? 'да' : 'нет'}{h.next && h.replicated && <span className="sub">прогноз: {h.next.map((v) => v ?? '·').join(' ')}</span>}</td>
+              </tr>
+            ))))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
 
 /** Лототрон и ГСЧ отдельно, сравнение между ними и порядок выпадения шаров. */
 function Mechanisms({ m }: { m: MechReport }) {
@@ -134,8 +182,9 @@ export function AnalysisOverview({ a }: { a: Analysis }) {
           объёме архива не отличить от случайности — и пользы для прогноза от них почти нет.
         </div>
       )}
+      {a.repeats && <RepeatsBlock r={a.repeats} />}
       {a.drift && (
-        <div className={`callout ${a.drift.alarms.length ? 'lv-signal' : 'lv-random'}`} data-testid="drift">
+      <div className={`callout ${a.drift.alarms.length ? 'lv-signal' : 'lv-random'}`} data-testid="drift">
           <strong>Наблюдение за дрейфом.</strong> {a.drift.verdict}
           <span className="sub">Последние тиражи каждого способа сравниваются с честной лотереей и с прошлой историей; о новой тревоге приходит уведомление в Telegram.</span>
         </div>

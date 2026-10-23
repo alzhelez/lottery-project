@@ -85,6 +85,8 @@ test('анализ: тесты случайности и сравнение ме
   await expect(page.getByTestId('mechanisms')).toContainText('ГСЧ — 899 тиражей')
   await expect(page.getByTestId('detectable')).toContainText('чаще нормы')
   await expect(page.getByTestId('drift')).toContainText('Дрейфа нет')
+  await expect(page.getByTestId('repeats')).toContainText('Повторы по позициям выпадения')
+  await expect(page.getByTestId('repeats')).toContainText('Сдвинутое число на сдвинутой позиции')
   // порядок из хаоса: лототрон и ГСЧ — отдельные наборы тиражей
   await page.getByTestId('tab-chaos').click()
   await expect(page.getByTestId('chaos-conclusion')).toContainText('Лототрон (600 тиражей)')
@@ -115,12 +117,14 @@ test('правила игры со stoloto.ru и ожидаемый возвра
 test('режим Бога: запуск, промежуточный и итоговый результат', async ({ page }) => {
   await page.goto('/games/4x20')
   await page.getByTestId('tab-god').click()
-  await page.getByTestId('budget').fill('1')
+  // поля бюджета нет: режим работает до исчерпания перебора (не дольше 8 часов)
+  await expect(page.getByTestId('budget')).toHaveCount(0)
   await page.getByTestId('run-god').click()
   await expect(page.getByTestId('god-progress')).toBeVisible()
-  await expect(page.getByTestId('run-god')).toBeVisible({ timeout: 240_000 })
+  await expect(page.getByTestId('run-god')).toBeVisible({ timeout: 400_000 })
   const result = page.getByTestId('god-result')
-  await expect(result).toContainText('Завершено')
+  await expect(result).toContainText('Завершено: перебор исчерпан')
+  await expect(result).toContainText('Стратегия «Лидер за всю историю»')
   await expect(result).toContainText('Прогноз на тираж №13896')
   await expect(page.getByTestId('timeline').locator('tbody tr')).toHaveCount(30)
 })
@@ -245,10 +249,13 @@ test('режим Бога, запущенный из консоли, виден 
 test('автозапуск: цикл из приложения', async ({ page }) => {
   await page.goto('/')
   await page.getByTestId('run-auto').click()
-  await expect(page.getByTestId('auto-status')).toContainText('готово', { timeout: 240_000 })
+  await expect(page.getByTestId('auto-status')).toContainText('готово', { timeout: 400_000 })
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   await expect(page.getByTestId('journal-entries')).toContainText('№13897')
+  // в автозапуске у игры есть прогнозы всех четырёх источников, включая режим Бога
+  await page.getByTestId('journal-draw').filter({ hasText: '№13897' }).click()
+  await expect(page.getByTestId('journal-source-row')).toHaveCount(4)
 })
 
 test('устаревшая игра: анализ есть, в журнал не пишется', async ({ page }) => {
