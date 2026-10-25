@@ -1,26 +1,28 @@
 # docker compose up -d   — приложение на http://localhost:3000 и автозапуск раз в час.
-# Данные (тиражи, журнал, результаты) лежат в ./data рядом с этим файлом.
+# Данные (тиражи, журнал, результаты) лежат в ./data рядом с этим файлом, резервные копии журнала — в ./backup.
 services:
   app:
     build: .
-    image: lottery-analyzer:41.7.0
+    image: lottery-analyzer:41.8.0
     ports:
       # только этот компьютер: в приложении нет авторизации. Для доступа из локальной сети
       # замените на "3000:3000" и закройте порт файрволом от интернета.
       - "127.0.0.1:3000:3000"
     volumes:
       - ./data:/data
+      - ./backup:/backup
     env_file:
       - path: .env
         required: false
     restart: unless-stopped
 
   auto:
-    image: lottery-analyzer:41.7.0
+    image: lottery-analyzer:41.8.0
     depends_on: [app]
     command: ["/opt/venv/bin/python", "python/lp.py", "auto", "--every", "1"]
     volumes:
       - ./data:/data
+      - ./backup:/backup
     env_file:
       - path: .env
         required: false

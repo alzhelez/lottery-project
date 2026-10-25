@@ -23,6 +23,7 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PYTHON_BIN=/opt/venv/bin/python \
     LOTTERY_DATA_DIR=/data \
+    LOTTERY_BACKUP_DIR=/backup \
     TZ=Europe/Moscow
 COPY --from=web /app/node_modules node_modules
 COPY --from=web /app/.next .next
@@ -32,7 +33,7 @@ COPY config config
 COPY python python
 COPY data/tirazh*.txt /app/data-seed/
 COPY docker/entrypoint.sh /entrypoint.sh
-VOLUME ["/data"]
+VOLUME ["/data", "/backup"]
 EXPOSE 3000
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
 CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]

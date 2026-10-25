@@ -100,7 +100,7 @@ lp.bat telegram test
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | токен бота (шаг 1) |
 | `TELEGRAM_CHAT_ID` | куда писать (шаг 4) |
-| `TELEGRAM_EVENTS` | какие события присылать, через запятую; по умолчанию все: `journal,auto,godmode,errors,drift,ev`. Только итоги автозапуска и ошибки: `TELEGRAM_EVENTS=auto,errors` |
+| `TELEGRAM_EVENTS` | какие события присылать, через запятую; по умолчанию все: `journal,auto,godmode,errors,drift,ev,tickets` (`tickets` — сверка моих билетов). Только итоги автозапуска и ошибки: `TELEGRAM_EVENTS=auto,errors` |
 | `TELEGRAM_EV_THRESHOLD` | порог для события `ev`: ожидаемый возврат ближайшего тиража с 1 ₽ ставки; по умолчанию `1` (тираж в среднем окупает ставку — так бывает примерно в 1% тиражей при большом суперпризе). `0.8` — сообщать чаще |
 
 События:

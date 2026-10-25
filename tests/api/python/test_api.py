@@ -1,5 +1,5 @@
 # test_api.py — API-автотесты приложения на Python (pytest + requests + Allure).
-# Набор сценариев API-01…API-14 одинаков для Java, Python и Go (см. tests/api/README.md).
+# Набор сценариев API-01…API-15 одинаков для Java, Python и Go (см. tests/api/README.md).
 # Перед запуском нужно окружение: python tests/api/env.py start
 
 # math.comb — число сочетаний: из него считаем точный шанс главного приза.
@@ -276,3 +276,35 @@ def test_results_bad_kind(api):
     response = api.get("/api/games/4x20/results", params={"kind": "secret"})
     # Иначе — 400 и сообщение об ошибке.
     assert response.status_code == 400 and response.json()["error"] == "Неверный запрос"
+
+
+@allure.feature("Мои билеты")
+@allure.title("API-15. Мои билеты: сверка с тиражом, итог, неверные запросы, удаление")
+def test_my_tickets(api):
+    with allure.step("Билет на последний загруженный тираж сверяется сразу"):
+        # Номер последнего тиража 4 из 20 — из списка игр.
+        last = next(g for g in api.get("/api/games").json()["games"] if g["slug"] == "4x20")["last"]["no"]
+        # POST /api/my-tickets: игра, числа двух полей, тираж и цена.
+        response = api.post("/api/my-tickets", json={"game": "4x20", "numbers": "1,2,3,4|5,6,7,8",
+                                                      "draw_no": last, "price": 150})
+        # Билет принят.
+        assert response.status_code == 200
+        # Одна строка — тираж уже сыгран, поэтому статус «сверен» и угадано по каждому полю.
+        ticket = response.json()["added"][0]
+        assert ticket["status"] == "checked" and len(ticket["hits_by_block"]) == 2 and ticket["price"] == 150
+    with allure.step("Итог по игре"):
+        # GET /api/my-tickets?game=4x20 — билеты, итог и данные для формы.
+        body = api.get("/api/my-tickets", params={"game": "4x20"}).json()
+        # Потрачено не меньше цены нашего билета; ближайший тираж — после последнего.
+        assert body["summary"]["checked"] >= 1 and body["summary"]["spent"] >= 150
+        assert body["form"]["next_no"] > last
+    with allure.step("Неверные запросы — 400"):
+        # Три числа вместо четырёх, буквы, чужая папка.
+        for payload in ({"game": "4x20", "numbers": "1,2,3"}, {"game": "4x20", "numbers": "a,b"},
+                        {"game": "../etc", "numbers": "1"}):
+            assert api.post("/api/my-tickets", json=payload).status_code == 400
+    with allure.step("Удаление"):
+        # DELETE по игре и номеру билета — 200, повторно — 400 (билета уже нет).
+        params = {"game": "4x20", "id": ticket["id"]}
+        assert api.delete("/api/my-tickets", params=params).status_code == 200
+        assert api.delete("/api/my-tickets", params=params).status_code == 400

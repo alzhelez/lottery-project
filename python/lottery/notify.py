@@ -3,7 +3,7 @@
 Настройка (.env в папке проекта):
     TELEGRAM_BOT_TOKEN=123456:ABC...   токен бота от @BotFather
     TELEGRAM_CHAT_ID=123456789         куда писать (узнать: lp.bat telegram setup)
-    TELEGRAM_EVENTS=journal,auto,godmode,errors,drift,ev   какие события присылать (по умолчанию все)
+    TELEGRAM_EVENTS=journal,auto,godmode,errors,drift,ev,tickets   какие события присылать (по умолчанию все)
     TELEGRAM_EV_THRESHOLD=1   порог ожидаемого возврата ближайшего тиража для события ev
     TELEGRAM_PROXY=socks5://host:port  если api.telegram.org недоступен напрямую (нужен pip install pysocks)
     TELEGRAM_API_BASE=https://...      свой адрес Bot API (зеркало или локальный сервер)
@@ -27,7 +27,7 @@ import requests
 
 from .games import data_dir
 
-EVENTS = ("journal", "auto", "godmode", "errors", "drift", "ev")
+EVENTS = ("journal", "auto", "godmode", "errors", "drift", "ev", "tickets")
 TIMEOUT = (10, 20)          # соединение, ответ
 ATTEMPTS = 2
 PAUSE_MIN = 10              # после неудачной попытки связи — столько минут не пытаемся снова
@@ -361,11 +361,36 @@ def drift_message(title: str, alarms: list[dict]) -> str:
 
 
 def ev_message(items: list[dict]) -> str:
+    """Тиражи с высоким ожидаемым возвратом; у каждого — непопулярная комбинация (если игра
+    позволяет её подобрать): при выигрыше суперприз реже придётся делить."""
     lines = ["<b>Ближайшие тиражи с возвратом выше порога</b>"]
     for r in items:
         when = (r.get("date") or "").replace("T", " ")[:16]
         sp = f"{r['super_prize']:,.0f}".replace(",", " ")
         lines.append(f"• {esc(r['title'])} №{r['number']} ({esc(when)}): возврат {r['return']:.2f} "
                      f"на рубль, суперприз {sp} ₽".replace(".", ",", 1))
-    lines.append("Ожидание в среднем по очень большому числу билетов; почти все билеты проигрывают.")
+        if r.get("unpopular"):
+            lines.append(f"  непопулярная комбинация: <code>{esc(fmt_blocks(r['unpopular']))}</code>")
+    lines.append("Ожидание в среднем по очень большому числу билетов; почти все билеты проигрывают. "
+                 "Непопулярная комбинация не повышает шанс — только снижает вероятность делить приз.")
+    return "\n".join(lines)
+
+
+def tickets_message(games: list[tuple[str, list[dict]]], total: dict | None = None) -> str | None:
+    """Сверка купленных билетов: по игре — тираж, угадано, выигрыш; в конце — общий итог."""
+    if not games:
+        return None
+    lines = ["<b>Мои билеты</b> — сверены с тиражами"]
+    for title, tickets in games:
+        lines.append(f"<b>{esc(title)}</b>")
+        for t in tickets:
+            hits = "+".join(str(h) for h in t["hits_by_block"])
+            won = t.get("won")
+            res = ("выплата пока неизвестна" if won is None else
+                   f"выигрыш <b>{_rub(won)} ₽</b>" if won > 0 else "без выигрыша")
+            lines.append(f"  №{t['draw_no']}: <code>{esc(fmt_blocks(t['numbers']))}</code> — угадано {hits}, {res}")
+    if total and total.get("checked"):
+        ret = f", возврат {_dec(total['return'], 2)} ₽ с рубля" if total.get("return") is not None else ""
+        lines.append(f"Всего сверено {total['checked']}: потрачено {_rub(total['spent'])} ₽, "
+                     f"выиграно {_rub(total['won'])} ₽{ret}")
     return "\n".join(lines)

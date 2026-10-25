@@ -212,6 +212,43 @@ test('билеты: непопулярные комбинации и прове�
   await expect(page.getByTestId('check-result')).toContainText('похожа на популярный выбор')
 })
 
+test('мои билеты: внесение, сверка с тиражом и денежный итог', async ({ page, request }) => {
+  const games = (await (await request.get('/api/games')).json()).games as Array<{ slug: string; last: { no: number } }>
+  const last = games.find((g) => g.slug === '4x20')!.last.no
+  // билет на уже сыгранный тираж сверяется сразу
+  const r = await request.post('/api/my-tickets', { data: { game: '4x20', numbers: '1,2,3,4|5,6,7,8', draw_no: last, price: 150 } })
+  expect(r.status()).toBe(200)
+  const [checked] = (await r.json()).added
+  expect(checked.status).toBe('checked')
+  expect(checked.hits_by_block).toHaveLength(2)
+  expect((await request.post('/api/my-tickets', { data: { game: '4x20', numbers: '1,2,3' } })).status()).toBe(400)
+  expect((await request.post('/api/my-tickets', { data: { game: '../x', numbers: '1' } })).status()).toBe(400)
+
+  // на странице игры — вкладка «Мои билеты»: билет на два ближайших тиража
+  await page.goto('/games/4x20')
+  await page.getByTestId('tab-mine').click()
+  await expect(page.getByTestId('mt-row')).toHaveCount(1)
+  await page.getByTestId('mt-numbers').fill('3, 11, 17, 20 | 2, 9, 14, 19')
+  await page.getByTestId('mt-draws').fill('2')
+  await page.getByTestId('mt-add').click()
+  await expect(page.getByTestId('mt-added')).toContainText(`тиражи №${last + 1}–${last + 2}`)
+  await expect(page.getByTestId('mt-row')).toHaveCount(3)
+  await expect(page.getByTestId('mt-row').filter({ hasText: 'ждёт тиража' })).toHaveCount(2)
+
+  // общая страница: итог по всем играм, выигрыш вручную, удаление
+  await page.goto('/my-tickets')
+  await expect(page.getByTestId('mytickets-summary')).toContainText('сверено 1, ждут тиража 2')
+  await expect(page.getByTestId('mt-spent')).toContainText('150')
+  const row = page.getByTestId('mt-row').filter({ hasText: `№${last}` })
+  await row.getByRole('button', { name: 'вписать' }).click()
+  await row.getByTestId('mt-won-input').fill('1000')
+  await row.getByRole('button', { name: 'сохранить' }).click()
+  await expect(page.getByTestId('mt-won')).toContainText('1 000')
+  await expect(page.getByTestId('mt-balance')).toContainText('+850')
+  await page.getByTestId('mt-row').filter({ hasText: 'ждёт тиража' }).first().getByTestId('mt-delete').click()
+  await expect(page.getByTestId('mt-row')).toHaveCount(2)
+})
+
 test('экспорт в Excel и CSV', async ({ page, request }) => {
   const xlsx = await request.get('/api/games/4x20/export?format=xlsx')
   expect(xlsx.status()).toBe(200)
@@ -249,6 +286,8 @@ test('автозапуск: цикл из приложения', async ({ page }
   await page.goto('/')
   await page.getByTestId('run-auto').click()
   await expect(page.getByTestId('auto-status')).toContainText('готово', { timeout: 400_000 })
+  // цикл сделал резервную копию журнала и билетов
+  await expect(page.getByTestId('backup-status')).toContainText('последняя')
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   await expect(page.getByTestId('journal-entries')).toContainText('№13897')

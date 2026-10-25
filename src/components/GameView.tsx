@@ -8,6 +8,7 @@ import { GodModePanel } from './GodModePanel'
 import { JournalPanel } from './JournalPanel'
 import { OddsPanel } from './OddsPanel'
 import { RulesPanel } from './RulesPanel'
+import { MyTickets } from './MyTickets'
 import { TicketsPanel } from './TicketsPanel'
 import { useJob } from './useJob'
 
@@ -31,6 +32,7 @@ const TABS = [
   { id: 'journal', label: 'Журнал прогнозов' },
   { id: 'odds', label: 'Шансы' },
   { id: 'tickets', label: 'Билеты' },
+  { id: 'mine', label: 'Мои билеты' },
   { id: 'rules', label: 'Правила' },
 ] as const
 
@@ -163,6 +165,7 @@ export function GameView({ info }: { info: Info }) {
           {tab === 'journal' && <JournalPanel info={info} />}
           {tab === 'odds' && <OddsPanel slug={info.slug} />}
           {tab === 'tickets' && <TicketsPanel slug={info.slug} />}
+          {tab === 'mine' && <MyTickets slug={info.slug} />}
           {tab === 'rules' && <RulesPanel slug={info.slug} stolotoUrl={info.stolotoUrl} />}
         </>
       )}

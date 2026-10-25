@@ -10,6 +10,7 @@ interface AutoStatus {
   seconds?: number
   current?: { stage: string; game: string | null; since: string }
   games: Record<string, { analyzed?: boolean; added?: number; journal_checked?: number; skipped?: string }>
+  backup?: { dir: string; count: number; last: { name: string; modified: string; bytes: number } | null }
 }
 
 const when = (s: string | null | undefined) => (s ? s.replace('T', ' ').slice(0, 16) : '—')
@@ -66,6 +67,15 @@ export function AutoBox({ onDone }: { onDone: () => void }) {
         </p>
       ) : (
         <p className="small muted">Ещё не запускался.</p>
+      )}
+      {status?.backup && (
+        <p className="small" data-testid="backup-status">
+          Резервная копия журнала и билетов:{' '}
+          {status.backup.last
+            ? <>последняя {when(status.backup.last.modified)} ({(status.backup.last.bytes / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} МБ), всего {status.backup.count}</>
+            : 'ещё не делалась'}
+          <span className="sub">Раз в сутки, хранятся последние 30, папка <code>{status.backup.dir}</code>. Вернуть: <code>lp.bat backup restore имя-архива</code>.</span>
+        </p>
       )}
       <p className="small" data-testid="telegram-status">
         Уведомления в Telegram:{' '}

@@ -32,3 +32,5 @@ data/auto_status.json
 data/api_games.json
 data/draws/
 data/telegram_outbox.json
+data/my_tickets/
+backup/

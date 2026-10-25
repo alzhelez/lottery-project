@@ -236,8 +236,20 @@ def after_fetch(slugs: list[str] | None = None, log=None) -> dict:
     res = nextdraw.compute_all(slugs or local_slugs(), lambda s: load_game_data(get_game(s)))
     hot = nextdraw.to_notify(res)
     if hot:
+        for r in hot:
+            r["unpopular"] = unpopular_ticket(r["slug"])
         notify.send(notify.ev_message(hot), "ev")
     return res
+
+
+def unpopular_ticket(slug: str) -> list[list[int]] | None:
+    """Одна непопулярная комбинация для уведомления о высоком возврате (None — в игре не подобрать)."""
+    from lottery.tickets import generate
+    try:
+        res = generate(load_game_data(get_game(slug)), count=1)
+    except Exception:  # noqa: BLE001 — подсказка к уведомлению, не повод его не отправить
+        return None
+    return res["tickets"][0]["blocks"] if res.get("supported") and res.get("tickets") else None
 
 
 def cmd_fetch(args) -> None:
@@ -533,6 +545,7 @@ def auto_once(args) -> dict:
     status = {"started_at": started, "finished_at": None, "status": "running", "pid": os.getpid(), "games": {}}
     save_json(status_path, status)
     log("Автозапуск: начало")
+    status["backup"] = housekeeping(log)
 
     def stage(text: str, game: str | None = None) -> None:
         """Что цикл делает сейчас — видно на главной и по auto_status.json, если цикл завис."""
@@ -551,6 +564,7 @@ def auto_once(args) -> dict:
             stage("правила игр и ближайшие тиражи")
             nd = after_fetch(args.game or None, log=log)
             status["nextdraw"] = {s: round(r["return"], 3) for s, r in nd.items()}
+        status["my_tickets"] = settle_my_tickets(log)
         slugs = args.game or local_slugs()
         from lottery.drawfile import same_draws
         seen: dict[str, list] = {}
@@ -684,6 +698,54 @@ def auto_godmode(args, predictions: dict, stage, log) -> None:
             save_json(results_dir(slug) / "godmode.json", {**meta(data), **res, "auto": True})
         journal_record(data, "godmode", numbers, detail, draw_no=target["no"], mechanism=mech)
         p["godmode"] = numbers
+
+
+def housekeeping(log) -> dict:
+    """Раз в сутки — архив журнала и билетов; файлы убранных из программы игр — удалить
+    (их журнал и билеты сначала в архив). Сбой здесь не останавливает цикл."""
+    from lottery import backup, notify
+    try:
+        made = backup.daily()
+        if made:
+            log(f"Резервная копия журнала: {made['path']} ({made['bytes'] / 1e6:.1f} МБ)"
+                + (f", удалены старые: {', '.join(made['removed'])}" if made["removed"] else ""))
+    except Exception as exc:  # noqa: BLE001
+        log(f"Резервная копия не сделана: {type(exc).__name__}: {exc}")
+        notify.send(f"<b>Резервная копия журнала не сделана</b>\n{notify.esc(f'{type(exc).__name__}: {exc}')}", "errors")
+    try:
+        gone = backup.remove_excluded()
+        if gone["games"]:
+            mb = sum(gone["games"].values()) / 1e6
+            log(f"Удалены файлы убранных игр ({', '.join(gone['games'])}): {mb:.0f} МБ"
+                + (f"; их журнал и билеты — в {gone['archive']}" if gone["archive"] else ""))
+    except Exception as exc:  # noqa: BLE001
+        log(f"Файлы убранных игр не удалены: {type(exc).__name__}: {exc}")
+    try:
+        return backup.info()
+    except OSError:
+        return {}
+
+
+def settle_my_tickets(log) -> dict:
+    """Сверка купленных билетов с загруженными тиражами и сообщение в Telegram о сверенных."""
+    from lottery import mytickets, notify
+    fresh: list[tuple[str, list[dict]]] = []
+    for slug in mytickets.slugs():
+        try:
+            got = mytickets.settle(get_game(slug))
+        except Exception as exc:  # noqa: BLE001 — одна игра не должна ронять цикл
+            log(f"{slug}: мои билеты не сверены — {type(exc).__name__}: {exc}")
+            continue
+        if got:
+            fresh.append((get_game(slug).title, got))
+            won = sum(t["won"] or 0 for t in got)
+            log(f"{slug}: сверено моих билетов {len(got)}, выигрыш {won:,.0f} ₽".replace(",", " "))
+    total = mytickets.summary([t for s in mytickets.slugs() for t in mytickets.load(s)["tickets"]])
+    if fresh:
+        msg = notify.tickets_message(fresh, total)
+        if msg:
+            notify.send(msg, "tickets")
+    return {"checked_now": sum(len(t) for _, t in fresh), **{k: total[k] for k in ("total", "pending", "spent", "won")}}
 
 
 def recommend(predictions: dict, top: int = 3) -> list[dict]:
@@ -841,6 +903,92 @@ def cmd_tickets(args) -> None:
         say(f"{i:>2}. {balls(t['blocks'])}")
     if res.get("accepted_share") is not None:
         say(f"Фильтр проходит {res['accepted_share']:.0%} комбинаций. Шанс выигрыша у них тот же, что у любых других.")
+
+
+def cmd_mytickets(args) -> None:
+    """Мои билеты: list | add | remove | won."""
+    from lottery import mytickets
+    if args.action == "list":
+        res = mytickets.overview([args.game] if args.game else None)
+        if args.game:
+            data = load_game_data(get_game(args.game))
+            from lottery.journal import target_draw
+            res["form"] = {"next_no": target_draw(data)["no"] if data.draws else None,
+                           "price": mytickets.current_price(data),
+                           "blocks": [{"name": s.name, "count": s.count, "lo": s.lo, "hi": s.hi, "mode": s.mode,
+                                       "flexible": s.mode == "set" and s.drawn > s.count} for s in data.fmt.blocks]}
+        emit({"type": "result", **res})
+        t = res["summary"]
+        say(f"Билетов: {t['total']}, сверено {t['checked']}, ждут тиража {t['pending']}; потрачено "
+            f"{t['spent']:,.0f} ₽, выиграно {t['won']:,.0f} ₽".replace(",", " ")
+            + (f", возврат {t['return']:.2f} с рубля" if t["return"] is not None else ""))
+        for g in res["games"]:
+            for x in g["tickets"][:20]:
+                won = mytickets.won_of(x)
+                state = ("ждёт тиража" if x["status"] == "pending" else
+                         f"угадано {x['hits']}, " + ("выплата неизвестна" if won is None else f"выигрыш {won:,.0f} ₽".replace(",", " ")))
+                say(f"  {g['title']} №{x['draw_no']}: {balls(x['numbers'])} — {state}")
+        return
+    if not args.game:
+        raise SystemExit("укажите --game")
+    if args.action == "add":
+        data = load_game_data(get_game(args.game))
+        try:
+            added = mytickets.add(data, mytickets.parse(args.numbers or ""), draw_no=args.draw, draws=args.draws,
+                                  price=args.price, note=args.note or "")
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        emit({"type": "result", "added": added})
+        say(f"Внесено билетов: {len(added)}, тиражи №{added[0]['draw_no']}–{added[-1]['draw_no']}")
+        return
+    if not args.id:
+        raise SystemExit("укажите --id")
+    if args.action == "remove":
+        ok = mytickets.remove(args.game, args.id)
+        if not ok:
+            raise SystemExit("билет не найден")
+        emit({"type": "result", "removed": args.id})
+        say("Билет удалён")
+        return
+    try:
+        t = mytickets.set_won(args.game, args.id, None if args.won is None or args.won < 0 else args.won)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    if not t:
+        raise SystemExit("билет не найден")
+    emit({"type": "result", "ticket": t})
+    say("Выигрыш записан")
+
+
+def cmd_backup(args) -> None:
+    """Резервные копии журнала и билетов: list | make | restore; cleanup — файлы убранных игр."""
+    from lottery import backup
+    if args.action == "make":
+        p = backup.make()
+        backup.rotate()
+        emit({"type": "result", "path": str(p)})
+        say(f"Архив: {p}")
+    elif args.action == "restore":
+        if not args.name:
+            raise SystemExit("укажите имя архива: lp.bat backup restore lottery-backup-ГГГГ-ММ-ДД.zip")
+        try:
+            res = backup.restore(args.name)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        emit({"type": "result", **res})
+        say(f"Восстановлено файлов: {len(res['restored'])}. Прежнее состояние сохранено в {res['before']}")
+    elif args.action == "cleanup":
+        res = backup.remove_excluded()
+        emit({"type": "result", **res})
+        say("Файлов убранных игр нет" if not res["games"] else
+            f"Удалено {sum(res['games'].values()) / 1e6:.0f} МБ: {', '.join(res['games'])}"
+            + (f"; журнал и билеты этих игр — в {res['archive']}" if res["archive"] else ""))
+    else:
+        items = backup.listing()
+        emit({"type": "result", "dir": str(backup.backup_dir()), "items": items})
+        say(f"Папка: {backup.backup_dir()}")
+        for i in items:
+            say(f"  {i['name']}  {i['bytes'] / 1e6:.1f} МБ  {i['modified'].replace('T', ' ')}")
 
 
 def cmd_export(args) -> None:
@@ -1235,6 +1383,19 @@ def main() -> None:
     p.add_argument("--count", type=int, default=5)
     p.add_argument("--seed", type=int)
     p.add_argument("--check", help="проверить свою комбинацию: \"1,2,3,4|5,6,7,8\"")
+    p = sub.add_parser("mytickets", help="мои купленные билеты: list | add | remove | won")
+    p.add_argument("action", choices=["list", "add", "remove", "won"])
+    p.add_argument("--game")
+    p.add_argument("--numbers", help="\"1,2,3,4|5,6,7,8\"")
+    p.add_argument("--draw", type=int, help="номер тиража (по умолчанию — ближайший)")
+    p.add_argument("--draws", type=int, default=1, help="на сколько тиражей подряд")
+    p.add_argument("--price", type=float, help="цена билета на один тираж, ₽")
+    p.add_argument("--note")
+    p.add_argument("--id")
+    p.add_argument("--won", type=float, help="выигрыш вручную, ₽ (меньше 0 — вернуть расчёт)")
+    p = sub.add_parser("backup", help="резервные копии журнала и билетов: list | make | restore | cleanup")
+    p.add_argument("action", choices=["list", "make", "restore", "cleanup"], nargs="?", default="list")
+    p.add_argument("name", nargs="?")
     p = sub.add_parser("export", help="экспорт в Excel или CSV")
     p.add_argument("--game", required=True)
     p.add_argument("--format", choices=["xlsx", "csv"], default="xlsx")
@@ -1245,7 +1406,7 @@ def main() -> None:
                 "info": cmd_info, "journal": cmd_journal, "auto": cmd_auto, "odds": cmd_odds,
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
                 "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos,
-                "repeats": cmd_repeats}
+                "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

@@ -17,3 +17,5 @@ data/prizes
 **/__pycache__
 *.tsbuildinfo
 data/results/*/godmode_state.*
+data/my_tickets
+backup

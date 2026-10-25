@@ -1,5 +1,5 @@
 // api_test.go — API-автотесты приложения на Go (стандартный пакет testing).
-// Сценарии API-01…API-14 те же, что в Java и Python (см. tests/api/README.md).
+// Сценарии API-01…API-15 те же, что в Java и Python (см. tests/api/README.md).
 // Запуск: python tests/api/env.py start, затем в этой папке: go test -v ./...
 package lotteryapi
 
@@ -9,6 +9,8 @@ import (
 	"bytes"
 	// math — модуль разности для сравнения дробных чисел.
 	"math"
+	// net/http — константа метода DELETE.
+	"net/http"
 	// strings — поиск подстрок в заголовках и тексте.
 	"strings"
 	// testing — тестовый фреймворк.
@@ -406,5 +408,47 @@ func TestAPI14ResultsBadKind(t *testing.T) {
 	// 400 и сообщение.
 	if resp.Status != 400 || resp.JSON(t)["error"] != "Неверный запрос" {
 		t.Errorf("код %d, тело %s", resp.Status, resp.Body)
+	}
+}
+
+// TestAPI15MyTickets — мои билеты: сверка с тиражом, итог, неверные запросы, удаление.
+func TestAPI15MyTickets(t *testing.T) {
+	// Номер последнего тиража 4 из 20 — из списка игр.
+	var last float64
+	for _, g := range get(t, "/api/games").JSON(t)["games"].([]any) {
+		game := g.(map[string]any)
+		if game["slug"] == "4x20" {
+			last = game["last"].(map[string]any)["no"].(float64)
+		}
+	}
+	// Билет на последний тираж: он уже сыгран — сверяется сразу.
+	resp := post(t, "/api/my-tickets", map[string]any{"game": "4x20", "numbers": "1,2,3,4|5,6,7,8", "draw_no": int(last), "price": 150})
+	if resp.Status != 200 {
+		t.Fatalf("код %d, тело %s", resp.Status, resp.Body)
+	}
+	ticket := resp.JSON(t)["added"].([]any)[0].(map[string]any)
+	// Статус «сверен», угадано по каждому из двух полей.
+	if ticket["status"] != "checked" || len(ticket["hits_by_block"].([]any)) != 2 {
+		t.Errorf("билет не сверен: %v", ticket)
+	}
+	// Итог по игре: потрачено не меньше цены билета, ближайший тираж — после последнего.
+	body := get(t, "/api/my-tickets?game=4x20").JSON(t)
+	summary := body["summary"].(map[string]any)
+	if summary["spent"].(float64) < 150 || body["form"].(map[string]any)["next_no"].(float64) <= last {
+		t.Errorf("итог: %v, форма: %v", summary, body["form"])
+	}
+	// Неверные запросы — 400.
+	for _, payload := range []map[string]any{{"game": "4x20", "numbers": "1,2,3"}, {"game": "4x20", "numbers": "a,b"}, {"game": "../etc", "numbers": "1"}} {
+		if r := post(t, "/api/my-tickets", payload); r.Status != 400 {
+			t.Errorf("%v: код %d", payload, r.Status)
+		}
+	}
+	// Удаление: 200, повторно — 400 (билета уже нет).
+	path := "/api/my-tickets?game=4x20&id=" + ticket["id"].(string)
+	if r := do(t, http.MethodDelete, path, nil); r.Status != 200 {
+		t.Errorf("удаление: код %d", r.Status)
+	}
+	if r := do(t, http.MethodDelete, path, nil); r.Status != 400 {
+		t.Errorf("повторное удаление: код %d", r.Status)
 	}
 }
