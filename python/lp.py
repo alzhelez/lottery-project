@@ -165,6 +165,10 @@ def game_activity(data) -> dict:
     return activity(data.draws[-1].dt if data.draws else None, read_meta(data.game.slug).get("checked_at"))
 
 
+def sorted_blocks(numbers) -> list[list[int]]:
+    return [sorted(int(v) for v in b) for b in numbers]
+
+
 def ordered_prediction(data, numbers, draw_no: int, mechanism: str | None = None) -> list[list[int]]:
     """Числа прогноза в предсказанном порядке выпадения (order.py); набор чисел не меняется."""
     from lottery import order
@@ -193,7 +197,7 @@ def godmode_target(data, res: dict) -> None:
 
 
 def journal_record(data, source: str, numbers, detail: str, draw_no: int | None = None,
-                   mechanism: str | None = None) -> None:
+                   mechanism: str | None = None, ordered: bool = True) -> None:
     """Прогноз в журнал — только для активной игры (иначе тираж не наступит). Номер тиража —
     ближайший будущий (journal.target_draw), если не задан; числа — в предсказанном порядке
     выпадения."""
@@ -202,8 +206,10 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
         if draw_no is None:
             target = target_draw(data)
             draw_no, mechanism = target["no"], mechanism or target_mechanism(data, target)
-        numbers = ordered_prediction(data, numbers, draw_no, mechanism)
-        record(data, source, numbers, detail, draw_no=draw_no, ordered=True)
+        if ordered:
+            numbers = ordered_prediction(data, numbers, draw_no, mechanism)
+        record(data, source, [sorted(b) for b in numbers] if not ordered else numbers, detail,
+               draw_no=draw_no, ordered=ordered)
 
 
 def game_info(slug: str) -> dict:
@@ -369,6 +375,11 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
                        evaluation["next_prediction"]["model"], draw_no=target["no"], mechanism=mech_next)
         journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"],
                        mechanism=mech_next)
+        least = evaluation.get("least") or {}
+        if least.get("status") == "ok":
+            # наименее вероятные: порядок выпадения для них смысла не имеет — числа по возрастанию
+            journal_record(data, "least", least["next_prediction"]["numbers"], least["next_prediction"]["model"],
+                           draw_no=target["no"], mechanism=mech_next, ordered=False)
     if cache:
         popularity = cache.get("popularity") or {}
     else:
@@ -604,6 +615,8 @@ def auto_once(args) -> dict:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
                                      "numbers": ev["next_prediction"]["numbers"],
                                      "consensus": ev["next_consensus"]}
+                if (ev.get("least") or {}).get("status") == "ok":
+                    predictions[slug]["least"] = sorted_blocks(ev["least"]["next_prediction"]["numbers"])
                 ch = (payload.get("chaos") or {}).get("next") or {}
                 if ch.get("numbers"):
                     predictions[slug]["chaos"] = {"numbers": ch["numbers"], "title": ch["title"]}
@@ -651,7 +664,12 @@ def auto_godmode(args, predictions: dict, stage, log) -> None:
     from lottery.mechanics import subset
     due = []
     now = datetime.now()
+    busy = godmode_all_running()
+    if busy:
+        log("режим Бога: идёт всеобъемлющий режим — новые запуски пропускаю, прогноз Б — лидер прошлого запуска")
     for slug in predictions:
+        if busy or _lock_alive(results_dir(slug) / "godmode.lock"):
+            continue
         gm = _read_json(results_dir(slug) / "godmode.json") or {}
         try:
             age_h = (now - datetime.fromisoformat(gm["generated_at"])).total_seconds() / 3600
@@ -1028,6 +1046,10 @@ def cmd_godmode(args) -> None:
     folder = results_dir(args.game)
     path = folder / "godmode.json"
     lock = folder / "godmode.lock"
+    if _lock_alive(lock):
+        held = _read_json(lock) or {}
+        raise SystemExit("По этой игре уже идёт " + ("всеобъемлющий режим Бога" if held.get("comprehensive")
+                                                     else "режим Бога") + " — дождитесь окончания или остановите его")
     progress_file = folder / "godmode.progress.json"
     base = meta(data)
     folder.mkdir(parents=True, exist_ok=True)
@@ -1067,6 +1089,168 @@ def cmd_godmode(args) -> None:
         f"\nЭкспертов: {res['experts']}, время: {res['elapsed_seconds']:.0f} с"
         + (" (перебор исчерпан)" if res.get("exhausted") else " (можно продолжить: --resume)")
         + f". Отчёт: {path}")
+
+
+GODMODE_ALL_FROM = 1000
+
+
+def godmode_all_file() -> Path:
+    return results_dir() / "godmode_all.json"
+
+
+def _lock_alive(path: Path) -> int | None:
+    """PID из lock-файла, если процесс жив и это не мы."""
+    held = _read_json(path) or {}
+    try:
+        pid = int(held.get("pid", 0))
+    except (TypeError, ValueError):
+        return None
+    return pid if pid and pid != os.getpid() and pid_alive(pid) else None
+
+
+def godmode_all_running() -> bool:
+    from lottery.games import data_dir
+    return _lock_alive(data_dir() / "godmode_all.lock") is not None
+
+
+def godmode_all_plan(from_draw: int) -> tuple[list[str], dict, dict]:
+    """Игры для всеобъемлющего режима: формат поддерживается, тиражей больше from_draw + 60
+    (проверке нужен хотя бы короткий отрезок), без копий одних и тех же тиражей. Сначала
+    короткие архивы — первые итоги появятся быстрее."""
+    from lottery.drawfile import same_draws
+    order, info, skipped, seen = [], {}, {}, {}
+    for slug in local_slugs():
+        try:
+            data = load_game_data(get_game(slug))
+        except ValueError as exc:
+            skipped[slug] = str(exc)
+            continue
+        twin = next((s for s, d in seen.items() if same_draws(d, data.draws)), None)
+        seen[slug] = data.draws
+        title = data.game.title
+        if twin:
+            skipped[slug] = f"{title}: те же тиражи, что у «{get_game(twin).title}»"
+        elif not data.fmt.supported:
+            skipped[slug] = f"{title}: формат не поддерживается"
+        elif data.T < from_draw + 60:
+            skipped[slug] = f"{title}: тиражей {data.T}, нужно больше {from_draw + 60}"
+        else:
+            order.append(slug)
+            info[slug] = {"title": data.game.title, "draws": data.T, "status": "queued"}
+    order.sort(key=lambda s: info[s]["draws"])
+    return order, info, skipped
+
+
+def cmd_godmode_all(args) -> None:
+    """Всеобъемлющий режим Бога: все игры по очереди, эксперты проверяются на каждом тираже
+    с from-го (каждый — только по предыдущим) до последнего, без ограничения длины истории.
+    До budget минут на игру. --resume — продолжить остановленный проход: готовые игры не
+    пересчитываются, прерванная продолжает с сохранения (если не пришли новые тиражи)."""
+    from lottery import notify
+    from lottery.games import data_dir
+    from lottery.godmode import drop_state, run_godmode
+    lock = data_dir() / "godmode_all.lock"
+    if _lock_alive(lock):
+        raise SystemExit("Всеобъемлющий режим Бога уже идёт")
+    path = godmode_all_file()
+    budget = min(max(args.budget, 1.0), MAX_GODMODE_MIN)
+    state = _read_json(path) if args.resume else None
+    if not state or state.get("status") == "done" or not state.get("order"):
+        order, info, skipped = godmode_all_plan(args.from_draw)
+        state = {"started_at": datetime.now().isoformat(timespec="seconds"), "from": args.from_draw,
+                 "budget": budget, "order": order, "games": info, "skipped": skipped}
+    state.update({"status": "running", "pid": os.getpid(), "resumed_at": datetime.now().isoformat(timespec="seconds")
+                  if args.resume else None, "finished_at": None})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    save_json(lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds")})
+    save_json(path, state)
+    emit({"type": "games", "games": state["order"]})
+    if not state["order"]:
+        say("Нет игр, где тиражей больше " + str(state["from"] + 60))
+    last_write = [0.0]
+    try:
+        for slug in state["order"]:
+            g = state["games"][slug]
+            if g["status"] == "done":
+                emit({"type": "game", "game": slug, **g})
+                continue
+            g.pop("error", None)
+            data = load_game_data(get_game(slug))
+            eval_from = min(state["from"] - 1, data.T - 60)
+            folder = results_dir(slug)
+            folder.mkdir(parents=True, exist_ok=True)
+            state_path = folder / "godmode_all_state.npz"
+            game_lock = folder / "godmode.lock"
+            progress_file = folder / "godmode.progress.json"
+            resume = bool(g.get("partial")) and state_path.exists()
+            g.update({"status": "running", "started_at": g.get("started_at") or datetime.now().isoformat(timespec="seconds"),
+                      "from_no": data.draws[eval_from].no, "to_no": data.draws[-1].no, "draws": data.T})
+            state["current"] = slug
+            save_json(path, state)
+            emit({"type": "game", "game": slug, **g})
+            save_json(game_lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds"),
+                                  "budget": budget, "comprehensive": True})
+
+            def on_progress(p: dict, slug=slug, g=g) -> None:
+                emit({"type": "progress", "game": slug, **p})
+                if time.time() - last_write[0] > 5:
+                    stamp = datetime.now().isoformat(timespec="seconds")
+                    _write_json_quiet(progress_file, {**p, "updated_at": stamp, "comprehensive": True})
+                    g["progress"] = {k: p.get(k) for k in ("stage", "done", "total", "experts", "total_elapsed", "note")}
+                    _write_json_quiet(path, state)
+                    last_write[0] = time.time()
+
+            def checkpoint(res: dict, data=data, slug=slug, g=g) -> None:
+                godmode_target(data, res)
+                res["comprehensive"] = {"from": state["from"], "from_no": data.draws[eval_from].no}
+                save_json(results_dir(slug) / "godmode.json", {**meta(data), **res})
+                journal_record(data, "godmode", res["next"]["numbers"],
+                               f"всеобъемлющий: {res['next']['strategy']}"
+                               + (f" → {res['next']['model']}" if res["next"]["model"] else ""),
+                               draw_no=res["next"]["no"], mechanism=res["next"].get("mechanism"))
+                g.update({"partial": True, "stage": res["stage"], "experts": res["experts"]})
+                save_json(path, state)
+
+            t_game = time.time()
+            try:
+                try:
+                    res = run_godmode(data, budget, on_progress=on_progress, on_checkpoint=checkpoint,
+                                      state_path=state_path, resume=resume, eval_from=eval_from)
+                except ValueError:
+                    # сохранение не подходит (пришли новые тиражи) — эту игру заново
+                    drop_state(state_path)
+                    res = run_godmode(data, budget, on_progress=on_progress, on_checkpoint=checkpoint,
+                                      state_path=state_path, resume=False, eval_from=eval_from)
+            except Exception as exc:  # noqa: BLE001 — одна игра не должна останавливать проход
+                g.update({"status": "error", "error": f"{type(exc).__name__}: {exc}",
+                          "finished_at": datetime.now().isoformat(timespec="seconds")})
+                say(f"{data.game.title}: ошибка — {g['error']}")
+            else:
+                second = next(x["second"] for x in res["strategies"] if x["key"] == res["chosen"])
+                g.update({"status": "done", "finished_at": datetime.now().isoformat(timespec="seconds"),
+                          "seconds": round(time.time() - t_game), "elapsed_total": res["elapsed_seconds"],
+                          "experts": res["experts"], "exhausted": bool(res.get("exhausted")),
+                          "mean_hits": second["mean_hits"], "baseline": second["baseline"],
+                          "excess_pct": second["excess_pct"], "p_better": second["p_better"],
+                          "verdict": res["verdict"], "next": res["next"]["numbers"], "next_no": res["next"]["no"]})
+                g.pop("progress", None)
+                say(f"{data.game.title}: {res['verdict']}")
+            finally:
+                for f in (game_lock, progress_file):
+                    f.unlink(missing_ok=True)
+            emit({"type": "game", "game": slug, **g})
+            save_json(path, state)
+        state.update({"status": "done", "current": None, "finished_at": datetime.now().isoformat(timespec="seconds")})
+        save_json(path, state)
+        notify.send(notify.godmode_all_message(state), "godmode")
+        emit({"type": "result", "path": str(path)})
+    except BaseException:
+        if state.get("status") == "running":
+            state["status"] = "stopped"
+            _write_json_quiet(path, state)
+        raise
+    finally:
+        lock.unlink(missing_ok=True)
 
 
 def cmd_journal(args) -> None:
@@ -1354,6 +1538,12 @@ def main() -> None:
     p.add_argument("--budget", type=float, default=480.0,
                    help="предел времени, минут (1–480); по умолчанию — до исчерпания перебора, не дольше 8 ч")
     p.add_argument("--resume", action="store_true", help="продолжить с сохранённого состояния")
+    p = sub.add_parser("godmode-all", help="всеобъемлющий режим Бога: все игры по очереди с 1000-го тиража")
+    p.add_argument("--from", dest="from_draw", type=int, default=GODMODE_ALL_FROM,
+                   help="с какого по счёту тиража проверять экспертов (по умолчанию 1000)")
+    p.add_argument("--budget", type=float, default=float(os.environ.get("LOTTERY_GODMODE_ALL_BUDGET", 480)),
+                   help="минут на игру (1–480; по умолчанию 480 или LOTTERY_GODMODE_ALL_BUDGET)")
+    p.add_argument("--resume", action="store_true", help="продолжить остановленный проход")
     p = sub.add_parser("info")
     p.add_argument("--game", required=True)
     p = sub.add_parser("journal")
@@ -1406,7 +1596,8 @@ def main() -> None:
                 "info": cmd_info, "journal": cmd_journal, "auto": cmd_auto, "odds": cmd_odds,
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
                 "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos,
-                "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup}
+                "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup,
+                "godmode-all": cmd_godmode_all}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

@@ -231,6 +231,15 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
             "models": len(voters),
         })
 
+    # наименее вероятные числа: те же методы «наоборот» (least.py)
+    from . import least as least_mod
+    if progress:
+        progress({"stage": "models", "done": len(models) + 1, "total": len(models) + 1, "model": "наименее вероятные числа"})
+    try:
+        least = least_mod.evaluate(data, ev, models, warm, split)
+    except Exception as exc:  # noqa: BLE001 — дополнительный раздел не должен ронять анализ
+        least = {"status": "error", "message": f"{type(exc).__name__}: {exc}"}
+
     pmf = baseline_pmf(data, slice(warm, None))
     best_h = next(h for m, h in results if m.key == best["key"])[warm:]
     dist_obs = np.bincount(best_h.astype(int), minlength=len(pmf))[: len(pmf)]
@@ -258,4 +267,5 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
             "draws_with_prizes": mctx.get("draws_with_prizes"),
         },
         "distribution": {"observed": dist_obs.tolist(), "expected": (pmf * len(best_h)).round(1).tolist()},
+        "least": least,
     }

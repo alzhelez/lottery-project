@@ -29,7 +29,10 @@ SOURCES = {
     "analysis_consensus": "Консенсус методов",
     "godmode": "Режим Бога",
     "chaos": "Порядок из хаоса",
+    "least": "Наименее вероятные",
 }
+# у этих источников цель — угадать МЕНЬШЕ случайного выбора (числа, которые не выпадут)
+LOWER = {"least"}
 
 
 def journal_path(slug: str):
@@ -188,8 +191,9 @@ def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = No
         "hits": int(sum(hits_by_block)),
         "expected": expected,
         "variance": variance,
-        "won": _payout(entry, hits_by_block, prize_table),
-        "spent": _price(prize_table),
+        # «наименее вероятные» — не билет: выигрыш и цену не считаем
+        "won": None if entry["source"] in LOWER else _payout(entry, hits_by_block, prize_table),
+        "spent": None if entry["source"] in LOWER else _price(prize_table),
         **({"in_place": in_place, "in_place_expected": in_place_exp} if entry.get("ordered") else {}),
     }
 
@@ -220,6 +224,8 @@ def reconcile(game: Game, now: datetime | None = None, collect: list | None = No
             if collect is not None:
                 collect.append(journal["entries"][i])
             changed += 1
+        elif e["source"] in LOWER:
+            continue
         elif e["status"] in ("checked", "late") and e.get("won") is not None and "spent" not in e:
             # записи до 41.5.0: цены билета не было — дописываем из архива выплат
             if tables is None:
@@ -254,12 +260,15 @@ def summary(entries: list[dict]) -> list[dict]:
             exp = np.array([e["expected"] for e in done], float)
             var = float(sum(e["variance"] for e in done))
             z = float((hits.sum() - exp.sum()) / math.sqrt(var)) if var > 0 else 0.0
+            if source in LOWER:
+                row["goal"] = "fewer"     # p_better — шанс случайно угадать столько же или МЕНЬШЕ
             row.update({
                 "mean_hits": float(hits.mean()),
                 "expected": float(exp.mean()),
                 "excess_pct": float((hits.mean() - exp.mean()) / exp.mean() * 100) if exp.mean() else 0.0,
                 "z": z,
-                "p_better": float(sps.norm.sf(z)) if len(done) >= MIN_FOR_P else None,
+                "p_better": (float(sps.norm.cdf(z) if source in LOWER else sps.norm.sf(z))
+                             if len(done) >= MIN_FOR_P else None),
             })
             ordered = [e for e in done if "in_place" in e]
             if ordered:
@@ -289,13 +298,14 @@ def view(slug: str) -> dict:
             "by_mechanism": by_mech if len(by_mech) > 1 else {}}
 
 
-def sequential_p(entries: list[dict]) -> float | None:
+def sequential_p(entries: list[dict], lower: bool = False) -> float | None:
     """«Всегда верное» p (смесь Роббинса), как в приложении (src/lib/journalStats.ts): его
-    можно смотреть после каждого тиража, ложной тревоги всё равно не чаще заявленного."""
+    можно смотреть после каждого тиража, ложной тревоги всё равно не чаще заявленного.
+    lower=True — проверяется, что угадано МЕНЬШЕ случайного (наименее вероятные числа)."""
     done = [e for e in entries if e.get("status") == "checked"]
     if len(done) < MIN_FOR_P:
         return None
-    s = float(sum(e["hits"] - e["expected"] for e in done))
+    s = float(sum(e["hits"] - e["expected"] for e in done)) * (-1.0 if lower else 1.0)
     v = float(sum(e["variance"] for e in done))
     if v <= 0 or s <= 0:
         return 1.0
@@ -310,6 +320,8 @@ def proven_source(slug: str) -> dict | None:
     entries = load(slug)["entries"]
     best = None
     for source, title in SOURCES.items():
+        if source in LOWER:
+            continue        # «наименее вероятные» — не числа для билета
         p = sequential_p([e for e in entries if e["source"] == source])
         if p is not None and p < 0.05 and (best is None or p < best["p"]):
             best = {"source": source, "title": title, "p": p}

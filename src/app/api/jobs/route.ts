@@ -4,7 +4,7 @@ import { isValidSlug } from '@/lib/paths'
 
 export const dynamic = 'force-dynamic'
 
-const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules', 'chaos']
+const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules', 'chaos', 'godmode_all']
 const NEEDS_GAME: JobKind[] = ['analyze', 'godmode', 'chaos']
 
 function parse(kind: unknown, game: unknown): { kind: JobKind; game: string | null } | string {
@@ -41,5 +41,6 @@ export async function POST(req: Request) {
     params.budget = budget
     params.resume = body.resume === true
   }
+  if (p.kind === 'godmode_all') params.resume = body.resume === true
   return NextResponse.json({ job: startJob(p.kind, p.game, params) })
 }

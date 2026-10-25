@@ -1,7 +1,7 @@
 interface Props {
   numbers: number[]
   hits?: number[]           // числа, которые совпали с тиражом
-  tone?: 'predict' | 'actual' | 'plain'
+  tone?: 'predict' | 'actual' | 'plain' | 'cold'
   size?: 'sm' | 'md' | 'lg'
   label?: string
 }

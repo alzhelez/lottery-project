@@ -19,6 +19,9 @@ data/auto.lock
 data/results/*/godmode.lock
 data/results/*/godmode.progress.json
 data/results/*/godmode_state.*
+data/results/*/godmode_all_state.*
+data/results/godmode_all.json
+data/godmode_all.lock
 tests/api/.data/
 tests/api/.env-state.json
 tests/api/*.log

@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dataDir, PROJECT_ROOT, resultsFile } from './paths'
 
-export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos'
+export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos' | 'godmode_all'
 export type JobStatus = 'running' | 'done' | 'error' | 'cancelled'
 
 export interface Job {
@@ -74,6 +74,7 @@ export function latestJob(kind: JobKind, game: string | null): Job | undefined {
 function lockFile(kind: JobKind, game: string | null): string | null {
   if (kind === 'godmode' && game) return resultsFile(game, 'godmode.lock')
   if (kind === 'auto') return path.join(dataDir(), 'auto.lock')
+  if (kind === 'godmode_all') return path.join(dataDir(), 'godmode_all.lock')
   return null
 }
 
@@ -110,7 +111,7 @@ export function externalJob(kind: JobKind, game: string | null): Job | undefined
 }
 
 function parseExternalId(id: string): { kind: JobKind; game: string | null } | null {
-  const m = /^ext:(godmode|auto):([a-z0-9_-]*)$/.exec(id)
+  const m = /^ext:(godmode_all|godmode|auto):([a-z0-9_-]*)$/.exec(id)
   return m ? { kind: m[1] as JobKind, game: m[2] || null } : null
 }
 
@@ -130,6 +131,8 @@ function argsFor(kind: JobKind, game: string | null, params: Record<string, unkn
       return ['rules', ...(game ? ['--game', game] : [])]
     case 'chaos':
       return ['chaos', '--game', game!]
+    case 'godmode_all':
+      return ['godmode-all', ...(params.resume ? ['--resume'] : [])]
   }
 }
 

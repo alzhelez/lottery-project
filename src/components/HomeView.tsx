@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { dateOnly, nf, plural, span } from './format'
 import { AutoBox } from './AutoBox'
+import { GodModeAll } from './GodModeAll'
 import { SetupModal } from './SetupModal'
 import { useJob } from './useJob'
 
@@ -87,6 +88,7 @@ export function HomeView() {
       </p>
 
       <AutoBox onDone={load} />
+      {withData.length > 0 && <GodModeAll />}
 
       {(neverChecked || staleData) && withData.length > 0 && (
         <p className="warn" data-testid="stale-warning">

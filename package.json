@@ -1,6 +1,6 @@
 {
   "name": "lottery-predictor",
-  "version": "41.8.0",
+  "version": "42.0.0",
   "private": true,
   "description": "Анализ тиражей Столото: тесты случайности, честная проверка методов прогноза, режим Бога",
   "scripts": {

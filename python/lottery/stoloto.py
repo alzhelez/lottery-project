@@ -624,6 +624,7 @@ def update_game(game: Game, log=print, on_status=None, notify_journal: bool = Tr
         from .godmode import drop_state
         from .games import results_dir
         drop_state(results_dir(game.slug) / "godmode_state.npz")
+        drop_state(results_dir(game.slug) / "godmode_all_state.npz")
     final = sorted(store.by_no.values(), key=lambda d: d.no)
     missing = sum(b.no - a.no - 1 for a, b in zip(final, final[1:]))
     still_bad = len(damaged(game, final))

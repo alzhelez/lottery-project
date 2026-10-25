@@ -7,7 +7,11 @@ export const SOURCES: Record<string, string> = {
   analysis_consensus: 'Консенсус методов',
   chaos: 'Порядок из хаоса',
   godmode: 'Режим Бога',
+  least: 'Наименее вероятные',
 }
+
+/** Источники, у которых цель — угадать МЕНЬШЕ случайного (числа, которые не выпадут). */
+export const LOWER = new Set(['least'])
 
 export interface JournalEntry {
   source: string
@@ -64,6 +68,9 @@ export function summarize(entries: JournalEntry[]) {
       const exp = done.reduce((s, e) => s + (e.expected ?? 0), 0)
       const vr = done.reduce((s, e) => s + (e.variance ?? 0), 0)
       const z = vr > 0 ? (hits - exp) / Math.sqrt(vr) : 0
+      // для «наименее вероятных» успех — выпало меньше: p считаются в обратную сторону
+      const sign = LOWER.has(source) ? -1 : 1
+      if (sign < 0) row.goal = 'fewer'
       Object.assign(row, {
         hits, expected_total: exp,
         mean_hits: hits / done.length,
@@ -71,8 +78,8 @@ export function summarize(entries: JournalEntry[]) {
         excess_pct: exp ? ((hits - exp) / exp) * 100 : 0,
         z,
         // на малом числе прогнозов нормальное приближение врёт, а сам результат — шум
-        p_better: done.length >= MIN_FOR_P ? 0.5 * erfc(z / Math.SQRT2) : null,
-        p_sequential: done.length >= MIN_FOR_P ? alwaysValidP(hits - exp, vr, 1 / (500 * (vr / done.length))) : null,
+        p_better: done.length >= MIN_FOR_P ? 0.5 * erfc((sign * z) / Math.SQRT2) : null,
+        p_sequential: done.length >= MIN_FOR_P ? alwaysValidP(sign * (hits - exp), vr, 1 / (500 * (vr / done.length))) : null,
       })
       const ordered = done.filter((e) => e.in_place != null)
       if (ordered.length) {

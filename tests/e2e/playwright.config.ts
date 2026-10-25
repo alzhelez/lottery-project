@@ -42,6 +42,8 @@ export default defineConfig({
         LOTTERY_DATA_DIR: dataDir,
         STOLOTO_API_BASE: 'http://127.0.0.1:3199',
         STOLOTO_DELAY: '0',
+        // всеобъемлющий режим Бога в тестах — минута на игру
+        LOTTERY_GODMODE_ALL_BUDGET: '1',
         ...(process.env.PYTHON_BIN ? { PYTHON_BIN: process.env.PYTHON_BIN } : {}),
       },
     },

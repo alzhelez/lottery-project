@@ -247,11 +247,12 @@ def _dec(v: float, digits: int) -> str:
     return f"{v:.{digits}f}".replace(".", ",")
 
 
-SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б"}
+SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б", "least": "Н"}
 
 
-LEGEND = "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога"
-ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode")
+LEGEND = ("Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога, "
+          "Н — наименее вероятные (их лучше не брать)")
+ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode", "least")
 
 
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
@@ -271,6 +272,10 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
             lines = [f"<b>{esc(title)}</b> №{no} (выпало <code>{esc(fmt_blocks(group[0]['actual']))}</code>)"]
             for e in group:
                 total = sum(len(b) for b in e["numbers"])
+                if e["source"] == "least":
+                    # числа, которые не должны были выпасть: меньше — лучше, в итог не входят
+                    lines.append(f"  Н: выпало {e['hits']} из {total} (меньше — лучше)")
+                    continue
                 w = f" — выигрыш {_rub(e['won'])} ₽" if e.get("won") else ""
                 lines.append(f"  {SHORT.get(e['source'], esc(e['source_title']))}: {e['hits']} из {total}{w}")
                 n += 1
@@ -324,7 +329,8 @@ def auto_message(status: dict, predictions: dict[str, dict], recommendations: li
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
         for label, nums in (("Л", p.get("numbers")), ("К", p.get("consensus")),
                             (f"Х ({esc(p['chaos']['title'])})" if p.get("chaos") else "Х",
-                             (p.get("chaos") or {}).get("numbers")), ("Б", p.get("godmode"))):
+                             (p.get("chaos") or {}).get("numbers")), ("Б", p.get("godmode")),
+                            ("Н (не брать)", p.get("least"))):
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))
@@ -349,6 +355,25 @@ def godmode_message(title: str, res: dict) -> str:
     return (f"<b>{esc(title)}</b> — режим Бога: {esc(res['stage'].lower())}\n"
             f"{esc(res['verdict'])}\n"
             f"Прогноз на тираж №{res['next']['no']}: <code>{esc(fmt_blocks(res['next']['numbers']))}</code>")
+
+
+def godmode_all_message(state: dict) -> str:
+    """Итог всеобъемлющего режима Бога: по игре — среднее угаданное на проверочной половине
+    против случайного выбора и p."""
+    games = [state["games"][s] for s in state.get("order", [])]
+    done = [g for g in games if g["status"] == "done"]
+    lines = [f"<b>Всеобъемлющий режим Бога</b> — готово: {len(done)} из {len(games)} игр, проверка с "
+             f"{state.get('from', 1000)}-го тиража"]
+    for g in games:
+        if g["status"] == "done":
+            sig = " ← заметно" if g.get("p_better", 1) < 0.05 else ""
+            lines.append(f"• {esc(g['title'])}: {_dec(g['mean_hits'], 3)} при {_dec(g['baseline'], 3)} у случайного "
+                         f"({'+' if g['excess_pct'] >= 0 else ''}{_dec(g['excess_pct'], 1)}%, p={_dec(g['p_better'], 3)}){sig}")
+        elif g["status"] == "error":
+            lines.append(f"• {esc(g['title'])}: ошибка — {esc(g.get('error', ''))}")
+    lines.append("Числа — на проверочной половине тиражей, которую поиск не видел. p < 0,05 у одной игры из "
+                 "многих бывает и случайно.")
+    return "\n".join(lines)
 
 
 def drift_message(title: str, alarms: list[dict]) -> str:

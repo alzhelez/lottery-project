@@ -233,7 +233,7 @@ def test_auto_runs_godmode_then_reuses_leader(data_dir):
     gm = json.loads((results_dir("5x36") / "godmode.json").read_text(encoding="utf-8"))
     assert gm["auto"] and gm["chosen"] == "leader_all" and gm["next"]["leader"]["key"]
     entries = json.loads((data_dir / "journal" / "5x36.json").read_text(encoding="utf-8"))["entries"]
-    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos", "godmode"}
+    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos", "godmode", "least"}
     write_draws(draws_path("5x36"), draws)
     rc, _ = run(["auto", "--skip-fetch", "--skip-scan", "--godmode-budget", "1"], data_dir)
     assert rc == 0

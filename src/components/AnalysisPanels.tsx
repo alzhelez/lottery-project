@@ -4,6 +4,7 @@ import { Balls, BlockBalls } from './Balls'
 import { FreqBars, LineChart } from './Charts'
 import type { ChaosResult } from './ChaosPanel'
 import { nf, num, pct, pval } from './format'
+import { LeastPanel, type LeastResult } from './LeastPanel'
 
 interface Metric { n: number; mean_hits: number; baseline: number; excess: number; excess_pct: number; z: number; p_better: number; p_adjusted?: number }
 interface Money { n: number; won?: number; spent?: number; return?: number; random_return?: number; excess_pct?: number }
@@ -49,6 +50,7 @@ export interface Analysis {
     by_mechanism?: Record<string, { title: string; draws: number; baseline: { mean: number }; conclusion?: string
       best: { title: string; selection: { excess_pct: number; mean_hits: number }; holdout: { excess_pct: number; mean_hits: number; p_adjusted?: number } } | null }>
     distribution: { observed: number[]; expected: number[] }
+    least?: LeastResult
   }
 }
 
@@ -239,6 +241,8 @@ export function AnalysisMethods({ a, nextNo }: { a: Analysis; nextNo: number | n
           </div>
         ))}
       </div>
+
+      <LeastPanel least={e.least} drawNo={e.target?.no ?? nextNo} />
 
       <h3>Как методы угадывали на истории</h3>
       <p className="muted small">

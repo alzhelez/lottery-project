@@ -16,6 +16,7 @@ interface GodResult {
   budget_seconds: number
   experts: number
   evaluation: { from: number; split: number; to: number }
+  comprehensive?: { from: number; from_no: number }
   baseline: { mean: number }
   strategies: Array<{ key: string; title: string; first: Metric; second: Metric }>
   chosen: string
@@ -116,6 +117,7 @@ function GodResultView({ r, info, rows, setRows }: { r: GodResult; info: Info; r
       <p className="muted small">
         {r.complete ? (r.exhausted ? 'Завершено: перебор исчерпан' : 'Завершено (время вышло)') : `Промежуточный итог (стадия «${r.stage}»)`} {r.generated_at.replace('T', ' ')},
         экспертов: {r.experts}, время: {duration(r.elapsed_seconds)}.
+        {r.comprehensive && <> Результат всеобъемлющего режима: эксперты проверялись с {r.comprehensive.from}-го тиража (№{r.comprehensive.from_no}).</>}
         {stale && <span className="warn"> Появились новые тиражи — запустите заново.</span>}
       </p>
       <div className="callout">{r.verdict}</div>

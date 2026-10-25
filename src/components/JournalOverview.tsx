@@ -10,6 +10,7 @@ interface Row {
   p_better?: number | null; p_sequential?: number | null
   in_place?: number; in_place_expected?: number; ordered_checked?: number
   money_checked?: number; won?: number; spent?: number; won_priced?: number; return?: number
+  goal?: 'fewer'
 }
 interface Data {
   summary: Row[]
@@ -17,12 +18,13 @@ interface Data {
   curves: Array<{ source: string; title: string; n: number; excess: number[]; upper: number[]; lower: number[] }>
 }
 
-const COLORS: Record<string, string> = { analysis_best: 'var(--accent)', analysis_consensus: 'var(--ball-dark)', chaos: '#7a3fb0', godmode: 'var(--hit)' }
+const COLORS: Record<string, string> = { analysis_best: 'var(--accent)', analysis_consensus: 'var(--link)', chaos: '#b48cf2', godmode: 'var(--hit)', least: 'var(--warn)' }
 
 function verdict(s: Row): string {
   if (!s.checked) return 'ещё нет сверенных прогнозов'
-  if (s.p_sequential != null && s.p_sequential < 0.05) return 'устойчиво лучше случайного выбора'
-  if (s.p_better != null && s.p_better < 0.05) return 'лучше случайного, но с учётом постоянного подсматривания — ещё не доказано'
+  const better = s.goal === 'fewer' ? 'выпадают реже случайных чисел' : 'лучше случайного выбора'
+  if (s.p_sequential != null && s.p_sequential < 0.05) return `устойчиво ${better}`
+  if (s.p_better != null && s.p_better < 0.05) return `${s.goal === 'fewer' ? 'реже случайных' : 'лучше случайного'}, но с учётом постоянного подсматривания — ещё не доказано`
   return 'в пределах случайности'
 }
 

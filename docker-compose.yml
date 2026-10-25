@@ -3,7 +3,7 @@
 services:
   app:
     build: .
-    image: lottery-analyzer:41.8.0
+    image: lottery-analyzer:42.0.0
     ports:
       # только этот компьютер: в приложении нет авторизации. Для доступа из локальной сети
       # замените на "3000:3000" и закройте порт файрволом от интернета.
@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
 
   auto:
-    image: lottery-analyzer:41.8.0
+    image: lottery-analyzer:42.0.0
     depends_on: [app]
     command: ["/opt/venv/bin/python", "python/lp.py", "auto", "--every", "1"]
     volumes:

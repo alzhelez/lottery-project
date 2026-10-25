@@ -72,7 +72,8 @@ def cleanup_states(results_root, max_age_days: float = STATE_MAX_AGE_DAYS) -> in
     if not results_root.exists():
         return 0
     limit = time.time() - max_age_days * 86400
-    for p in list(results_root.glob("*/godmode_state.npz")) + list(results_root.glob("*/.godmode_state.*.tmp.npz")):
+    for p in (list(results_root.glob("*/godmode_state.npz")) + list(results_root.glob("*/godmode_all_state.npz"))
+              + list(results_root.glob("*/.godmode_state.*.tmp.npz")) + list(results_root.glob("*/.godmode_all_state.*.tmp.npz"))):
         try:
             if p.stat().st_mtime < limit or p.name.startswith("."):
                 drop_state(p) if not p.name.startswith(".") else p.unlink()
@@ -82,11 +83,25 @@ def cleanup_states(results_root, max_age_days: float = STATE_MAX_AGE_DAYS) -> in
     return removed
 
 
+POOL_MEMORY = 1.2e9   # байт: прогнозы экспертов и мета-стратегии на длинной истории
+
+
+def expert_limit(data: GameData, warm: int) -> int:
+    """Сколько экспертов держать: у игр с сотнями тысяч проверяемых тиражей 800 экспертов
+    не помещаются в память (прогнозы, накопленные суммы стратегий), поэтому меньше."""
+    rows = max(1, data.T - warm)
+    per_expert = rows * (16 + sum(s.count for s in data.fmt.blocks))
+    return int(max(120, min(MAX_EXPERTS, POOL_MEMORY // per_expert)))
+
+
 class ExpertPool:
-    def __init__(self, data: GameData):
+    def __init__(self, data: GameData, warm: int | None = None):
         self.data = data
         self.ev = Evaluator(data)
-        self.warm = warmup_size(data.T)
+        # warm — сколько первых тиражей только для обучения; проверка — с тиража warm
+        self.warm = warmup_size(data.T) if warm is None else int(min(max(warm, 30), data.T - 60))
+        self.limit = expert_limit(data, self.warm)
+        self.fixed_warm = warm
         self.models: list[Model] = []
         self.hits: list[np.ndarray] = []           # по эксперту: hits на [warm, T)
         self.picks: list[list[np.ndarray]] = []    # по эксперту, по блоку: (T+1−warm)×k
@@ -110,9 +125,10 @@ class ExpertPool:
     def first_half_score(self, i: int) -> float:
         return float(self.hits[i][: self.half()].mean())
 
-    def prune(self, limit: int = MAX_EXPERTS) -> int:
+    def prune(self, limit: int | None = None) -> int:
         """Оставляет limit экспертов: контрольные всегда, остальные — лучшие по ПЕРВОЙ половине.
         Вторая половина в отборе не участвует, поэтому её оценка остаётся честной."""
+        limit = limit or self.limit
         if len(self.models) <= limit:
             return 0
         keep = [i for i, m in enumerate(self.models) if m.control]
@@ -322,8 +338,11 @@ def summarize(pool: ExpertPool, strategies: list[dict], stage: str, complete: bo
 
 # ── Состояние для продолжения ─────────────────────────────────────────────
 
-def _signature(data: GameData) -> dict:
-    return {"last_draw_no": data.draws[-1].no, "draws": data.T, "format": data.fmt.describe()}
+def _signature(data: GameData, warm: int | None = None) -> dict:
+    sig = {"last_draw_no": data.draws[-1].no, "draws": data.T, "format": data.fmt.describe()}
+    if warm is not None:
+        sig["warm"] = int(warm)     # всеобъемлющий режим: проверка с заданного тиража
+    return sig
 
 
 def save_state(path, pool: ExpertPool, meta: dict) -> None:
@@ -334,7 +353,7 @@ def save_state(path, pool: ExpertPool, meta: dict) -> None:
         arrays[f"picks_{b}"] = np.stack([p[b] for p in pool.picks])
     models = [{"key": m.key, "title": m.title, "family": m.family, "control": m.control,
                "weights": m.params.get("w")} for m in pool.models]
-    payload = {**meta, "signature": _signature(pool.data), "models": models}
+    payload = {**meta, "signature": _signature(pool.data, getattr(pool, "fixed_warm", None)), "models": models}
     tmp = path.with_name(f".{path.stem}.{os.getpid()}.tmp.npz")
     np.savez_compressed(tmp, meta=np.array(json.dumps(payload, ensure_ascii=False)), **arrays)
     replace_with_retry(tmp, path)
@@ -345,15 +364,16 @@ def save_state(path, pool: ExpertPool, meta: dict) -> None:
     write_text(path.with_suffix(".json"), json.dumps(summary, ensure_ascii=False))
 
 
-def load_state(path, data: GameData) -> tuple[ExpertPool, dict] | tuple[None, str]:
+def load_state(path, data: GameData, warm: int | None = None) -> tuple[ExpertPool, dict] | tuple[None, str]:
     if not path.exists():
         return None, "сохранённого состояния нет"
     try:
         with np.load(path, allow_pickle=False) as z:
             meta = json.loads(str(z["meta"]))
-            if meta.get("signature") != _signature(data):
+            if meta.get("signature") != _signature(data, warm):
                 return None, "после сохранения загружены новые тиражи — продолжить нельзя, запустите заново"
-            pool = ExpertPool(data)
+            pool = ExpertPool(data, warm=warm)
+            pool.fixed_warm = warm
             pool.hits = list(z["hits"])
             blocks = [z[f"picks_{b}"] for b in range(len(data.fmt.blocks))]
     except (OSError, ValueError, KeyError) as exc:
@@ -397,18 +417,22 @@ def mixture_from_weights(w: np.ndarray, names: list[str], idx: int, note: str = 
 
 
 def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_checkpoint=None,
-                state_path=None, resume: bool = False) -> dict:
+                state_path=None, resume: bool = False, eval_from: int | None = None) -> dict:
     """Режим Бога. budget_minutes — время этого запуска; при resume=True работа продолжается
-    с сохранённого состояния (пройденные стадии и найденные эксперты не пересчитываются)."""
+    с сохранённого состояния (пройденные стадии и найденные эксперты не пересчитываются).
+    eval_from — индекс тиража, с которого эксперты проверяются (всеобъемлющий режим: с
+    1000-го тиража); по умолчанию — после короткого разогрева (warmup_size)."""
     t_start = time.time()
     budget_s = max(MIN_BUDGET_S, budget_minutes * 60.0)
     deadline = t_start + budget_s
     pool, meta = None, {}
     if resume and state_path is not None:
-        pool, meta = load_state(state_path, data)
+        pool, meta = load_state(state_path, data, eval_from)
         if pool is None:
             raise ValueError(f"Продолжить нельзя: {meta}")
-    pool = pool or ExpertPool(data)
+    if pool is None:
+        pool = ExpertPool(data, warm=eval_from)
+        pool.fixed_warm = eval_from
     meta = meta if isinstance(meta, dict) else {}
     stages_done: list[str] = list(meta.get("stages_done", []))
     elapsed_before = float(meta.get("elapsed", 0.0))

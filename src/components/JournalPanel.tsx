@@ -43,13 +43,15 @@ interface Summary {
   spent?: number
   return?: number
   p_sequential?: number | null
+  goal?: 'fewer'
 }
 
-const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б' }
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', least: 'Н' }
 const SOURCE_TITLE: Record<string, string> = {
   analysis_best: 'лучший метод', analysis_consensus: 'консенсус', chaos: 'порядок из хаоса', godmode: 'режим Бога',
+  least: 'наименее вероятные',
 }
-const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode']
+const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'least']
 
 const STATUS: Record<Entry['status'], string> = {
   pending: 'ждёт тиража',
@@ -115,7 +117,8 @@ export function JournalPanel({ info }: { info: Info }) {
               <tbody>
                 {data.summary.map((s) => (
                   <tr key={s.source}>
-                    <td>{s.title}{s.late > 0 && <span className="sub">не засчитано (после тиража): {s.late}</span>}</td>
+                    <td>{s.title}{s.goal === 'fewer' && <span className="sub">цель — выпасть реже случайного</span>}
+                      {s.late > 0 && <span className="sub">не засчитано (после тиража): {s.late}</span>}</td>
                     <td className="r num">{s.checked}</td>
                     <td className="r num">{s.pending}</td>
                     <td className="r num">{num(s.mean_hits)}</td>
@@ -131,7 +134,7 @@ export function JournalPanel({ info }: { info: Info }) {
             </table>
           </div>
           <p className="muted small">
-            p — вероятность, что случайный выбор угадал бы столько же или больше. Считается от 30 сверенных
+            p — вероятность, что случайный выбор угадал бы столько же или больше (у «наименее вероятных» — столько же или меньше). Считается от 30 сверенных
             прогнозов: на меньшем числе разница почти всегда объясняется удачей. Сводка по всем играм — на странице
             «Итоги прогнозов». Числа прогноза записываются в
             предсказанном порядке выпадения; «на своём месте» — сколько из них вышли именно на той позиции.
@@ -171,7 +174,7 @@ export function JournalPanel({ info }: { info: Info }) {
                     const open = expanded.has(g.no)
                     const head = g.items[0]
                     const actual = g.items.find((e) => e.actual)?.actual
-                    const won = g.items.reduce((acc, e) => (e.won != null ? (acc ?? 0) + e.won : acc), null as number | null)
+                    const won = g.items.reduce((acc, e) => (e.won != null && e.source !== 'least' ? (acc ?? 0) + e.won : acc), null as number | null)
                     const status = g.items.some((e) => e.status === 'pending') ? 'pending'
                       : g.items.some((e) => e.status === 'checked') ? 'checked' : head.status
                     const rows = [
