@@ -14,6 +14,7 @@ interface AutoStatus {
 }
 
 const when = (s: string | null | undefined) => (s ? s.replace('T', ' ').slice(0, 16) : '—')
+const size = (b: number) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} КБ` : `${(b / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} МБ`)
 
 /** Автозапуск: последний цикл «загрузка → анализ → прогноз в журнал» и запуск вручную. */
 export function AutoBox({ onDone }: { onDone: () => void }) {
@@ -72,7 +73,7 @@ export function AutoBox({ onDone }: { onDone: () => void }) {
         <p className="small" data-testid="backup-status">
           Резервная копия журнала и билетов:{' '}
           {status.backup.last
-            ? <>последняя {when(status.backup.last.modified)} ({(status.backup.last.bytes / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} МБ), всего {status.backup.count}</>
+            ? <>последняя {when(status.backup.last.modified)} ({size(status.backup.last.bytes)}), всего {status.backup.count}</>
             : 'ещё не делалась'}
           <span className="sub">Раз в сутки, хранятся последние 30, папка <code>{status.backup.dir}</code>. Вернуть: <code>lp.bat backup restore имя-архива</code>.</span>
         </p>

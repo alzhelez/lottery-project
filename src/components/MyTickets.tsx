@@ -199,14 +199,14 @@ export function MyTickets({ slug }: { slug?: string }) {
         {hint && <p className="muted small">{hint}. Числа через запятую, поля разделяйте знаком «|».</p>}
         <div className="run-bar">
           <label className="budget">Тираж №
-            <input className="prize-input" type="number" min={1} placeholder={form?.next_no ? String(form.next_no) : 'ближайший'}
+            <input className="prize-input" type="number" min={1} placeholder={form?.next_no ? String(form.next_no) : 'авто'}
               value={drawNo} onChange={(e) => setDrawNo(e.target.value)} data-testid="mt-draw" />
           </label>{' '}
           <label className="budget">на тиражей
             <input type="number" min={1} max={100} value={draws} onChange={(e) => setDraws(Math.min(100, Math.max(1, Number(e.target.value) || 1)))} data-testid="mt-draws" />
           </label>{' '}
           <label className="budget">Цена за тираж, ₽
-            <input className="prize-input" type="number" min={0} placeholder={form?.price != null ? String(form.price) : 'по таблице'}
+            <input className="prize-input" type="number" min={0} placeholder={form?.price != null ? String(form.price) : 'авто'}
               value={price} onChange={(e) => setPrice(e.target.value)} data-testid="mt-price" />
           </label>{' '}
           <input className="combo-input" style={{ width: 'min(14rem, 100%)' }} type="text" maxLength={200} placeholder="заметка (необязательно)"
