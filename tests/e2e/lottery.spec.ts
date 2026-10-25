@@ -28,9 +28,11 @@ test('загрузка всех игр через модальное окно и
   await expect(page.getByRole('dialog')).toBeVisible()                 // данных нет — окно открывается само
   await page.getByTestId('start-fetch').click()
   await expect(page.getByTestId('fetch-4x20')).toContainText('Готово', { timeout: 180_000 })
-  for (const slug of ['6x45plus', 'top-3', 'ruslotto', 'bingo75', 'duel']) {
+  for (const slug of ['6x45plus', 'top-3', 'duel']) {
     await expect(page.getByTestId(`fetch-${slug}`)).toContainText('Готово')
   }
+  // бинго (числа не выбираются) убраны из программы: не загружаются, хотя API их отдаёт
+  for (const slug of ['ruslotto', 'bingo75']) await expect(page.getByTestId(`fetch-${slug}`)).toHaveCount(0)
   await expect(page.getByTestId('fetch-5x36')).toContainText('Нет архива')
   await expect(page.getByTestId('fetch-4x20')).toContainText('1 499')
   await expect(page.getByTestId('scan-status')).toContainText('завершена', { timeout: 120_000 })
@@ -39,9 +41,10 @@ test('загрузка всех игр через модальное окно и
   const table = page.getByTestId('games-table')
   await expect(table.getByTestId('row-4x20')).toContainText('1 499')
   await expect(table.getByTestId('row-4x20')).toContainText('№13896')
-  for (const slug of ['4x20', '6x45plus', 'top-3', 'ruslotto', 'bingo75']) {
+  for (const slug of ['4x20', '6x45plus', 'top-3']) {
     await expect(table.getByTestId(`row-${slug}`)).not.toContainText('не проверялась')
   }
+  await expect(table.getByTestId('row-ruslotto')).toHaveCount(0)
   await expect(table.getByTestId('row-duel')).toHaveCount(0)            // давно нет тиражей — не в основном списке
 })
 
@@ -207,10 +210,6 @@ test('билеты: непопулярные комбинации и прове�
   await page.getByTestId('check-input').fill('1, 2, 3, 10, 11, 12 | 2')
   await page.getByTestId('check').click()
   await expect(page.getByTestId('check-result')).toContainText('похожа на популярный выбор')
-  await page.goto('/games/ruslotto')
-  await page.getByTestId('tab-tickets').click()
-  await page.getByTestId('generate').click()
-  await expect(page.getByTestId('tickets')).toContainText('напечатаны заранее')
 })
 
 test('экспорт в Excel и CSV', async ({ page, request }) => {
@@ -266,18 +265,12 @@ test('устаревшая игра: анализ есть, в журнал не
   await expect(page.getByTestId('journal')).toContainText('Журнал пуст')
 })
 
-test('бинго-игры: невыпавшие числа и первые шары', async ({ page }) => {
-  await page.goto('/games/ruslotto')
-  await page.getByTestId('run-analysis').click()
-  await expect(page.getByTestId('overview')).toContainText('Невыпавшие числа: прогноз 11 из 1–90', { timeout: 120_000 })
-  await page.getByTestId('tab-methods').click()
-  await expect(page.getByTestId('methods-prediction').locator('.balls-lg .ball')).toHaveCount(11)
-
-  await page.goto('/games/bingo75')
-  await page.getByTestId('run-analysis').click()
-  await expect(page.getByTestId('overview')).toContainText('Первые 10 шаров', { timeout: 120_000 })
-  await expect(page.getByTestId('overview')).toContainText('Невыпавшие числа')
-  await page.screenshot({ path: 'tests/e2e/.data/bingo.png', fullPage: true })
+test('игры без выбора чисел убраны из программы', async ({ page }) => {
+  // бинго: числа в билете напечатаны заранее — страницы игры нет
+  const res = await page.goto('/games/ruslotto')
+  expect(res?.status()).toBe(404)
+  await page.goto('/odds')
+  await expect(page.getByText('Русское лото')).toHaveCount(0)
 })
 
 test('цифровая игра разбирается по позициям', async ({ page }) => {

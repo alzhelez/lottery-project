@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
-import { gameTitle, readJournal, readJson } from '@/lib/games'
+import { gameTitle, isExcluded, readJournal, readJson } from '@/lib/games'
 import { cumulative, type JournalEntry, SOURCES, summarize } from '@/lib/journalStats'
 import { dataDir, resultsFile } from '@/lib/paths'
 
@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   let files: string[] = []
   try {
-    files = fs.readdirSync(path.join(dataDir(), 'journal')).filter((f) => f.endsWith('.json'))
+    // убранные игры (excluded в config/games.json) в итоги не входят
+    files = fs.readdirSync(path.join(dataDir(), 'journal')).filter((f) => f.endsWith('.json') && !isExcluded(f.slice(0, -5)))
   } catch {
     files = []
   }

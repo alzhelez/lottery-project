@@ -89,15 +89,13 @@ public class OddsApiTest extends BaseApiTest {
         });
     }
 
-    @Test(description = "API-11. Шансы всех игр: у бинго калькулятора нет")
+    @Test(description = "API-11. Шансы всех игр: игр без выбора чисел в списке нет")
     public void oddsAllGames() {
         // GET /api/odds — словарь «игра → шансы» (ключи вида 4x20 читаем через Map, а не путём).
         Map<String, Object> odds = get("/api/odds").jsonPath().getMap("odds");
         // 4 из 20 поддерживается.
         assertThat(obj(odds, "4x20").get("supported")).isEqualTo(true);
-        // Русское лото — нет…
-        assertThat(obj(odds, "ruslotto").get("supported")).isEqualTo(false);
-        // …и указана причина.
-        assertThat((String) obj(odds, "ruslotto").get("reason")).isNotBlank();
+        // Русское лото (бинго: числа не выбираются) убрано из программы.
+        assertThat(odds).doesNotContainKey("ruslotto");
     }
 }

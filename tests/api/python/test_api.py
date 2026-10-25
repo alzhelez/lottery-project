@@ -241,14 +241,14 @@ def test_export(api):
 
 
 @allure.feature("Шансы")
-@allure.title("API-11. Шансы всех игр: бинго без калькулятора")
+@allure.title("API-11. Шансы всех игр: игр без выбора чисел нет в списке")
 def test_odds_all_games(api):
     # GET /api/odds — шансы по всем играм с тиражами.
     odds = api.get("/api/odds").json()["odds"]
     # Для 4 из 20 калькулятор работает.
     assert odds["4x20"]["supported"] is True
-    # Для Русского лото (бинго) — нет, и указана причина.
-    assert odds["ruslotto"]["supported"] is False and odds["ruslotto"]["reason"]
+    # Русское лото (бинго: числа не выбираются) убрано из программы — его нет в списке.
+    assert "ruslotto" not in odds
 
 
 @allure.feature("Сервис")

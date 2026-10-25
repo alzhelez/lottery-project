@@ -361,7 +361,7 @@ func TestAPI10Export(t *testing.T) {
 	}
 }
 
-// TestAPI11OddsAllGames — шансы всех игр: у бинго калькулятора нет.
+// TestAPI11OddsAllGames — шансы всех игр: игр без выбора чисел (бинго) в списке нет.
 func TestAPI11OddsAllGames(t *testing.T) {
 	// GET /api/odds.
 	odds := get(t, "/api/odds").JSON(t)["odds"].(map[string]any)
@@ -369,9 +369,9 @@ func TestAPI11OddsAllGames(t *testing.T) {
 	if field(odds, "4x20", "supported") != true {
 		t.Error("4x20 должна поддерживаться")
 	}
-	// Русское лото — нет, с причиной.
-	if field(odds, "ruslotto", "supported") != false || field(odds, "ruslotto", "reason") == "" {
-		t.Errorf("ruslotto: %v", odds["ruslotto"])
+	// Русское лото (числа не выбираются) убрано из программы.
+	if _, ok := odds["ruslotto"]; ok {
+		t.Errorf("ruslotto не должно быть в списке: %v", odds["ruslotto"])
 	}
 }
 
