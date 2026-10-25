@@ -264,7 +264,8 @@ tbody tr:hover td { background: color-mix(in srgb, var(--card-2) 60%, transparen
   box-shadow: 0 3px 12px rgba(63, 196, 138, .35); }
 .ball-actual { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
 .ball-plain { background: var(--card-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
-.ball-cold { background: radial-gradient(circle at 34% 28%, #e3f3f7 0 10%, #6b8fae 55%, #2f4a66 100%); color: #fff; }
+.ball-cold { background: radial-gradient(circle at 28% 22%, rgba(255, 255, 255, .45) 0 7%, #56789a 38%, #22384f 100%); color: #f2f7fb;
+  box-shadow: 0 3px 10px rgba(20, 40, 60, .35); text-shadow: 0 1px 1px rgba(0, 0, 0, .35); }
 .balls-lg .ball-predict { animation: drop .55s cubic-bezier(.3, 1.4, .5, 1) both; }
 .balls-lg .ball:nth-child(2) { animation-delay: .06s; } .balls-lg .ball:nth-child(3) { animation-delay: .12s; }
 .balls-lg .ball:nth-child(4) { animation-delay: .18s; } .balls-lg .ball:nth-child(5) { animation-delay: .24s; }
