@@ -332,3 +332,21 @@ details.faq summary { cursor: pointer; font-weight: 600; }
   border: 1px solid var(--line); border-radius: var(--radius-l); padding: 1.1rem 1.3rem; margin: 1.2rem 0; }
 .god-all h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; margin-bottom: .3rem; }
 .god-all .now { margin: .6rem 0; }
+
+/* ближайший тираж на вкладке «Обзор» */
+.next-card { background: radial-gradient(140% 120% at 0% 0%, rgba(242, 179, 61, .09), transparent 50%), var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius-l); padding: 1.2rem 1.4rem; margin: 1rem 0 1.4rem; }
+.next-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.next-head h2 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; margin-bottom: .2rem; }
+.countdown { text-align: right; }
+.countdown-label { display: block; font-size: .8rem; color: var(--muted); }
+.countdown-value { font-family: var(--display); font-size: clamp(1.6rem, 3.6vw, 2.4rem); font-weight: 600; color: var(--accent);
+  font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.next-sources { display: grid; gap: .9rem; margin: 1rem 0; }
+.next-source { display: grid; grid-template-columns: 2.2rem 1fr; gap: .8rem; align-items: start; }
+.next-source + .next-source { border-top: 1px solid var(--line-soft); padding-top: .9rem; }
+.src-chip { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; font-weight: 700;
+  background: var(--tint-accent); color: var(--accent); }
+.src-title { font-weight: 600; margin-bottom: .35rem; }
+.next-least { border: 1px dashed var(--line); border-radius: var(--radius-s); padding: .8rem 1rem; margin: .4rem 0 .8rem; }
+.next-least h3 { margin: 0 0 .2rem; }

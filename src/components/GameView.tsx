@@ -9,6 +9,7 @@ import { JournalPanel } from './JournalPanel'
 import { OddsPanel } from './OddsPanel'
 import { RulesPanel } from './RulesPanel'
 import { MyTickets } from './MyTickets'
+import { NextDrawCard } from './NextDrawCard'
 import { TicketsPanel } from './TicketsPanel'
 import { useJob } from './useJob'
 
@@ -138,6 +139,8 @@ export function GameView({ info }: { info: Info }) {
                 onClick={() => setTab(t.id)} data-testid={`tab-${t.id}`}>{t.label}</button>
             ))}
           </div>
+
+          {tab === 'overview' && <NextDrawCard slug={info.slug} stamp={analysis?.generated_at} onAnalyzed={loadAnalysis} />}
 
           {(tab === 'overview' || tab === 'methods' || tab === 'chaos') && (
             <div className="run-bar">

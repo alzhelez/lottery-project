@@ -95,6 +95,14 @@ test('анализ: тесты случайности и сравнение ме
   await page.getByTestId('run-analysis').click()
   await expect(page.getByTestId('overview')).toBeVisible({ timeout: 120_000 })
   await expect(page.getByTestId('overview')).toContainText('Равномерность частот')
+  // на «Обзоре» — ближайший тираж: таймер, прогнозы источников из журнала, наименее вероятные числа
+  const next = page.getByTestId('next-card')
+  await expect(next).toContainText('Ближайший тираж №13896')
+  await expect(page.getByTestId('countdown')).toContainText(':')
+  await expect(page.getByTestId('next-analysis_best')).toContainText('Лучший метод анализа')
+  await expect(page.getByTestId('next-chaos')).toContainText('Порядок из хаоса')
+  await expect(page.getByTestId('next-least')).toContainText('Наименее вероятно выпадут')
+  await expect(next).toContainText('по журналу: ещё нет сверенных прогнозов')
   await page.getByTestId('tab-methods').click()
   await expect(page.getByTestId('methods-prediction')).toContainText('Прогноз на тираж №13896')
   // в таблице сначала 10 лучших методов — контроль может оказаться ниже

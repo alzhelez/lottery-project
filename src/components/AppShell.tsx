@@ -76,7 +76,9 @@ export function AppShell({ version, children }: { version: string; children: Rea
   const active = withData.filter((g) => g.activity.active)
   const stale = withData.filter((g) => !g.activity.active)
   const s = auto?.status
-  const state = auto?.running ? 'run' : !s ? '' : s.status === 'done' ? 'ok' : s.status === 'error' ? 'bad' : ''
+  // Планировщик запускает цикл раз в час: старше 2,5 часа — компьютер спал или задача не запускается
+  const late = !!s && !auto?.running && Date.now() - new Date(s.started_at).getTime() > 2.5 * 3600_000
+  const state = auto?.running ? 'run' : !s ? '' : late || s.status === 'error' ? 'bad' : s.status === 'done' ? 'ok' : ''
 
   const gameLink = (g: SideGame) => (
     <Link key={g.slug} href={`/games/${g.slug}`} className={`side-game ${g.activity.active ? '' : 'stale'}`}
@@ -136,6 +138,7 @@ export function AppShell({ version, children }: { version: string; children: Rea
                 : !s ? 'ещё не запускался'
                   : s.status === 'done' ? `готово ${when(s.started_at)}`
                     : s.status === 'error' ? `ошибка ${when(s.started_at)}` : `прерван ${when(s.started_at)}`}
+              {late && <span className="sub warn" data-testid="side-auto-late">давно не запускался — проверьте Планировщик (schedule.bat) и сон компьютера</span>}
             </span>
           </div>
           <div className="side-status">
