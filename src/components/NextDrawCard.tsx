@@ -7,13 +7,13 @@ import { useJob } from './useJob'
 interface Rec { checked: number; mean_hits?: number; expected?: number; p_sequential?: number | null; goal?: string }
 interface Source { source: string; title: string; detail: string; numbers: number[][]; made_at: string | null; record: Rec | null }
 interface NextData {
-  draw_no: number | null; date?: string | null; how?: string | null; last_no?: number; active: boolean
+  draw_no: number | null; date?: string | null; how?: string | null; last_no?: number; active: boolean; draws?: number
   analysis_at?: string | null; super_prize?: number | null
   sources: Source[]
   least: { numbers: number[][] | null; model: string; consensus: number[][] | null; conclusion: string | null; record: Rec | null } | null
 }
 
-const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б' }
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э' }
 
 function left(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000))
@@ -66,7 +66,12 @@ export function NextDrawCard({ slug, stamp, onAnalyzed }: { slug: string; stamp?
   if (data.draw_no == null) {
     return (
       <section className="next-card" data-testid="next-card">
-        <p className="muted">{data.active ? 'Прогноза на ближайший тираж ещё нет — запустите анализ.' : 'Игра устарела: тиражей давно не было, прогнозы не пишутся.'}</p>
+        <p className="muted">
+          {!data.active ? 'Игра устарела: тиражей давно не было, прогнозы не пишутся.'
+            : (data.draws ?? 0) < 300 ? `В архиве ${nf.format(data.draws ?? 0)} тиражей — для прогноза нужно хотя бы 300.`
+              : 'Прогноза на ближайший тираж нет: тиражи загружены после последнего анализа или анализ ещё не запускался.'}
+        </p>
+        {data.active && (data.draws ?? 0) >= 300 && <div className="run-bar">{refresh}</div>}
       </section>
     )
   }

@@ -46,12 +46,12 @@ interface Summary {
   goal?: 'fewer'
 }
 
-const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', least: 'Н' }
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', least: 'Н' }
 const SOURCE_TITLE: Record<string, string> = {
   analysis_best: 'лучший метод', analysis_consensus: 'консенсус', chaos: 'порядок из хаоса', godmode: 'режим Бога',
-  least: 'наименее вероятные',
+  experiment: 'эксперимент «эхо ±3»', least: 'наименее вероятные',
 }
-const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'least']
+const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'experiment', 'least']
 
 const STATUS: Record<Entry['status'], string> = {
   pending: 'ждёт тиража',
@@ -63,6 +63,7 @@ const STATUS: Record<Entry['status'], string> = {
 export function JournalPanel({ info }: { info: Info }) {
   const [data, setData] = useState<{ entries: Entry[]; summary: Summary[]; byMechanism?: Array<{ mechanism: string; title: string; summary: Summary[] }> } | null>(null)
   const [source, setSource] = useState('all')
+  const [limit, setLimit] = useState(30)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const toggle = (no: number) => setExpanded((prev) => {
     const next = new Set(prev)
@@ -170,7 +171,7 @@ export function JournalPanel({ info }: { info: Info }) {
                   <tr><th>Тираж</th><th>Прогнозы</th><th>Выпало</th><th className="r">Угадано по источникам</th><th className="r">Ожидалось</th><th className="r">Выигрыш, ₽</th><th>Статус</th></tr>
                 </thead>
                 <tbody>
-                  {groups.slice(0, 200).flatMap((g) => {
+                  {groups.slice(0, limit).flatMap((g) => {
                     const open = expanded.has(g.no)
                     const head = g.items[0]
                     const actual = g.items.find((e) => e.actual)?.actual
@@ -227,7 +228,7 @@ export function JournalPanel({ info }: { info: Info }) {
                   <tr><th>Тираж</th><th>Источник</th><th>Прогноз</th><th>Выпало</th><th className="r">Угадано</th><th className="r">Ожидалось</th><th className="r">Выигрыш, ₽</th><th>Статус</th></tr>
                 </thead>
                 <tbody>
-                  {entries.slice(0, 200).map((e) => (
+                  {entries.slice(0, limit).map((e) => (
                     <tr key={e.id}>
                       <td>№{e.draw_no}{e.mechanism && <span className="sub">{e.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}<span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
                       <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
@@ -246,6 +247,11 @@ export function JournalPanel({ info }: { info: Info }) {
               </table>
             )}
           </div>
+          {(source === 'all' ? groups.length : entries.length) > limit && (
+            <button className="link-btn" onClick={() => setLimit((v) => v + 100)} data-testid="journal-more">
+              Показать ещё (всего {source === 'all' ? groups.length : entries.length})
+            </button>
+          )}
           {source === 'all' && groups.length > 0 && (
             <p className="muted small">Нажмите на тираж, чтобы увидеть прогноз каждого источника. Угадано: {Object.entries(SHORT).map(([k, v]) => `${v} — ${SOURCE_TITLE[k]}`).join(', ')}.</p>
           )}

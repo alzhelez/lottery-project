@@ -18,7 +18,7 @@ interface Data {
   curves: Array<{ source: string; title: string; n: number; excess: number[]; upper: number[]; lower: number[] }>
 }
 
-const COLORS: Record<string, string> = { analysis_best: 'var(--accent)', analysis_consensus: 'var(--link)', chaos: '#b48cf2', godmode: 'var(--hit)', least: 'var(--warn)' }
+const COLORS: Record<string, string> = { analysis_best: 'var(--accent)', analysis_consensus: 'var(--link)', chaos: '#b48cf2', godmode: 'var(--hit)', experiment: '#e87fb0', least: 'var(--warn)' }
 
 function verdict(s: Row): string {
   if (!s.checked) return 'ещё нет сверенных прогнозов'

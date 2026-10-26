@@ -29,7 +29,7 @@ function guess(r: Row): string {
 }
 
 /** «Как проходят розыгрыши» и таблица выигрышей со stoloto.ru/<игра>/rules. */
-export function RulesPanel({ slug, stolotoUrl }: { slug: string; stolotoUrl: string }) {
+export function RulesPanel({ slug, stolotoUrl, lastNo }: { slug: string; stolotoUrl: string; lastNo?: number | null }) {
   const [rules, setRules] = useState<Rules | null>(null)
   const [next, setNext] = useState<NextDraw | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -62,6 +62,7 @@ export function RulesPanel({ slug, stolotoUrl }: { slug: string; stolotoUrl: str
           {nd && (
             <dl className="facts">
               <div><dt>Ближайший тираж</dt><dd>№{nd.number}</dd>
+                {lastNo != null && nd.number != null && nd.number <= lastNo && <dd className="sub warn" data-testid="rules-stale">уже сыгран — обновите правила, чтобы увидеть текущий</dd>}
                 <dd className="sub">{nd.date?.replace('T', ' ').slice(0, 16)}{nd.lototron != null && ` · ${nd.lototron ? 'лототрон (трансляция)' : 'без трансляции'}`}</dd></div>
               <div><dt>Суперприз</dt><dd data-testid="rules-superprize">{nd.super_prize ? rub(nd.super_prize) : '—'}</dd>
                 <dd className="sub">{nd.jackpot_guaranteed ? `гарантированный минимум ${rub(nd.jackpot_guaranteed)}` : ''}</dd></div>

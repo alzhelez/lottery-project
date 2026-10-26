@@ -7,7 +7,7 @@ import { dataDir, isValidSlug } from '@/lib/paths'
 export const dynamic = 'force-dynamic'
 
 type Entry = JournalEntry & { numbers: number[][]; detail?: string; source_title?: string; id: string }
-const ORDER = ['analysis_best', 'analysis_consensus', 'chaos', 'godmode']
+const ORDER = ['analysis_best', 'analysis_consensus', 'chaos', 'godmode', 'experiment']
 
 /**
  * Ближайший тираж игры: прогнозы всех источников, записанные в журнал на этот тираж (те же
@@ -26,11 +26,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const ev = analysis?.evaluation ?? {}
   const lastNo = info.last?.no ?? 0
 
-  // тираж — последний, на который записаны прогнозы; если журнала нет — цель анализа
+  // тираж — тот, на который записано больше всего источников (при равенстве — более поздний):
+  // у быстрых игр режим Бога может писать прогноз на тираж позже, чем анализ
   const pending = entries.filter((e) => e.status === 'pending' && e.draw_no > lastNo)
-  const drawNo: number | null = pending.length ? Math.max(...pending.map((e) => e.draw_no)) : ev.target?.no ?? null
+  const bySources = new Map<number, Set<string>>()
+  for (const e of pending) {
+    if (!bySources.has(e.draw_no)) bySources.set(e.draw_no, new Set())
+    bySources.get(e.draw_no)!.add(e.source)
+  }
+  const ranked = [...bySources.entries()].sort((a, b) => b[1].size - a[1].size || b[0] - a[0])
+  const drawNo: number | null = ranked.length ? ranked[0][0] : ev.target?.no ?? null
   if (drawNo == null) {
-    return NextResponse.json({ draw_no: null, active: info.activity.active, sources: [], least: null, record: summarize(entries) })
+    return NextResponse.json({ draw_no: null, active: info.activity.active, draws: info.draws, sources: [], least: null })
   }
   const nd = rules?.next_draw
   const date: string | null = ev.target?.no === drawNo && ev.target?.date ? ev.target.date
@@ -49,6 +56,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       if (source === 'analysis_consensus') numbers = ev.next_consensus ?? null
       if (source === 'chaos' && analysis?.chaos?.next?.draw_no === drawNo) { numbers = analysis.chaos.next.numbers; detail = analysis.chaos.next.model ?? '' }
       if (source === 'godmode' && godmode?.next?.no === drawNo) { numbers = godmode.next.numbers; detail = godmode.next.strategy ?? '' }
+      if (source === 'experiment') numbers = ev.next_experiment ?? null
     }
     return { source, title: SOURCES[source], detail, numbers, made_at: e?.made_at ?? null, record: record[source] ?? null }
   }).filter((s) => s.numbers)

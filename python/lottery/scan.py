@@ -93,7 +93,9 @@ def run_scan(progress=None, parallel: bool = True) -> dict:
     if progress:
         progress({"done": done, "total": len(slugs), "cached": done})
     if todo and parallel and workers() > 1 and len(todo) > 1:
-        with ProcessPoolExecutor(max_workers=workers()) as pool:
+        # spawn: после бустинга в анализе (OpenMP) процессы, созданные fork, могут зависнуть
+        import multiprocessing
+        with ProcessPoolExecutor(max_workers=workers(), mp_context=multiprocessing.get_context("spawn")) as pool:
             futures = {pool.submit(scan_game, s): s for s in todo}
             for fut in as_completed(futures):
                 results[futures[fut]] = fut.result()

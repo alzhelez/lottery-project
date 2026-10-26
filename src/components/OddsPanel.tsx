@@ -20,7 +20,7 @@ export interface Odds {
   expected_value?: number | null
   return_per_ruble?: number | null
   p_any_prize?: number | null
-  price_source?: 'user' | 'archive' | null
+  price_source?: 'user' | 'archive' | 'rules' | null
   archive_draws?: number
   legal_prize_fund: number
   archive?: ArchiveStats | null
@@ -168,7 +168,7 @@ export function OddsPanel({ slug }: { slug: string }) {
       const v = Number(prizes[p.key]?.replace(',', '.')) || p.official_prize || p.archive_prize || 0
       if (v > 0) { ev += p.p * v; any += p.p; entered++ }
     }
-    const pr = Number(price.replace(',', '.')) || (odds.price_source === 'archive' ? odds.price ?? 0 : 0)
+    const pr = Number(price.replace(',', '.')) || (odds.price_source === 'archive' || odds.price_source === 'rules' ? odds.price ?? 0 : 0)
     return { ev, any, entered, ret: pr > 0 && entered ? ev / pr : null }
   }, [odds, prizes, price])
 
@@ -243,7 +243,7 @@ export function OddsPanel({ slug }: { slug: string }) {
       <div className="run-bar">
         <label className="budget">Цена билета, ₽
           <input type="text" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} data-testid="ticket-price"
-            placeholder={odds.price_source === 'archive' && odds.price ? String(odds.price) : ''} />
+            placeholder={(odds.price_source === 'archive' || odds.price_source === 'rules') && odds.price ? String(odds.price) : ''} />
         </label>
         <button className="btn" onClick={save} disabled={saving} data-testid="save-prizes">{saving ? 'Сохраняю…' : 'Сохранить'}</button>
       </div>

@@ -375,6 +375,11 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
                        evaluation["next_prediction"]["model"], draw_no=target["no"], mechanism=mech_next)
         journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"],
                        mechanism=mech_next)
+        exp_row = next((m for m in evaluation["models"] if m["key"] == "experiment_echo3"), None)
+        if exp_row:
+            evaluation["next_experiment"] = ordered_prediction(data, exp_row["next"], target["no"], mech_next)
+            journal_record(data, "experiment", evaluation["next_experiment"], exp_row["title"],
+                           draw_no=target["no"], mechanism=mech_next)
         least = evaluation.get("least") or {}
         if least.get("status") == "ok":
             # наименее вероятные: порядок выпадения для них смысла не имеет — числа по возрастанию
@@ -615,6 +620,8 @@ def auto_once(args) -> dict:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
                                      "numbers": ev["next_prediction"]["numbers"],
                                      "consensus": ev["next_consensus"]}
+                if ev.get("next_experiment"):
+                    predictions[slug]["experiment"] = ev["next_experiment"]
                 if (ev.get("least") or {}).get("status") == "ok":
                     predictions[slug]["least"] = sorted_blocks(ev["least"]["next_prediction"]["numbers"])
                 ch = (payload.get("chaos") or {}).get("next") or {}
@@ -681,7 +688,10 @@ def auto_godmode(args, predictions: dict, stage, log) -> None:
     results: dict[str, dict] = {}
     if run_now:
         stage("режим Бога", ", ".join(run_now))
-        with ProcessPoolExecutor(max_workers=2) as pool:
+        # spawn, а не fork: после обучения бустинга в анализе (OpenMP) дочерний процесс,
+        # созданный fork, зависает на первом же бустинге (на Linux и в Docker; Windows — всегда spawn)
+        import multiprocessing
+        with ProcessPoolExecutor(max_workers=2, mp_context=multiprocessing.get_context("spawn")) as pool:
             futures = {pool.submit(auto_run, s, args.godmode_budget, GODMODE_MAX_DRAWS): s for s in run_now}
             for fut in as_completed(futures):
                 slug = futures[fut]
@@ -708,8 +718,16 @@ def auto_godmode(args, predictions: dict, stage, log) -> None:
             if not numbers:
                 continue
             detail = f"лидер за всю историю «{leader['title']}» (режим Бога {gm['generated_at'][5:16].replace('T', ' ')})"
-        target = {"no": p["next_no"]}
-        mech = (_read_json(results_dir(slug) / "analysis.json") or {}).get("evaluation", {}).get("target", {}).get("mechanism")
+        # режим Бога идёт после анализа всех игр (до получаса): у быстрых игр тираж, на который
+        # был анализ, к этому времени уже прошёл — прогноз Б пишется на ближайший будущий тираж
+        # на момент записи (иначе журнал помечает его «после тиража» и не засчитывает)
+        from lottery.journal import target_draw
+        tgt = target_draw(data)
+        target = {"no": max(int(p["next_no"]), int(tgt["no"]))}
+        mech = target_mechanism(data, tgt) if target["no"] == tgt["no"] else (
+            _read_json(results_dir(slug) / "analysis.json") or {}).get("evaluation", {}).get("target", {}).get("mechanism")
+        if target["no"] != p["next_no"]:
+            p["godmode_no"] = target["no"]
         numbers = ordered_prediction(data, numbers, target["no"], mech)
         if res:
             res["next"].update({"no": target["no"], "numbers": numbers, "mechanism": mech})

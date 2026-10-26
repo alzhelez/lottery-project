@@ -83,7 +83,8 @@ def cleanup_states(results_root, max_age_days: float = STATE_MAX_AGE_DAYS) -> in
     return removed
 
 
-POOL_MEMORY = 1.2e9   # байт: прогнозы экспертов и мета-стратегии на длинной истории
+POOL_MEMORY = 0.8e9   # байт: прогнозы экспертов и мета-стратегии на длинной истории
+CACHE_BYTES = 400e6   # байт: промежуточные матрицы признаков (частоты в окнах и т. п.)
 
 
 def expert_limit(data: GameData, warm: int) -> int:
@@ -118,6 +119,7 @@ class ExpertPool:
         for f in self.ev.features:
             f._cache.pop(("model", model.key), None)
             f._cache.pop(("picks", model.key), None)
+            f.trim(CACHE_BYTES / max(1, len(self.ev.features)))
 
     def half(self) -> int:
         return (self.data.T - self.warm) // 2
@@ -151,6 +153,7 @@ class ExpertPool:
 
 
 VOTE_CHUNK = 64   # экспертов за раз: ограничивает память при подсчёте голосов
+VOTE_CELLS = 1e7   # и не больше стольких (эксперт × тираж × число) за раз
 
 
 def _stacked(pool: ExpertPool) -> list[np.ndarray]:
@@ -170,8 +173,11 @@ def _vote(pool: ExpertPool, weights: np.ndarray, stacked: list[np.ndarray] | Non
     row_base = np.arange(rows, dtype=np.int64)[None, :, None]
     for b, spec in enumerate(pool.data.fmt.blocks):
         votes = np.zeros(rows * spec.size, np.float64)
-        for start in range(0, len(active), VOTE_CHUNK):
-            sel = active[start:start + VOTE_CHUNK]
+        # пачка экспертов ограничена и по числу ячеек: на 190 тыс. тиражей 64 эксперта давали
+        # временные массивы по 0,8 ГБ (и пик памяти режима Бога больше 5 ГБ)
+        chunk = max(1, min(VOTE_CHUNK, int(VOTE_CELLS // max(1, rows * spec.count))))
+        for start in range(0, len(active), chunk):
+            sel = active[start:start + chunk]
             picks = stacked[b][sel].astype(np.int64)                      # c×R×k
             idx = (row_base * spec.size + picks).ravel()
             w = np.broadcast_to(weights[sel][:, :, None], picks.shape).ravel()
@@ -204,17 +210,19 @@ def run_strategies(pool: ExpertPool) -> list[dict]:
         else:
             lag = np.hstack([np.zeros((e_count, min(w, rows)), np.float32), cum[:, : max(rows - w, 0)]])
             score = cum - lag
-        noisy = score + tie_noise(score.T.shape, 5).T * 1e-4
+        noisy = score + tie_noise(score.T.shape, 5).T.astype(np.float32) * np.float32(1e-4)
         leader = noisy.argmax(axis=0)                # по строке — индекс эксперта
         picks = [st[leader, np.arange(rows)] for st in stacked]
         name = "Лидер за всю историю" if w is None else f"Лидер за {w} тиражей"
         strategies.append({"key": f"leader_{w or 'all'}", "title": name, "picks": picks, "active": leader})
 
-    gains = hmat - mean0
+    # float32: на сотнях тысяч тиражей каждая такая матрица E×T весит сотни МБ
+    gains = (hmat - mean0).astype(np.float32)
     for eta, gamma in HEDGE_PARAMS:
-        g = lfilter([1.0], [1.0, -gamma], gains, axis=1)
-        g = np.hstack([np.zeros((e_count, 1)), g])           # G перед тиражом
-        z = eta * g
+        g = lfilter(np.float32([1.0]), np.float32([1.0, -gamma]), gains, axis=1).astype(np.float32, copy=False)
+        g = np.hstack([np.zeros((e_count, 1), np.float32), g])   # G перед тиражом
+        z = np.float32(eta) * g
+        del g
         z -= z.max(axis=0, keepdims=True)
         w = np.exp(z)
         w /= w.sum(axis=0, keepdims=True)

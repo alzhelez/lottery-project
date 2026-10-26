@@ -164,7 +164,7 @@ def odds_table(data: GameData) -> dict:
         "jackpot": {"key": jackpot["key"], "p": jackpot["p"], "one_in": jackpot["one_in"]},
         "combinations": tickets,
         "price": price,
-        "price_source": "user" if user["price"] else ("archive" if archive["price"] else None),
+        "price_source": "user" if user["price"] else ("archive" if archive["price"] else ("rules" if price else None)),
         "expected_value": ev,
         "return_per_ruble": (ev / price) if ev is not None and price else None,
         "p_any_prize": win_p if any_prize else None,

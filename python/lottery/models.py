@@ -39,6 +39,28 @@ class Features:
             self._cache[key] = fn()
         return self._cache[key]
 
+    # без этих матриц перебор режима Бога пересчитывал бы их для каждого эксперта
+    KEEP = ("stack", "gap", "last")
+
+    def trim(self, max_bytes: float) -> int:
+        """Освобождает кэш (сначала самые старые матрицы), пока он больше max_bytes: у игр с
+        сотнями тысяч тиражей каждая матрица оценок — десятки МБ, и за сотни экспертов режима
+        Бога кэш вырастал до нескольких ГБ. Нужное позже просто посчитается заново."""
+        def size(v):
+            return v.nbytes if isinstance(v, np.ndarray) else (sum(size(x) for x in v) if isinstance(v, tuple) else 0)
+        total = sum(size(v) for v in self._cache.values())
+        freed = 0
+        for key in list(self._cache):
+            if total <= max_bytes:
+                break
+            head = key[0] if isinstance(key, tuple) else key
+            if head in self.KEEP:
+                continue
+            s = size(self._cache.pop(key))
+            total -= s
+            freed += s
+        return freed
+
     def window(self, w: int | None) -> np.ndarray:
         """Сколько раз число выпало за последние w тиражей (None — за всю историю)."""
         def calc():
@@ -337,7 +359,8 @@ def standard_models() -> list[Model]:
                        (lambda a: lambda f: f.zscore(f.sampled("window", 100, _seed(f"mix_{a}"))) + a * f.zscore(f.gap()))(a),
                        params={"alpha": a}))
     m.append(Model("logreg", "Онлайн-логистическая регрессия", "ml", lambda f: online_logreg(f)))
-    return m
+    from .models_extra import extra_models
+    return m + extra_models()
 
 
 def expert_grid(level: int) -> list[Model]:

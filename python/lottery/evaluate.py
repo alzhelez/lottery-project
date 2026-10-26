@@ -100,6 +100,15 @@ class Evaluator:
         self.data = data
         self.features = [Features(x, s.count) for x, s in zip(data.matrices, data.fmt.blocks)]
         self.mean0, self.var0 = baseline(data)
+        # порядок выпадения (если архив его хранит) — для метода «позиции выпадения»
+        try:
+            from .mechanics import _ordered_rows
+            for f, spec in zip(self.features, data.fmt.blocks):
+                arr = _ordered_rows(data, spec)
+                if arr is not None and arr.shape[0] == f.T:
+                    f.ordered = (arr - spec.lo).astype(np.int64)
+        except Exception:  # noqa: BLE001 — без порядка метод считает обычную частоту
+            pass
 
     def picks(self, model: Model) -> list[np.ndarray]:
         out = []
@@ -138,8 +147,18 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         h = ev.hits(p)
         results.append((m, h))
 
-    # консенсус: числа, которые чаще всего попадают в прогнозы разных моделей
+    # ансамбль: голосование трёх методов, лучших на прошлых тиражах (на каждый тираж — свои)
     voters = [m.key for m in models if not m.control]
+    if len(voters) >= 3:
+        from .models_extra import leaders_ensemble
+        hrows = np.stack([h for m, h in results if not m.control])
+        ens = leaders_ensemble([all_picks[k] for k in voters], hrows, [s.size for s in data.fmt.blocks],
+                               [s.count for s in data.fmt.blocks])
+        ens_model = Model("leaders_3", "Ансамбль: голосование трёх лидеров", "ensemble", lambda f: None)
+        all_picks["leaders_3"] = ens
+        results.append((ens_model, ev.hits(ens)))
+
+    # консенсус: числа, которые чаще всего попадают в прогнозы разных моделей
     cons_picks = []
     for b, spec in enumerate(data.fmt.blocks):
         votes = consensus_votes([all_picks[k][b] for k in voters], spec.size)

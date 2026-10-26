@@ -168,13 +168,13 @@ test('журнал прогнозов: запись до тиража и све�
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   const entries = page.getByTestId('journal-entries')
-  // «Все»: одна строка на тираж, по нажатию — прогнозы пяти источников (с наименее вероятными)
+  // «Все»: одна строка на тираж, по нажатию — прогнозы шести источников (с экспериментом и наименее вероятными)
   await expect(page.getByTestId('journal-draw')).toHaveCount(1)
   await expect(entries).toContainText('ждёт тиража')
   await expect(entries).toContainText('№13896')
-  await expect(entries).toContainText('5 источников')
+  await expect(entries).toContainText('6 источников')
   await page.getByTestId('journal-draw').click()
-  await expect(page.getByTestId('journal-source-row')).toHaveCount(5)
+  await expect(page.getByTestId('journal-source-row')).toHaveCount(6)
   await expect(entries).toContainText('Порядок из хаоса')
   await page.getByTestId('journal-draw').click()
   await expect(page.getByTestId('journal-source-row')).toHaveCount(0)
@@ -186,17 +186,17 @@ test('журнал прогнозов: запись до тиража и све�
   expect((await (await request.get(`${MOCK}/__release`)).json()).released).toEqual([13896])
   const job = await runJob(request, { kind: 'fetch', game: '4x20' })
   expect(job.status).toBe('done')
-  expect(job.games['4x20'].journal_checked).toBe(5)
+  expect(job.games['4x20'].journal_checked).toBe(6)
 
   await page.reload()
   await page.getByTestId('tab-journal').click()
   await expect(entries).toContainText('сверен')
   await expect(entries).not.toContainText('ждёт тиража')
   await page.getByTestId('journal-draw').click()
-  await expect(page.getByTestId('journal-source-row').filter({ hasText: 'сверен' })).toHaveCount(5)
+  await expect(page.getByTestId('journal-source-row').filter({ hasText: 'сверен' })).toHaveCount(6)
   const summary = page.getByTestId('journal-summary')
   await expect(summary.locator('tr', { hasText: 'Наименее вероятные' })).toContainText('цель — выпасть реже случайного')
-  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Режим Бога', 'Порядок из хаоса', 'Наименее вероятные']) {
+  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Режим Бога', 'Порядок из хаоса', 'Эксперимент: эхо ±3', 'Наименее вероятные']) {
     await expect(summary.locator('tr', { hasText: title }).locator('td').nth(1)).toHaveText('1')
   }
   await page.screenshot({ path: 'tests/e2e/.data/journal.png', fullPage: true })
@@ -206,7 +206,7 @@ test('итоги прогнозов по всем играм', async ({ page }) 
   await page.goto('/')
   await page.getByRole('link', { name: 'Итоги прогнозов' }).click()
   const summary = page.getByTestId('overview-summary')
-  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Порядок из хаоса', 'Режим Бога', 'Наименее вероятные']) {
+  for (const title of ['Лучший метод анализа', 'Консенсус методов', 'Порядок из хаоса', 'Режим Бога', 'Эксперимент: эхо ±3', 'Наименее вероятные']) {
     await expect(summary.locator('tr', { hasText: title }).locator('td').nth(1)).toHaveText('1')
   }
   await expect(summary).toContainText('в пределах случайности')
@@ -341,9 +341,9 @@ test('автозапуск: цикл из приложения', async ({ page }
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   await expect(page.getByTestId('journal-entries')).toContainText('№13897')
-  // в автозапуске у игры есть прогнозы всех пяти источников, включая режим Бога и наименее вероятные
+  // в автозапуске у игры есть прогнозы всех пяти источников, включая режим Бога, эксперимент и наименее вероятные
   await page.getByTestId('journal-draw').filter({ hasText: '№13897' }).click()
-  await expect(page.getByTestId('journal-source-row')).toHaveCount(5)
+  await expect(page.getByTestId('journal-source-row')).toHaveCount(6)
 })
 
 test('устаревшая игра: анализ есть, в журнал не пишется', async ({ page }) => {

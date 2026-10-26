@@ -247,12 +247,13 @@ def _dec(v: float, digits: int) -> str:
     return f"{v:.{digits}f}".replace(".", ",")
 
 
-SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б", "least": "Н"}
+SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б", "experiment": "Э",
+         "least": "Н"}
 
 
 LEGEND = ("Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога, "
-          "Н — наименее вероятные (их лучше не брать)")
-ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode", "least")
+          "Э — эксперимент «эхо ±3», Н — наименее вероятные (их лучше не брать)")
+ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode", "experiment", "least")
 
 
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
@@ -329,8 +330,9 @@ def auto_message(status: dict, predictions: dict[str, dict], recommendations: li
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
         for label, nums in (("Л", p.get("numbers")), ("К", p.get("consensus")),
                             (f"Х ({esc(p['chaos']['title'])})" if p.get("chaos") else "Х",
-                             (p.get("chaos") or {}).get("numbers")), ("Б", p.get("godmode")),
-                            ("Н (не брать)", p.get("least"))):
+                             (p.get("chaos") or {}).get("numbers")),
+                            (f"Б (на №{p['godmode_no']})" if p.get("godmode_no") else "Б", p.get("godmode")),
+                            ("Э", p.get("experiment")), ("Н (не брать)", p.get("least"))):
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))

@@ -81,7 +81,7 @@ def test_telegram_least_line_not_in_totals():
     assert "1 шт., угадано 3" in msg
     auto = notify.auto_message({"games": {}}, {"4x20": {"title": "4 из 20", "next_no": 5, "numbers": [[1, 2, 3, 4]],
                                                         "least": [[7, 8, 9, 10]]}})
-    assert "Н (не брать): <code>7 8 9 10</code>" in auto and "Н — наименее вероятные" in auto
+    assert "Н (не брать): <code>7 8 9 10</code>" in auto and "Н — наименее вероятные" in auto and "Э — эксперимент" in auto
 
 
 def test_analysis_records_least_sorted(data_dir, monkeypatch):

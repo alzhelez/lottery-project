@@ -233,7 +233,7 @@ def test_auto_runs_godmode_then_reuses_leader(data_dir):
     gm = json.loads((results_dir("5x36") / "godmode.json").read_text(encoding="utf-8"))
     assert gm["auto"] and gm["chosen"] == "leader_all" and gm["next"]["leader"]["key"]
     entries = json.loads((data_dir / "journal" / "5x36.json").read_text(encoding="utf-8"))["entries"]
-    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos", "godmode", "least"}
+    assert {e["source"] for e in entries} == {"analysis_best", "analysis_consensus", "chaos", "godmode", "least", "experiment"}
     write_draws(draws_path("5x36"), draws)
     rc, _ = run(["auto", "--skip-fetch", "--skip-scan", "--godmode-budget", "1"], data_dir)
     assert rc == 0
@@ -266,3 +266,24 @@ def test_recommend_uses_expected_return_and_proven_source(data_dir):
     recs = lp.recommend(preds)
     assert len(recs) == 1 and recs[0]["return"] == 0.71 and recs[0]["source"] == "analysis_consensus"
     assert recs[0]["numbers"] == [[7, 13, 22, 29, 34]] and recs[0]["proven"] is None
+
+
+def test_auto_godmode_targets_future_draw_at_record_time(data_dir):
+    """Режим Бога в автозапуске идёт после анализа всех игр: если тираж, на который был анализ,
+    уже прошёл, прогноз Б пишется на ближайший будущий тираж (раньше 44% таких прогнозов
+    журнал помечал «после тиража»)."""
+    import argparse
+    import lp
+    from lottery import journal
+    write_draws(draws_path("5x36"), fresh_draws(420))       # раз в час, последний — час назад
+    folder = results_dir("5x36")
+    folder.mkdir(parents=True)
+    (folder / "godmode.json").write_text(json.dumps({
+        "generated_at": datetime.now().isoformat(timespec="seconds"), "version": lp.__version__,
+        "next": {"leader": {"key": "hot_all", "title": "Горячие за всю историю", "params": {}}}}), encoding="utf-8")
+    preds = {"5x36": {"title": "5 из 36", "next_no": 421}}  # №421 приходится на «сейчас»
+    args = argparse.Namespace(godmode_budget=5, godmode_every=3)
+    lp.auto_godmode(args, preds, lambda *a: None, lambda m: None)
+    entry = next(e for e in journal.load("5x36")["entries"] if e["source"] == "godmode")
+    target = journal.target_draw(load_game_data(get_game("5x36")))["no"]
+    assert entry["draw_no"] == target > 421 and preds["5x36"]["godmode_no"] == target

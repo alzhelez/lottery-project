@@ -169,7 +169,7 @@ export function GameView({ info }: { info: Info }) {
           {tab === 'odds' && <OddsPanel slug={info.slug} />}
           {tab === 'tickets' && <TicketsPanel slug={info.slug} />}
           {tab === 'mine' && <MyTickets slug={info.slug} />}
-          {tab === 'rules' && <RulesPanel slug={info.slug} stolotoUrl={info.stolotoUrl} />}
+          {tab === 'rules' && <RulesPanel slug={info.slug} stolotoUrl={info.stolotoUrl} lastNo={info.last?.no ?? null} />}
         </>
       )}
     </main>
