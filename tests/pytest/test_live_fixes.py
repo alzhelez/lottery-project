@@ -119,8 +119,9 @@ def test_bonus_is_split_for_unknown_game():
 
 def test_api_titles_are_used(data_dir):
     (data_dir / "api_games.json").write_text(json.dumps(
-        {"games": [{"name": "vin", "title": "Винлото", "keys": []}]}, ensure_ascii=False), encoding="utf-8")
-    assert get_game("vin").title == "Винлото"
+        {"games": [{"name": "newlotto", "title": "Новая лотерея", "keys": []}]}, ensure_ascii=False), encoding="utf-8")
+    assert get_game("newlotto").title == "Новая лотерея"                 # игры нет в реестре
+    assert get_game("vin").title == "Всё или ничего (повторяет «Забаву от Русского лото»)"
     assert get_game("4x20").title == "4 из 20"              # реестр важнее
     assert stoloto._api_title({"name": "x", "displayName": "Золотое кольцо", "id": 3}) == "Золотое кольцо"
     assert stoloto._api_title({"name": "x", "id": 3}) is None

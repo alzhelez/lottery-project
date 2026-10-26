@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { nf } from './format'
 import { useJob } from './useJob'
 
@@ -41,6 +41,16 @@ export function RulesPanel({ slug, stolotoUrl, lastNo }: { slug: string; stoloto
   }, [slug])
   useEffect(() => { load() }, [load])
   const job = useJob('rules', slug, load)
+  // данные о ближайшем тираже обновляются в каждом цикле автозапуска (раз в час), а у быстрых
+  // игр тираж проходит за минуты — если он уже сыгран, обновляем сами (один раз за открытие)
+  const refreshed = useRef(false)
+  const staleNext = rules?.next_draw?.number != null && lastNo != null && rules.next_draw.number <= lastNo
+  useEffect(() => {
+    if (staleNext && !refreshed.current && !job.running) {
+      refreshed.current = true
+      job.start()
+    }
+  }, [staleNext, job])
 
   if (!loaded) return null
   const nd = rules?.next_draw
@@ -62,7 +72,7 @@ export function RulesPanel({ slug, stolotoUrl, lastNo }: { slug: string; stoloto
           {nd && (
             <dl className="facts">
               <div><dt>Ближайший тираж</dt><dd>№{nd.number}</dd>
-                {lastNo != null && nd.number != null && nd.number <= lastNo && <dd className="sub warn" data-testid="rules-stale">уже сыгран — обновите правила, чтобы увидеть текущий</dd>}
+                {staleNext && <dd className="sub warn" data-testid="rules-stale">{job.running ? 'уже сыгран — обновляю…' : 'уже сыгран — обновите правила, чтобы увидеть текущий'}</dd>}
                 <dd className="sub">{nd.date?.replace('T', ' ').slice(0, 16)}{nd.lototron != null && ` · ${nd.lototron ? 'лототрон (трансляция)' : 'без трансляции'}`}</dd></div>
               <div><dt>Суперприз</dt><dd data-testid="rules-superprize">{nd.super_prize ? rub(nd.super_prize) : '—'}</dd>
                 <dd className="sub">{nd.jackpot_guaranteed ? `гарантированный минимум ${rub(nd.jackpot_guaranteed)}` : ''}</dd></div>
