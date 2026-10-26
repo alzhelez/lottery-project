@@ -16,6 +16,7 @@ interface Test { block: string; title: string; p_value: number; p_adjusted: numb
 
 export interface Analysis {
   generated_at: string
+  version?: string
   last_draw_no: number
   format: string
   seconds: number
