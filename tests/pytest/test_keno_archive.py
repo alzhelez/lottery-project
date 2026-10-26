@@ -118,8 +118,8 @@ def test_games_without_number_choice_or_small_prize_are_excluded():
     обычный суперприз меньше 1 000 000 ₽ (октябрь 2026)."""
     from lottery.games import get_game, is_excluded
     for slug in ("ruslotto", "gzhl", "rocketbingo", "fzp", "goldenring", "bingo75", "crazycombo",
-                 "ostatki-sladki", "lovi_moment", "udachanasdachu", "dvazhdydva", "oxota-vyzov", "spec"):
+                 "ostatki-sladki", "lovi_moment", "udachanasdachu", "dvazhdydva", "oxota-vyzov", "spec", "5x36lite2"):
         assert is_excluded(slug), slug
         assert get_game(slug).excluded
-    for slug in ("4x20", "6x45", "5x36plus", "keno2", "rapido2", "rapidodrive", "oxota", "vin", "top-3"):
+    for slug in ("4x20", "6x45", "5x36plus", "keno2", "rapido2", "rapidodrive", "oxota", "vin", "top-3", "5x36lite"):
         assert not is_excluded(slug), slug

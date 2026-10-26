@@ -10,7 +10,7 @@
     { "slug": "5x36",          "title": "5 из 36",            "counts": [5] },
     { "slug": "5x36plus",      "title": "5 из 36 плюс",       "counts": [5, 1] },
     { "slug": "5x36lite",      "title": "5 из 36 лайт",       "counts": [5] },
-    { "slug": "5x36lite2",     "title": "5 из 36 лайт 2",     "counts": [5] },
+    { "slug": "5x36lite2",     "title": "5 из 36 лайт 2",     "counts": [5], "excluded": "дубль «5 из 36 лайт»: API Столото отдаёт по этому адресу те же тиражи" },
     { "slug": "5x2",           "title": "5x2",                "counts": [5, 2] },
     { "slug": "6x36",          "title": "6 из 36",            "counts": [6] },
     { "slug": "6x49",          "title": "6 из 49",            "counts": [6] },
