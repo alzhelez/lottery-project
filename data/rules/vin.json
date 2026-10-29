@@ -1,0 +1,105 @@
+{
+ "slug": "vin",
+ "fetched_at": "2026-10-29T02:56:45",
+ "how": "",
+ "schedule": {
+  "lototron": false,
+  "rng": false,
+  "times": {}
+ },
+ "faq": [
+  {
+   "question": "Как копится суперприз?",
+   "answer": "В призовой фонд лотереи уходит 60% от стоимости каждого проданного билета. Суперприз лотереи накапливаемый. Если в текущем тираже его никто не выиграл, накопленная сумма переходит на следующий тираж. Минимальный гарантированный суперприз «Всё или ничего» — 10 000 000 ₽."
+  },
+  {
+   "question": "Что такое призовой фонд?",
+   "answer": "Это сумма, которая разыгрывается в тираже. Она рассчитывается после закрытия продаж на тираж и зависит от количества купленных билетов."
+  }
+ ],
+ "cards": [
+  {
+   "title": "{{lottery_winners_distribution_pers}}",
+   "text": "Повышенный призовой фонд"
+  },
+  {
+   "title": "Более 17 000 000 000 ₽",
+   "text": "Общая сумма выигрышей"
+  },
+  {
+   "title": "Каждые 15 минут",
+   "text": "Шанс стать миллионером"
+  },
+  {
+   "title": "{{lottery_jackpot_guaranteed}}",
+   "text": "Минимальный гарантированный суперприз"
+  },
+  {
+   "title": "{{lottery_min_prize}}",
+   "text": "Минимальный выигрыш"
+  },
+  {
+   "title": "{{lottery_bet_cost}}",
+   "text": "Минимальная ставка"
+  }
+ ],
+ "table": [
+  {
+   "g1": 12,
+   "g2": 0,
+   "prize": 0.0,
+   "superprize": true,
+   "percent": null,
+   "wc": 1
+  },
+  {
+   "g1": 11,
+   "g2": 1,
+   "prize": 70000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 2
+  },
+  {
+   "g1": 10,
+   "g2": 2,
+   "prize": 7000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 3
+  },
+  {
+   "g1": 9,
+   "g2": 3,
+   "prize": 1400.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 4
+  },
+  {
+   "g1": 8,
+   "g2": 4,
+   "prize": 350.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 5
+  }
+ ],
+ "table_error": null,
+ "min_prize": 350,
+ "superprize_rows": [],
+ "next_draw": {
+  "number": 189203,
+  "date": "2026-10-29T20:01:00",
+  "super_prize": 29674670,
+  "jackpots": [
+   29674670
+  ],
+  "price": 350,
+  "lototron": false,
+  "prize_fund_pct": 60,
+  "jackpot_guaranteed": 10000000,
+  "rollover": false,
+  "status": "PLAYING"
+ }
+}

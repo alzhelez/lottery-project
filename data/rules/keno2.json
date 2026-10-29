@@ -1,0 +1,375 @@
+{
+ "slug": "keno2",
+ "fetched_at": "2026-10-29T02:57:09",
+ "how": "",
+ "schedule": {
+  "lototron": false,
+  "rng": false,
+  "times": {}
+ },
+ "faq": [],
+ "cards": [],
+ "table": [
+  {
+   "g1": 100,
+   "g2": 100,
+   "prize": 0.0,
+   "superprize": true,
+   "percent": null,
+   "wc": 1
+  },
+  {
+   "g1": 10,
+   "g2": 10,
+   "prize": 10000000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 2
+  },
+  {
+   "g1": 10,
+   "g2": 9,
+   "prize": 1000000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 3
+  },
+  {
+   "g1": 10,
+   "g2": 8,
+   "prize": 50000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 5
+  },
+  {
+   "g1": 10,
+   "g2": 7,
+   "prize": 5000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 8
+  },
+  {
+   "g1": 10,
+   "g2": 6,
+   "prize": 750.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 12
+  },
+  {
+   "g1": 10,
+   "g2": 5,
+   "prize": 250.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 17
+  },
+  {
+   "g1": 10,
+   "g2": 4,
+   "prize": 100.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 39
+  },
+  {
+   "g1": 10,
+   "g2": 0,
+   "prize": 200.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 35
+  },
+  {
+   "g1": 9,
+   "g2": 9,
+   "prize": 4000000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 4
+  },
+  {
+   "g1": 9,
+   "g2": 8,
+   "prize": 210000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 6
+  },
+  {
+   "g1": 9,
+   "g2": 7,
+   "prize": 10000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 9
+  },
+  {
+   "g1": 9,
+   "g2": 6,
+   "prize": 1000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 13
+  },
+  {
+   "g1": 9,
+   "g2": 5,
+   "prize": 300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 18
+  },
+  {
+   "g1": 9,
+   "g2": 4,
+   "prize": 150.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 40
+  },
+  {
+   "g1": 9,
+   "g2": 0,
+   "prize": 150.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 36
+  },
+  {
+   "g1": 8,
+   "g2": 8,
+   "prize": 1500000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 7
+  },
+  {
+   "g1": 8,
+   "g2": 7,
+   "prize": 53300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 10
+  },
+  {
+   "g1": 8,
+   "g2": 6,
+   "prize": 2500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 14
+  },
+  {
+   "g1": 8,
+   "g2": 5,
+   "prize": 500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 19
+  },
+  {
+   "g1": 8,
+   "g2": 4,
+   "prize": 200.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 41
+  },
+  {
+   "g1": 8,
+   "g2": 0,
+   "prize": 150.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 37
+  },
+  {
+   "g1": 7,
+   "g2": 7,
+   "prize": 250000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 11
+  },
+  {
+   "g1": 7,
+   "g2": 6,
+   "prize": 10000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 15
+  },
+  {
+   "g1": 7,
+   "g2": 5,
+   "prize": 1200.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 20
+  },
+  {
+   "g1": 7,
+   "g2": 4,
+   "prize": 200.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 23
+  },
+  {
+   "g1": 7,
+   "g2": 3,
+   "prize": 100.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 42
+  },
+  {
+   "g1": 7,
+   "g2": 0,
+   "prize": 150.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 38
+  },
+  {
+   "g1": 6,
+   "g2": 6,
+   "prize": 75000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 16
+  },
+  {
+   "g1": 6,
+   "g2": 5,
+   "prize": 4180.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 21
+  },
+  {
+   "g1": 6,
+   "g2": 4,
+   "prize": 750.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 24
+  },
+  {
+   "g1": 6,
+   "g2": 3,
+   "prize": 200.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 27
+  },
+  {
+   "g1": 5,
+   "g2": 5,
+   "prize": 20000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 22
+  },
+  {
+   "g1": 5,
+   "g2": 4,
+   "prize": 1920.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 25
+  },
+  {
+   "g1": 5,
+   "g2": 3,
+   "prize": 400.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 28
+  },
+  {
+   "g1": 4,
+   "g2": 4,
+   "prize": 3300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 26
+  },
+  {
+   "g1": 4,
+   "g2": 3,
+   "prize": 300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 29
+  },
+  {
+   "g1": 4,
+   "g2": 2,
+   "prize": 100.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 31
+  },
+  {
+   "g1": 3,
+   "g2": 3,
+   "prize": 1500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 30
+  },
+  {
+   "g1": 3,
+   "g2": 2,
+   "prize": 300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 32
+  },
+  {
+   "g1": 2,
+   "g2": 2,
+   "prize": 300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 33
+  },
+  {
+   "g1": 2,
+   "g2": 1,
+   "prize": 100.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 43
+  },
+  {
+   "g1": 1,
+   "g2": 1,
+   "prize": 280.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 34
+  }
+ ],
+ "table_error": null,
+ "min_prize": 100,
+ "superprize_rows": [],
+ "next_draw": {
+  "number": 330491,
+  "date": "2026-10-29T20:02:30",
+  "super_prize": 20000000,
+  "jackpots": [
+   20000000
+  ],
+  "price": 100,
+  "lototron": false,
+  "prize_fund_pct": 70,
+  "jackpot_guaranteed": 20000000,
+  "rollover": false,
+  "status": "PLAYING"
+ }
+}

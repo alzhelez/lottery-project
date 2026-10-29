@@ -1,0 +1,135 @@
+{
+ "slug": "top-3",
+ "fetched_at": "2026-10-29T02:56:52",
+ "how": "",
+ "schedule": {
+  "lototron": false,
+  "rng": false,
+  "times": {}
+ },
+ "faq": [],
+ "cards": [],
+ "table": [
+  {
+   "g1": 100,
+   "g2": 100,
+   "prize": 0.0,
+   "superprize": true,
+   "percent": null,
+   "wc": 1
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 45000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 2
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 45000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 3
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 27000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 4
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 27000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 5
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 18000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 6
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 9000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 7
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 9000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 8
+  },
+  {
+   "g1": 2,
+   "g2": 0,
+   "prize": 5400.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 9
+  },
+  {
+   "g1": 2,
+   "g2": 0,
+   "prize": 5400.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 10
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 4500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 11
+  },
+  {
+   "g1": 2,
+   "g2": 0,
+   "prize": 2700.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 12
+  },
+  {
+   "g1": 1,
+   "g2": 0,
+   "prize": 450.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 13
+  }
+ ],
+ "table_error": null,
+ "min_prize": 450,
+ "superprize_rows": [],
+ "next_draw": {
+  "number": 270201,
+  "date": "2026-10-29T20:25:30",
+  "super_prize": 10000000,
+  "jackpots": [
+   10000000
+  ],
+  "price": 90,
+  "lototron": false,
+  "prize_fund_pct": 60,
+  "jackpot_guaranteed": 10000000,
+  "rollover": false,
+  "status": "WAITING"
+ }
+}

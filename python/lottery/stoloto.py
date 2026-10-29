@@ -6,10 +6,13 @@
   3. файл есть → докачиваем тиражи с даты последнего, заполняем пропуски в нумерации
      (запросом окна дат между соседними известными тиражами) и ранние тиражи;
   4. прогресс сохраняется на диск каждые несколько страниц — прерывание не теряет данные.
+
+Версия с улучшенным retry-механизмом через tenacity.
 """
 from __future__ import annotations
 
 import json
+import logging
 import os
 import threading
 import time
@@ -17,11 +20,21 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import requests
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+)
 
 from .drawfile import Draw, load_game_draws, merge_legacy, write_draws
 from . import prizes as prizes_mod
 from .fsutil import cleanup_stale_tmp, write_text
 from .games import Game, all_games, data_dir, draws_path, get_game, read_meta, write_meta
+
+# Настройка логирования для retry
+logger = logging.getLogger(__name__)
 
 API_BASE = os.environ.get("STOLOTO_API_BASE", "https://www.stoloto.ru/p/api/mobile/api/v35/service").rstrip("/")
 PAGE_SIZE = 50
@@ -178,44 +191,91 @@ def api_draw_to_draw(raw: dict, game: Game) -> Draw | None:
     return Draw(no=no, date=date, blocks=tuple(tuple(b) for b in blocks))
 
 
-# ── HTTP ──────────────────────────────────────────────────────────────────
+# ── HTTP с улучшенным retry ───────────────────────────────────────────────
+
+@retry(
+    stop=stop_after_attempt(6),
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    retry=retry_if_exception_type((requests.ConnectionError, requests.Timeout)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+def _robust_request(url: str, params: dict, headers: dict, timeout: int = 30) -> requests.Response:
+    """
+    HTTP GET с автоматическими retry при сетевых ошибках.
+
+    Использует tenacity для экспоненциального backoff:
+    - При ConnectionError/Timeout: 2s, 4s, 8s, 16s, 32s, 60s (6 попыток)
+    - При успехе или других ошибках: возврат сразу
+    """
+    with _API_SEMAPHORE:
+        response = requests.get(url, headers=headers, params=params, timeout=timeout)
+        return response
+
 
 def _get(url: str, params: dict, headers: dict | None = None, retries: int = 5, log=print) -> dict | None:
-    """GET с ретраями. None — данных нет (400/404). ApiUnavailable — сеть/сервер недоступны."""
+    """GET с ретраями и обработкой ошибок API. None — данных нет (400/404)."""
     last_err = ""
-    network_fails = 0
+
     for attempt in range(retries + 1):
         try:
-            with _API_SEMAPHORE:
-                resp = requests.get(url, headers=headers or HEADERS, params=params, timeout=30)
+            # Используем robost_request с tenacity
+            resp = _robust_request(url, params, headers or HEADERS)
+
+            # Обработка кодов ответа
             if resp.status_code == 429:
                 wait = min(2 ** (attempt + 1), 60)
-                log(f"HTTP 429 (лимит запросов), пауза {wait} с")
+                log(f"⚠️ HTTP 429 (rate limit), пауза {wait} с")
                 time.sleep(wait)
                 continue
+
             if resp.status_code in (400, 404):
                 return None
+
             if resp.status_code in (401, 403):
                 raise ApiUnavailable(
-                    f"API Столото отказало в доступе (HTTP {resp.status_code}). Обновите STOLOTO_COOKIE "
-                    "и STOLOTO_TOKEN в файле .env значениями из браузера (см. README).")
+                    f"🔒 API Столото отказало в доступе (HTTP {resp.status_code}). "
+                    "Обновите STOLOTO_COOKIE и STOLOTO_TOKEN в файле .env значениями из браузера "
+                    "(инструкция в .env.example или README)."
+                )
+
             if resp.status_code >= 500:
                 last_err = f"HTTP {resp.status_code}"
+                log(f"⚠️ Ошибка сервера: {last_err}, повтор {attempt + 1}/{retries + 1}")
                 time.sleep(min(2 ** (attempt + 1), 30))
                 continue
+
             resp.raise_for_status()
-            return resp.json()
+
+            # Парсинг JSON
+            try:
+                return resp.json()
+            except ValueError as exc:
+                last_err = f"Некорректный JSON: {exc}"
+                if attempt < retries:
+                    log(f"⚠️ {last_err}, повтор {attempt + 1}/{retries + 1}")
+                    time.sleep(2)
+                    continue
+                raise ApiUnavailable(f"API вернуло некорректные данные: {last_err}")
+
         except (requests.ConnectionError, requests.Timeout) as exc:
+            # tenacity уже сделала все retry, это финальный провал
             last_err = str(exc)
-            network_fails += 1
-            if network_fails >= 3:   # нет соединения — не тратим минуты на ретраи
-                raise ApiUnavailable(f"Нет связи с API Столото: {last_err}", network=True) from exc
-            time.sleep(2 * network_fails)
-        except (requests.RequestException, ValueError) as exc:
+            raise ApiUnavailable(
+                f"❌ Нет связи с API Столото после всех попыток: {last_err}",
+                network=True
+            ) from exc
+
+        except requests.RequestException as exc:
             last_err = str(exc)
             if attempt < retries:
+                log(f"⚠️ Ошибка запроса: {last_err}, повтор {attempt + 1}/{retries + 1}")
                 time.sleep(min(2 ** (attempt + 1), 30))
-    raise ApiUnavailable(f"API Столото недоступно: {last_err or 'превышен лимит повторов'}")
+                continue
+
+    raise ApiUnavailable(
+        f"❌ API Столото недоступно после {retries + 1} попыток: {last_err or 'неизвестная ошибка'}"
+    )
 
 
 def archive_page(game: Game, date_from: datetime, date_to: datetime, page: int, count: int = PAGE_SIZE,

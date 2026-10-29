@@ -1,0 +1,176 @@
+{
+ "slug": "5x2",
+ "fetched_at": "2026-10-29T02:56:54",
+ "how": "Тиражи «Большого Спортлото» проходят каждый день в 09:30 мск, 15:00 мск и 20:00 мск. Продажа билетов на тиражи заканчивается за 5 минут до их начала, в 09:25 мск, в 14:55 мск и 19:55 мск соответственно. Билеты, купленные после этого времени, автоматически переходят на следующий тираж.",
+ "schedule": {
+  "lototron": false,
+  "rng": false,
+  "times": {
+   "09:30": "R",
+   "15:00": "R",
+   "20:00": "R"
+  }
+ },
+ "faq": [
+  {
+   "question": "Как копится суперприз?",
+   "answer": "В призовой фонд лотереи уходит 60% от стоимости каждого проданного билета. Часть этих денег идёт в суперприз, и он накапливается. Если никто не выиграл суперприз, накопленная сумма переходит на следующий тираж. Минимальный гарантированный суперприз «Большого Спортлото» — 10 000 000 ₽."
+  },
+  {
+   "question": "Что такое призовой фонд?",
+   "answer": "Это сумма, которая разыгрывается в тираже. Она рассчитывается после закрытия продаж на тираж и зависит от количества купленных билетов."
+  }
+ ],
+ "cards": [
+  {
+   "title": "Общая сумма выигрышей",
+   "text": "> 3.5 млрд ₽"
+  },
+  {
+   "title": "Призовой фонд  лотереи",
+   "text": "60%"
+  },
+  {
+   "title": "3 шанса",
+   "text": "Cтать миллионером"
+  }
+ ],
+ "table": [
+  {
+   "g1": 5,
+   "g2": 2,
+   "prize": 0.0,
+   "superprize": true,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 5,
+   "g2": 1,
+   "prize": 3000000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 5,
+   "g2": 0,
+   "prize": 1000000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 4,
+   "g2": 2,
+   "prize": 15000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 4,
+   "g2": 1,
+   "prize": 7500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 4,
+   "g2": 0,
+   "prize": 3000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 3,
+   "g2": 2,
+   "prize": 1800.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 3,
+   "g2": 1,
+   "prize": 450.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 3,
+   "g2": 0,
+   "prize": 180.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 2,
+   "g2": 2,
+   "prize": 500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 2,
+   "g2": 1,
+   "prize": 90.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 2,
+   "g2": 0,
+   "prize": 60.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 1,
+   "g2": 2,
+   "prize": 120.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  },
+  {
+   "g1": 1,
+   "g2": 1,
+   "prize": 30.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 0
+  }
+ ],
+ "table_error": null,
+ "min_prize": 30,
+ "superprize_rows": [
+  {
+   "label": "Суперприз",
+   "g1": 5,
+   "g2": 2,
+   "second": null
+  }
+ ],
+ "next_draw": {
+  "number": 3414,
+  "date": "2026-10-29T20:00:00",
+  "super_prize": 34802029,
+  "jackpots": [
+   34802029
+  ],
+  "price": 30,
+  "lototron": false,
+  "prize_fund_pct": 60,
+  "jackpot_guaranteed": 10000000,
+  "rollover": true,
+  "status": "PLAYING"
+ }
+}

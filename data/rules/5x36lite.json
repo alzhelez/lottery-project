@@ -1,0 +1,85 @@
+{
+ "slug": "5x36lite",
+ "fetched_at": "2026-10-29T02:56:39",
+ "how": "",
+ "schedule": {
+  "lototron": false,
+  "rng": false,
+  "times": {}
+ },
+ "faq": [
+  {
+   "question": "Как копится суперприз?",
+   "answer": "В призовой фонд лотереи уходит 50% от стоимости каждого проданного билета. Часть этих денег идёт в суперприз, и он накапливается. Если никто не выиграл суперприз, накопленная сумма переходит на следующий тираж. Минимальный гарантированный суперприз «5x36» — 5 000 000 ₽."
+  },
+  {
+   "question": "Что такое призовой фонд?",
+   "answer": "Это сумма, которая разыгрывается в тираже. Она рассчитывается после закрытия продаж на тираж и зависит от количества купленных билетов."
+  }
+ ],
+ "cards": [
+  {
+   "title": "Суперприз",
+   "text": "от 5 000 000 ₽"
+  },
+  {
+   "title": "Призовой фонд лотереи",
+   "text": "50%"
+  },
+  {
+   "title": "Розыгрыши каждую",
+   "text": "НЕДЕЛЮ"
+  }
+ ],
+ "table": [
+  {
+   "g1": 5,
+   "g2": null,
+   "prize": 0.0,
+   "superprize": true,
+   "percent": null,
+   "wc": null
+  },
+  {
+   "g1": 4,
+   "g2": null,
+   "prize": 50000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": null
+  },
+  {
+   "g1": 3,
+   "g2": null,
+   "prize": 2000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": null
+  },
+  {
+   "g1": 2,
+   "g2": null,
+   "prize": 200.0,
+   "superprize": false,
+   "percent": null,
+   "wc": null
+  }
+ ],
+ "table_error": null,
+ "min_prize": 200,
+ "superprize_rows": [],
+ "next_draw": {
+  "number": 31,
+  "date": "2026-11-04T13:15:00",
+  "super_prize": 5000000,
+  "jackpots": [
+   5000000
+  ],
+  "price": 200,
+  "lototron": false,
+  "prize_fund_pct": 50,
+  "jackpot_guaranteed": 5000000,
+  "rollover": false,
+  "status": "WAITING"
+ }
+}

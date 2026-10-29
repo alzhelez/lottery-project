@@ -1,0 +1,137 @@
+{
+ "slug": "rapidopro",
+ "fetched_at": "2026-10-29T02:56:57",
+ "how": "",
+ "schedule": {
+  "lototron": false,
+  "rng": false,
+  "times": {}
+ },
+ "faq": [
+  {
+   "question": "Как копится суперприз",
+   "answer": "В призовой фонд лотереи уходит 67% от стоимости каждого проданного билета. Суперприз лотереи накапливаемый. Если в текущем тираже его никто не выиграл, накопленная сумма переходит на следующий тираж. Минимальный гарантированный суперприз «Рáпидо Про» —5 000 000 ₽."
+  },
+  {
+   "question": "Что такое призовой фонд",
+   "answer": "Это сумма, которая разыгрывается в тираже. Она рассчитывается после закрытия продаж на тираж и зависит от количества купленных билетов."
+  }
+ ],
+ "cards": [
+  {
+   "title": "{{lottery_winners_distribution_pers}}",
+   "text": "Повышенный призовой фонд"
+  },
+  {
+   "title": "Более 51 900 000 000 ₽",
+   "text": "Общая сумма выигрышей"
+  },
+  {
+   "title": "Каждые 15 минут",
+   "text": "Шанс стать миллионером"
+  },
+  {
+   "title": "{{lottery_jackpot_guaranteed}}",
+   "text": "Минимальный гарантированный суперприз"
+  },
+  {
+   "title": "{{lottery_min_prize}}",
+   "text": "Минимальный выигрыш"
+  },
+  {
+   "title": "{{lottery_bet_cost}}",
+   "text": "Минимальная ставка"
+  }
+ ],
+ "table": [
+  {
+   "g1": 8,
+   "g2": 1,
+   "prize": 0.0,
+   "superprize": true,
+   "percent": null,
+   "wc": 1
+  },
+  {
+   "g1": 8,
+   "g2": 0,
+   "prize": 400000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 2
+  },
+  {
+   "g1": 7,
+   "g2": 1,
+   "prize": 100000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 3
+  },
+  {
+   "g1": 7,
+   "g2": 0,
+   "prize": 30000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 4
+  },
+  {
+   "g1": 6,
+   "g2": 1,
+   "prize": 3000.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 5
+  },
+  {
+   "g1": 6,
+   "g2": 0,
+   "prize": 1500.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 6
+  },
+  {
+   "g1": 5,
+   "g2": 1,
+   "prize": 900.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 7
+  },
+  {
+   "g1": 5,
+   "g2": 0,
+   "prize": 600.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 8
+  },
+  {
+   "g1": 4,
+   "g2": 1,
+   "prize": 300.0,
+   "superprize": false,
+   "percent": null,
+   "wc": 9
+  }
+ ],
+ "table_error": null,
+ "min_prize": 300,
+ "superprize_rows": [],
+ "next_draw": {
+  "number": 374926,
+  "date": "2026-10-29T20:08:00",
+  "super_prize": 8886954,
+  "jackpots": [
+   8886954
+  ],
+  "price": 300,
+  "lototron": false,
+  "prize_fund_pct": 67,
+  "jackpot_guaranteed": 5000000,
+  "rollover": false,
+  "status": "WAITING"
+ }
+}

@@ -18,15 +18,21 @@
 Пул экспертов расширяется по стадиям, пока перебор не исчерпан (40 пачек смесей подряд без
 улучшения) или не прошло 8 часов; после каждой стадии результат сохраняется (можно смотреть
 промежуточный итог).
+
+Версия с контролем памяти через psutil и resource.
 """
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
+import sys
 import time
+import warnings
 
 import numpy as np
+import psutil
 from scipy.signal import lfilter
 
 from .drawfile import GameData
@@ -34,6 +40,92 @@ from .fsutil import replace_with_retry, write_text
 from .evaluate import Evaluator, metrics, rolling_curve, warmup_size
 from .models import Model, expert_grid, gbm_scores, standard_models, tie_noise, top_k
 from .stats import hypergeom_moments, ru
+
+# Настройка logging
+logger = logging.getLogger(__name__)
+
+
+# ── Контроль памяти ────────────────────────────────────────────────────────
+
+class MemoryMonitor:
+    """Мониторинг и ограничение использования памяти."""
+
+    def __init__(self, max_gb: float = 3.0, warn_gb: float = 2.5):
+        """
+        Args:
+            max_gb: Максимально допустимая память (ГБ). При превышении - попытка очистки.
+            warn_gb: Порог предупреждения (ГБ).
+        """
+        self.max_bytes = int(max_gb * 1024 ** 3)
+        self.warn_bytes = int(warn_gb * 1024 ** 3)
+        self.process = psutil.Process()
+
+        # Попытка установить hard limit (только Linux/macOS)
+        if sys.platform != 'win32':
+            try:
+                import resource
+                resource.setrlimit(
+                    resource.RLIMIT_AS,
+                    (self.max_bytes, self.max_bytes)
+                )
+                logger.info(f"✓ Установлен лимит памяти: {max_gb:.1f} ГБ")
+            except (ImportError, ValueError, OSError) as e:
+                logger.warning(f"Не удалось установить hard limit памяти: {e}")
+
+    def current_usage_gb(self) -> float:
+        """Текущее использование памяти процессом в ГБ."""
+        try:
+            return self.process.memory_info().rss / 1024 ** 3
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return 0.0
+
+    def check(self) -> tuple[bool, str]:
+        """
+        Проверка использования памяти.
+
+        Returns:
+            (is_critical, message): is_critical=True если нужна немедленная очистка
+        """
+        usage_gb = self.current_usage_gb()
+
+        if usage_gb >= self.max_bytes / 1024 ** 3:
+            return True, f"❌ КРИТИЧНО: память {usage_gb:.2f} ГБ (лимит {self.max_bytes / 1024 ** 3:.1f} ГБ)"
+
+        if usage_gb >= self.warn_bytes / 1024 ** 3:
+            return False, f"⚠️ Высокое использование памяти: {usage_gb:.2f} ГБ"
+
+        return False, f"✓ Память в норме: {usage_gb:.2f} ГБ"
+
+    def emergency_cleanup(self, pool=None):
+        """
+        Экстренная очистка памяти.
+
+        Args:
+            pool: ExpertPool для очистки кэша и сокращения экспертов
+        """
+        usage_before = self.current_usage_gb()
+        logger.warning(f"🧹 Начата экстренная очистка памяти (текущее: {usage_before:.2f} ГБ)")
+
+        if pool is not None:
+            # Сократить пул экспертов наполовину
+            original_limit = getattr(pool, 'limit', MAX_EXPERTS)
+            pool.prune(limit=original_limit // 2)
+            logger.info(f"  • Сокращен пул экспертов до {original_limit // 2}")
+
+            # Очистить кэш признаков
+            for f in pool.ev.features:
+                freed = f.trim(CACHE_BYTES // 4)  # Агрессивная очистка
+                if freed > 0:
+                    logger.info(f"  • Освобождено {freed / 1024 ** 2:.1f} МБ кэша")
+
+        # Принудительная сборка мусора
+        import gc
+        collected = gc.collect()
+        logger.info(f"  • Собран мусор: {collected} объектов")
+
+        usage_after = self.current_usage_gb()
+        freed_mb = (usage_before - usage_after) * 1024
+        logger.info(f"✓ Освобождено ~{freed_mb:.0f} МБ, текущее: {usage_after:.2f} ГБ")
 
 LEADER_WINDOWS = (50, 100, 250, 500, 1000, None)
 HEDGE_PARAMS = [(eta, g) for eta in (0.02, 0.1, 0.5) for g in (1.0, 0.995, 0.98)]
@@ -433,6 +525,11 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     t_start = time.time()
     budget_s = max(MIN_BUDGET_S, budget_minutes * 60.0)
     deadline = t_start + budget_s
+
+    # Инициализация монитора памяти
+    memory_monitor = MemoryMonitor(max_gb=3.0, warn_gb=2.5)
+    logger.info(f"🚀 Запуск режима Бога: бюджет {budget_minutes:.1f} мин, игра {data.slug}, тиражей {data.T}")
+
     pool, meta = None, {}
     if resume and state_path is not None:
         pool, meta = load_state(state_path, data, eval_from)
@@ -449,15 +546,39 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     if meta.get("rng"):
         rng.bit_generator.state = meta["rng"]
     last_save = [time.time()]
+    last_memory_check = [time.time()]
 
     def total_elapsed() -> float:
         return elapsed_before + time.time() - t_start
 
+    def check_memory_and_cleanup() -> None:
+        """Проверка памяти и очистка при необходимости."""
+        # Проверяем не чаще раза в минуту
+        if time.time() - last_memory_check[0] < 60:
+            return
+
+        last_memory_check[0] = time.time()
+        is_critical, message = memory_monitor.check()
+
+        if is_critical:
+            logger.error(message)
+            memory_monitor.emergency_cleanup(pool)
+            # Проверяем снова
+            is_critical2, message2 = memory_monitor.check()
+            if is_critical2:
+                raise MemoryError(
+                    f"Недостаточно памяти для продолжения работы: {message2}. "
+                    "Попробуйте уменьшить бюджет времени или использовать игру с меньшим архивом."
+                )
+        elif "⚠️" in message:
+            logger.warning(message)
+
     def progress(stage: str, done: int, total: int, note: str = "") -> None:
         if on_progress:
+            mem_gb = memory_monitor.current_usage_gb()
             on_progress({"stage": stage, "done": done, "total": total, "experts": len(pool.models),
                          "elapsed": round(time.time() - t_start, 1), "budget": budget_s, "note": note,
-                         "total_elapsed": round(total_elapsed(), 1)})
+                         "total_elapsed": round(total_elapsed(), 1), "memory_gb": round(mem_gb, 2)})
 
     def persist(force: bool = False, exhausted: bool = False) -> None:
         if state_path is None or (not force and time.time() - last_save[0] < SAVE_EVERY_S):
@@ -474,6 +595,7 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
         res = summarize(pool, run_strategies(pool), stage, complete, total_elapsed(), budget_s)
         res["exhausted"] = exhausted
         res["resumed"] = bool(elapsed_before)
+        res["memory_peak_gb"] = round(memory_monitor.current_usage_gb(), 2)
         if on_checkpoint:
             on_checkpoint(res)
         return res
@@ -487,6 +609,8 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
         for i, m in enumerate(base):
             progress("Базовые модели", i, len(base), m.title)
             pool.add(m)
+            if i % 10 == 0:  # Проверка памяти каждые 10 моделей
+                check_memory_and_cleanup()
         stages_done.append("base")
         persist(force=True)
         checkpoint("Базовые модели", complete=False)
@@ -500,6 +624,8 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
                 return checkpoint("Время вышло", complete=True)
             progress("Расширенная сетка", i, len(ext), m.title)
             pool.add(m)
+            if i % 10 == 0:
+                check_memory_and_cleanup()
         stages_done.append("grid")
         persist(force=True)
         checkpoint("Расширенная сетка", complete=False)
@@ -527,6 +653,9 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     names, _ = pool.ev.features[0].feature_stack()
     exhausted = bool(meta.get("exhausted"))
     while not out_of_time() and not exhausted:
+        # Проверка памяти перед каждой пачкой поиска
+        check_memory_and_cleanup()
+
         best_before = max((pool.first_half_score(i) for i, m in enumerate(pool.models) if not m.control),
                           default=0.0)
         top = sorted((m for m in pool.models if m.params.get("w") is not None),
@@ -554,6 +683,11 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     result = checkpoint("Перебор исчерпан" if exhausted else "Время вышло", complete=True, exhausted=exhausted)
     if exhausted and state_path is not None:
         drop_state(state_path, keep_summary=True)   # продолжать нечего — 50+ МБ не храним
+
+    # Финальный отчет по памяти
+    mem_final = memory_monitor.current_usage_gb()
+    logger.info(f"✓ Режим Бога завершен: {len(pool.models)} экспертов, память {mem_final:.2f} ГБ")
+
     return result
 
 
