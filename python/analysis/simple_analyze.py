@@ -46,7 +46,11 @@ def analyze_game_simple(game):
         T, N = x.shape
         k = spec.count
 
-        print(f"\n📦 Блок: {spec.name} ({k} из {N})")
+        # В некоторых играх (например Keno) выпадает больше чисел, чем нужно выбрать
+        # Используем spec.drawn если есть, иначе spec.count
+        actual_drawn = spec.drawn if spec.drawn > 0 else k
+
+        print(f"\n📦 Блок: {spec.name} ({k} из {N}, выпадает {actual_drawn})")
 
         # Частоты
         freq = x.sum(axis=0).tolist()
@@ -62,9 +66,20 @@ def analyze_game_simple(game):
         print(f"🔥 Горячие: {[num for num, _ in hot[:5]]}")
         print(f"❄️  Холодные: {[num for num, _ in cold[:5]]}")
 
-        # Четность
-        even_nums = sum(1 for t in range(T) for num in range(N) if x[t,num]==1 and (num+spec.lo)%2==0)
-        total_nums = T * k
+        # Четность (считаем реальные числа, не индексы)
+        even_nums = 0
+        odd_nums = 0
+        for t in range(T):
+            for num_idx in range(N):
+                if x[t, num_idx] == 1:
+                    actual_number = num_idx + spec.lo
+                    if actual_number % 2 == 0:
+                        even_nums += 1
+                    else:
+                        odd_nums += 1
+
+        # Используем реальное количество чисел
+        total_nums = even_nums + odd_nums
         even_pct = 100.0 * even_nums / total_nums if total_nums > 0 else 50.0
 
         print(f"⚖️  Четные: {even_pct:.1f}% | Нечетные: {100-even_pct:.1f}%")
@@ -89,13 +104,14 @@ def analyze_game_simple(game):
 
         if repeats:
             avg_repeat = sum(repeats) / len(repeats)
-            print(f"🔁 Средних повторов с пред. тиражом: {avg_repeat:.2f} (из {k})")
+            print(f"🔁 Средних повторов с пред. тиражом: {avg_repeat:.2f} (из {actual_drawn})")
 
         # Сохранить данные
         block_data = {
             "name": spec.name,
             "size": N,
             "count": k,
+            "drawn": actual_drawn,  # Реальное количество выпадающих чисел
             "hot_numbers": [num for num, _ in hot],
             "cold_numbers": [num for num, _ in cold],
             "even_pct": round(even_pct, 1),
