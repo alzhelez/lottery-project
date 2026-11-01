@@ -34,6 +34,12 @@ check_venv() {
         echo_warn "Виртуальное окружение не найдено или повреждено"
         echo_info "Запускаю setup.sh для инициализации..."
         ./setup.sh
+        return
+    fi
+    # после git pull или смены ветки в requirements.txt могут появиться новые библиотеки
+    if ! "$PYTHON" -c "import numpy, scipy, sklearn, requests, openpyxl, threadpoolctl, psutil" 2>/dev/null; then
+        echo_warn "Не хватает библиотек Python — устанавливаю..."
+        "$PYTHON" -m pip install -q -r python/requirements.txt
     fi
 }
 

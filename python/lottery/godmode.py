@@ -21,6 +21,8 @@
 """
 from __future__ import annotations
 
+import contextlib
+import functools
 import json
 import math
 import os
@@ -436,7 +438,32 @@ def mixture_from_weights(w: np.ndarray, names: list[str], idx: int, note: str = 
                  params={"w": [round(float(v), 6) for v in w], "note": note})
 
 
-def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_checkpoint=None,
+GODMODE_THREADS_ENV = "LOTTERY_GODMODE_THREADS"
+
+
+def thread_limit():
+    """Режим Бога считает в одном потоке (LOTTERY_GODMODE_THREADS, 0 — без ограничения).
+    Автозапуск считает две игры параллельно, а бустинг (OpenMP) и numpy (OpenBLAS) каждого
+    процесса по умолчанию занимают все ядра: процессы мешают друг другу, и расчёт шёл в 3–4 раза
+    дольше (за 5 минут — 105 экспертов вместо полного перебора из 800). Одному процессу один поток
+    не мешает: время то же."""
+    try:
+        n = int(os.environ.get(GODMODE_THREADS_ENV, "1"))
+    except ValueError:
+        n = 1
+    if n <= 0:
+        return contextlib.nullcontext()
+    try:
+        from threadpoolctl import threadpool_limits
+        # OpenMP бустинга загружается вместе со scikit-learn; ограничение действует только на уже
+        # загруженные библиотеки, поэтому загружаем его заранее
+        import sklearn.ensemble  # noqa: F401
+    except ImportError:   # threadpoolctl приходит вместе со scikit-learn; без них — как раньше
+        return contextlib.nullcontext()
+    return threadpool_limits(limits=n)
+
+
+def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_checkpoint=None,
                 state_path=None, resume: bool = False, eval_from: int | None = None) -> dict:
     """Режим Бога. budget_minutes — время этого запуска; при resume=True работа продолжается
     с сохранённого состояния (пройденные стадии и найденные эксперты не пересчитываются).
@@ -586,7 +613,14 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     return result
 
 
+@functools.wraps(_run_godmode)
+def run_godmode(*args, **kwargs) -> dict:
+    with thread_limit():
+        return _run_godmode(*args, **kwargs)
+
+
 # ── Автозапуск ─────────────────────────────────────────────────────────────
+
 
 def _game_slugs() -> list[str]:
     from .models_game_specific import GAME_METHODS

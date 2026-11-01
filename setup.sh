@@ -155,10 +155,12 @@ setup_data_dirs() {
 
 # Основная функция
 main() {
+    local version
+    version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' config/version.json)
     echo ""
-    echo "╔════════════════════════════════════════════════╗"
-    echo "║   Установка lottery-project v42.2.2           ║"
-    echo "╚════════════════════════════════════════════════╝"
+    echo "════════════════════════════════════════════════"
+    echo "  Установка lottery-project ${version}"
+    echo "════════════════════════════════════════════════"
     echo ""
 
     check_python
