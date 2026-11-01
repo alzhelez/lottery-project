@@ -8,7 +8,7 @@ set "RETRIED="
 
 :check
 if not exist "%VPY%" goto create
-"%VPY%" -c "import numpy, scipy, sklearn, requests, openpyxl" >nul 2>nul
+"%VPY%" -c "import numpy, scipy, sklearn, requests, openpyxl, threadpoolctl, psutil, tenacity" >nul 2>nul
 if not errorlevel 1 exit /b 0
 echo Окружение Python есть, но библиотек не хватает — устанавливаю...
 goto install
