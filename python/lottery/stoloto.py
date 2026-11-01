@@ -194,8 +194,10 @@ def api_draw_to_draw(raw: dict, game: Game) -> Draw | None:
 # ── HTTP с улучшенным retry ───────────────────────────────────────────────
 
 @retry(
-    stop=stop_after_attempt(6),
-    wait=wait_exponential(multiplier=1, min=2, max=60),
+    # без сети шесть попыток с паузами до минуты держали каждый запрос ~1 минуту (а загрузка
+    # всех игр — десятки минут); три попытки с паузами 1–4 с — как было до ветки: быстрый отказ
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=4),
     retry=retry_if_exception_type((requests.ConnectionError, requests.Timeout)),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
@@ -205,7 +207,7 @@ def _robust_request(url: str, params: dict, headers: dict, timeout: int = 30) ->
     HTTP GET с автоматическими retry при сетевых ошибках.
 
     Использует tenacity для экспоненциального backoff:
-    - При ConnectionError/Timeout: 2s, 4s, 8s, 16s, 32s, 60s (6 попыток)
+    - При ConnectionError/Timeout: 3 попытки с паузами 1 и 2–4 с
     - При успехе или других ошибках: возврат сразу
     """
     with _API_SEMAPHORE:

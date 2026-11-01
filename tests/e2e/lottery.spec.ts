@@ -103,6 +103,8 @@ test('анализ: тесты случайности и сравнение ме
   await expect(page.getByTestId('next-chaos')).toContainText('Порядок из хаоса')
   await expect(page.getByTestId('next-least')).toContainText('Наименее вероятно выпадут')
   await expect(next).toContainText('по журналу: ещё нет сверенных прогнозов')
+  await expect(page.getByTestId('next-experiment')).toContainText('Эксперимент: эхо ±3')
+  await expect(page.getByTestId('analysis-old-version')).toHaveCount(0)
   await page.getByTestId('tab-methods').click()
   await expect(page.getByTestId('methods-prediction')).toContainText('Прогноз на тираж №13896')
   // в таблице сначала 10 лучших методов — контроль может оказаться ниже

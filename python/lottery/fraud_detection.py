@@ -15,6 +15,13 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+def _max_p(p_single: float, m: int) -> float:
+    """p-value максимума из m проверок (поправка Шидака): без неё самое большое из сотен
+    отклонений почти всегда выглядит «значимым» даже у честной лотереи."""
+    p_single = min(max(float(p_single), 0.0), 1.0)
+    return float(-np.expm1(max(1, m) * np.log1p(-p_single))) if p_single < 1.0 else 1.0
+
+
 @dataclass
 class FraudTestResult:
     """Результат одного теста."""
@@ -132,9 +139,10 @@ class FraudDetector:
         for num_idx in range(N):
             seq = x[:, num_idx]
 
-            # Подсчет серий (runs): переключений 0→1 или 1→0
-            changes = np.diff(np.concatenate([[0], seq, [0]])).nonzero()[0]
-            n_runs = len(changes) // 2
+            # Подсчет серий (runs): серии и выпадений, и невыпадений — 1 + число переключений.
+            # (Раньше считались только серии выпадений — примерно половина ожидаемого, поэтому
+            # тест «находил залипание» у любой, даже честной лотереи.)
+            n_runs = 1 + int(np.count_nonzero(np.diff(seq)))
 
             n1 = int(seq.sum())  # Единиц (выпадений)
             n0 = len(seq) - n1   # Нулей (невыпадений)
@@ -163,9 +171,9 @@ class FraudDetector:
                 "Недостаточно данных для теста"
             )
 
-        # Максимальное отклонение
+        # Максимальное отклонение; p — с поправкой на то, что берётся максимум из N проверок
         max_z = max(z_scores)
-        p_value = 2 * (1 - stats.norm.cdf(max_z))
+        p_value = _max_p(2 * (1 - stats.norm.cdf(max_z)), len(z_scores))
 
         return FraudTestResult(
             test_name="Runs Test (последовательности)",
@@ -221,9 +229,10 @@ class FraudDetector:
             )
 
         max_corr = max(correlations)
+        n_corr = len(correlations)
         # Под нулевой гипотезой: corr ~ N(0, 1/√T)
         z = max_corr * np.sqrt(T)
-        p_value = 2 * (1 - stats.norm.cdf(z))
+        p_value = _max_p(2 * (1 - stats.norm.cdf(z)), n_corr)   # максимум из N × задержек проверок
 
         return FraudTestResult(
             test_name="Autocorrelation (зависимость тиражов)",
@@ -289,7 +298,7 @@ class FraudDetector:
             )
 
         max_chi2 = max(chi2_stats)
-        p_value = 1 - stats.chi2.cdf(max_chi2, df=k - 1)
+        p_value = _max_p(1 - stats.chi2.cdf(max_chi2, df=k - 1), len(chi2_stats))
 
         return FraudTestResult(
             test_name="Position Bias (смещение позиций)",
@@ -346,7 +355,7 @@ class FraudDetector:
 
         max_corr = max(correlations)
         z = max_corr * np.sqrt(T)
-        p_value = 2 * (1 - stats.norm.cdf(z))
+        p_value = _max_p(2 * (1 - stats.norm.cdf(z)), len(correlations))
 
         return FraudTestResult(
             test_name="Position Correlation (корреляция порядка)",

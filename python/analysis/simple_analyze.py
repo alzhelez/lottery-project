@@ -104,7 +104,11 @@ def analyze_game_simple(game):
 
         if repeats:
             avg_repeat = sum(repeats) / len(repeats)
-            print(f"🔁 Средних повторов с пред. тиражом: {avg_repeat:.2f} (из {actual_drawn})")
+            # у честной лотереи из прошлого тиража в среднем повторяется drawn²/N чисел
+            # (Кено: 20·20/80 = 5, Рапидо: 8·8/20 = 3,2, «Всё или ничего»: 12·12/24 = 6)
+            expected_repeat = actual_drawn * actual_drawn / N
+            print(f"🔁 Средних повторов с пред. тиражом: {avg_repeat:.2f} (из {actual_drawn}), "
+                  f"у честной лотереи: {expected_repeat:.2f}")
 
         # Сохранить данные
         block_data = {

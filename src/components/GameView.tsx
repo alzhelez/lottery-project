@@ -8,6 +8,7 @@ import { GodModePanel } from './GodModePanel'
 import { JournalPanel } from './JournalPanel'
 import { OddsPanel } from './OddsPanel'
 import { RulesPanel } from './RulesPanel'
+import { APP_VERSION } from '@/lib/version'
 import { MyTickets } from './MyTickets'
 import { NextDrawCard } from './NextDrawCard'
 import { TicketsPanel } from './TicketsPanel'
@@ -59,6 +60,8 @@ export function GameView({ info }: { info: Info }) {
   const job = useJob('analyze', info.slug, loadAnalysis)
 
   const stale = analysis && info.last && analysis.last_draw_no !== info.last.no
+  // анализ посчитан прошлой версией программы — в нём нет методов, добавленных после неё
+  const oldVersion = analysis && analysis.version && analysis.version !== APP_VERSION ? analysis.version.split('_')[0] : null
 
   return (
     <main className="page">
@@ -156,6 +159,12 @@ export function GameView({ info }: { info: Info }) {
                 <span className="muted">Рассчитано {analysis.generated_at.replace('T', ' ')} по тиражам до №{analysis.last_draw_no}.</span>
               )}
               {stale && !job.running && <span className="warn">Появились новые тиражи — пересчитайте анализ.</span>}
+              {oldVersion && !job.running && (
+                <span className="warn" data-testid="analysis-old-version">
+                  Анализ посчитан прошлой версией программы ({oldVersion}) — новые методы и эксперимент появятся после пересчёта
+                  (нажмите «Пересчитать анализ» или дождитесь цикла автозапуска).
+                </span>
+              )}
               {job.job?.status === 'error' && <span className="error">Ошибка: {job.job.error}</span>}
               {job.error && <span className="error">{job.error}</span>}
             </div>

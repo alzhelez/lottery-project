@@ -42,8 +42,10 @@ def walk_forward_test(game_slug: str, model: models.Model, train_size: int = 500
     n = spec.size
     k = spec.count
 
-    # Baseline: ожидаемое кол-во угаданных при случайном выборе
-    baseline_expected = k * k / n
+    # Baseline: ожидаемое кол-во угаданных при случайном выборе k чисел, когда выпадает
+    # drawn (в Кено выбирают до 10, а выпадает 20 — было k·k/n, вдвое меньше нужного)
+    drawn = spec.drawn or k
+    baseline_expected = k * drawn / n
 
     hits_model = []
     hits_random = []

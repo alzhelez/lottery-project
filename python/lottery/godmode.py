@@ -19,7 +19,7 @@
 улучшения) или не прошло 8 часов; после каждой стадии результат сохраняется (можно смотреть
 промежуточный итог).
 
-Версия с контролем памяти через psutil и resource.
+Память процесса контролируется через psutil (LOTTERY_GODMODE_MAX_GB, по умолчанию 3,5 ГБ).
 """
 from __future__ import annotations
 
@@ -27,9 +27,7 @@ import json
 import logging
 import math
 import os
-import sys
 import time
-import warnings
 
 import numpy as np
 import psutil
@@ -59,25 +57,21 @@ class MemoryMonitor:
         self.max_bytes = int(max_gb * 1024 ** 3)
         self.warn_bytes = int(warn_gb * 1024 ** 3)
         self.process = psutil.Process()
+        self.peak_gb = 0.0
 
-        # Попытка установить hard limit (только Linux/macOS)
-        if sys.platform != 'win32':
-            try:
-                import resource
-                resource.setrlimit(
-                    resource.RLIMIT_AS,
-                    (self.max_bytes, self.max_bytes)
-                )
-                logger.info(f"✓ Установлен лимит памяти: {max_gb:.1f} ГБ")
-            except (ImportError, ValueError, OSError) as e:
-                logger.warning(f"Не удалось установить hard limit памяти: {e}")
+        # Жёсткий лимит адресного пространства (RLIMIT_AS) не ставим: он действует на весь
+        # процесс до его завершения (в автозапуске — и на анализ остальных игр), а numpy, OpenBLAS
+        # и потоки sklearn резервируют виртуальной памяти намного больше, чем реально занимают, —
+        # на длинных архивах лимит 3 ГБ обрывал расчёт ошибкой MemoryError.
 
     def current_usage_gb(self) -> float:
         """Текущее использование памяти процессом в ГБ."""
         try:
-            return self.process.memory_info().rss / 1024 ** 3
+            gb = self.process.memory_info().rss / 1024 ** 3
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             return 0.0
+        self.peak_gb = max(self.peak_gb, gb)
+        return gb
 
     def check(self) -> tuple[bool, str]:
         """
@@ -109,7 +103,9 @@ class MemoryMonitor:
         if pool is not None:
             # Сократить пул экспертов наполовину
             original_limit = getattr(pool, 'limit', MAX_EXPERTS)
-            pool.prune(limit=original_limit // 2)
+            # новый предел сохраняется: иначе следующая пачка поиска снова доводила пул до прежнего
+            pool.limit = max(120, original_limit // 2)
+            pool.prune()
             logger.info(f"  • Сокращен пул экспертов до {original_limit // 2}")
 
             # Очистить кэш признаков
@@ -527,8 +523,9 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
     deadline = t_start + budget_s
 
     # Инициализация монитора памяти
-    memory_monitor = MemoryMonitor(max_gb=3.0, warn_gb=2.5)
-    logger.info(f"🚀 Запуск режима Бога: бюджет {budget_minutes:.1f} мин, игра {data.slug}, тиражей {data.T}")
+    max_gb = float(os.environ.get("LOTTERY_GODMODE_MAX_GB", "3.5"))
+    memory_monitor = MemoryMonitor(max_gb=max_gb, warn_gb=max_gb * 0.85)
+    logger.info(f"🚀 Запуск режима Бога: бюджет {budget_minutes:.1f} мин, игра {data.game.slug}, тиражей {data.T}")
 
     pool, meta = None, {}
     if resume and state_path is not None:
@@ -566,10 +563,9 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
             # Проверяем снова
             is_critical2, message2 = memory_monitor.check()
             if is_critical2:
-                raise MemoryError(
-                    f"Недостаточно памяти для продолжения работы: {message2}. "
-                    "Попробуйте уменьшить бюджет времени или использовать игру с меньшим архивом."
-                )
+                # освобождённую память Python не всегда сразу отдаёт системе, и RSS остаётся
+                # высоким — это не повод бросать расчёт: продолжаем с уменьшенным пулом
+                logger.warning(f"{message2} — продолжаю с уменьшенным пулом экспертов")
         elif "⚠️" in message:
             logger.warning(message)
 
@@ -595,7 +591,8 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
         res = summarize(pool, run_strategies(pool), stage, complete, total_elapsed(), budget_s)
         res["exhausted"] = exhausted
         res["resumed"] = bool(elapsed_before)
-        res["memory_peak_gb"] = round(memory_monitor.current_usage_gb(), 2)
+        memory_monitor.current_usage_gb()
+        res["memory_peak_gb"] = round(memory_monitor.peak_gb, 2)   # наибольшее из замеров
         if on_checkpoint:
             on_checkpoint(res)
         return res
@@ -605,7 +602,8 @@ def run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_chec
 
     # Стадия 1 — базовый пул (быстро)
     if "base" not in stages_done:
-        base = expert_grid(1) + [m for m in standard_models() if not m.control]
+        from .models_game_specific import game_models
+        base = expert_grid(1) + [m for m in standard_models() if not m.control] + game_models(data.game.slug)
         for i, m in enumerate(base):
             progress("Базовые модели", i, len(base), m.title)
             pool.add(m)
@@ -700,7 +698,8 @@ def model_by_key(key: str, params: dict | None = None) -> Model | None:
     if key.startswith("rmix_") and params.get("w"):
         idx = int(key.split("_", 1)[1]) if key.split("_", 1)[1].isdigit() else 0
         return mixture_from_weights(np.asarray(params["w"], float), [], idx)
-    for m in expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2):
+    from .models_game_specific import all_game_models
+    for m in expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2) + all_game_models():
         if m.key == key:
             return m
     return None
