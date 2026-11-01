@@ -65,10 +65,13 @@ def test_wired_into_evaluation(data_dir):
 def test_godmode_runs_and_survives_memory_pressure(monkeypatch, data_dir):
     """В ветке режим Бога падал на data.slug; при нехватке памяти — бросал MemoryError и
     ставил жёсткий лимит адресного пространства на весь процесс."""
-    import resource
     import lottery.godmode as gm
+    try:
+        import resource                      # только Linux/macOS
+    except ImportError:
+        resource = None
     write_lotto_file(draws_path("5x36"), [random_lotto(500, 36, 5, seed=7)])
-    before = resource.getrlimit(resource.RLIMIT_AS) if hasattr(resource, "RLIMIT_AS") else None
+    before = resource.getrlimit(resource.RLIMIT_AS) if resource and hasattr(resource, "RLIMIT_AS") else None
     monkeypatch.setattr(gm, "MIN_BUDGET_S", 3)
     monkeypatch.setenv("LOTTERY_GODMODE_MAX_GB", "0.0001")
     monkeypatch.setattr(gm.MemoryMonitor, "current_usage_gb", lambda self: 9.9)
