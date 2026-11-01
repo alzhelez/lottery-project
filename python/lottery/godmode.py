@@ -37,6 +37,18 @@ from .evaluate import Evaluator, metrics, rolling_curve, warmup_size
 from .models import Model, expert_grid, gbm_scores, standard_models, tie_noise, top_k
 from .stats import hypergeom_moments, ru
 
+# ── Контроль памяти (идея ветки Fable, без жёсткого лимита адресного пространства) ──
+MEMORY_SOFT_GB = float(os.environ.get("LOTTERY_GODMODE_MAX_GB", "3.5"))
+
+
+def memory_gb() -> float | None:
+    """Сколько памяти занимает процесс сейчас (ГБ); None — узнать нельзя."""
+    try:
+        import psutil
+        return psutil.Process().memory_info().rss / 1024 ** 3
+    except Exception:  # noqa: BLE001 — psutil не установлен или нет доступа
+        return None
+
 LEADER_WINDOWS = (50, 100, 250, 500, 1000, None)
 HEDGE_PARAMS = [(eta, g) for eta in (0.02, 0.1, 0.5) for g in (1.0, 0.995, 0.98)]
 SEARCH_BATCH = 20
@@ -484,7 +496,22 @@ def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_che
         if on_progress:
             on_progress({"stage": stage, "done": done, "total": total, "experts": len(pool.models),
                          "elapsed": round(time.time() - t_start, 1), "budget": budget_s, "note": note,
-                         "total_elapsed": round(total_elapsed(), 1)})
+                         "total_elapsed": round(total_elapsed(), 1),
+                         "memory_gb": None if (mem := memory_gb()) is None else round(mem, 2)})
+
+    def relieve_memory() -> None:
+        """Если процесс занял больше LOTTERY_GODMODE_MAX_GB — сократить пул экспертов вдвое (по
+        первой половине, как обычная обрезка) и кэш признаков. Жёсткий лимит памяти не
+        ставится: на Linux он обрывал бы расчёт вместо того, чтобы освободить место."""
+        mem = memory_gb()
+        if mem is None or mem < MEMORY_SOFT_GB:
+            return
+        pool.limit = max(120, pool.limit // 2)
+        pool.prune()
+        for f in pool.ev.features:
+            f.trim(CACHE_BYTES / 4 / max(1, len(pool.ev.features)))
+        import gc
+        gc.collect()
 
     def persist(force: bool = False, exhausted: bool = False) -> None:
         if state_path is None or (not force and time.time() - last_save[0] < SAVE_EVERY_S):
@@ -510,7 +537,8 @@ def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_che
 
     # Стадия 1 — базовый пул (быстро)
     if "base" not in stages_done:
-        base = expert_grid(1) + [m for m in standard_models() if not m.control]
+        from .models_game_specific import game_models
+        base = expert_grid(1) + [m for m in standard_models() if not m.control] + game_models(data.game.slug)
         for i, m in enumerate(base):
             progress("Базовые модели", i, len(base), m.title)
             pool.add(m)
@@ -570,6 +598,7 @@ def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_che
             else:
                 pool.add(mixture_from_weights(rng.normal(size=len(names)), names, idx))
         pool.prune()
+        relieve_memory()
         best_after = max(pool.first_half_score(i) for i, m in enumerate(pool.models) if not m.control)
         search["stale"] = 0 if best_after > best_before + 1e-9 else search["stale"] + 1
         exhausted = search["stale"] >= STAGNATION_BATCHES
@@ -593,6 +622,14 @@ def run_godmode(*args, **kwargs) -> dict:
 # ── Автозапуск ─────────────────────────────────────────────────────────────
 
 
+def _game_slugs() -> list[str]:
+    from .models_game_specific import GAME_METHODS
+    return list(GAME_METHODS)
+
+
+GAME_SLUGS = _game_slugs()
+
+
 def model_by_key(key: str, params: dict | None = None) -> Model | None:
     """Эксперт по ключу — чтобы лидер прошлого запуска давал прогноз на новые тиражи без
     повторного перебора. Бустинг не восстанавливается (дорого) — None."""
@@ -600,7 +637,9 @@ def model_by_key(key: str, params: dict | None = None) -> Model | None:
     if key.startswith("rmix_") and params.get("w"):
         idx = int(key.split("_", 1)[1]) if key.split("_", 1)[1].isdigit() else 0
         return mixture_from_weights(np.asarray(params["w"], float), [], idx)
-    for m in expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2):
+    from .models_game_specific import game_models
+    for m in (expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2)
+              + [g for slug in GAME_SLUGS for g in game_models(slug)]):
         if m.key == key:
             return m
     return None
