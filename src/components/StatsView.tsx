@@ -83,17 +83,17 @@ export function StatsView() {
                     : r.source === g.worst?.source ? 'худший' : ''
                   return (
                     <tr key={g.slug + r.source} data-testid="stats-row" className={r.goal ? 'muted' : ''}>
-                      <td>{i === 0 ? <Link href={`/games/${g.slug}`}>{g.title}</Link> : ''}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{i === 0 ? <Link href={`/games/${g.slug}`}>{g.title}</Link> : ''}</td>
                       <td>
                         {r.title}
-                        {mark && <span className={`status-tag ${mark === 'лучший' ? 'st-done' : 'st-error'}`}> {mark}</span>}
+                        {mark && <span className={`status-tag ${mark === 'лучший' ? 'st-done' : 'st-error'}`} style={{ marginLeft: 8 }}>{mark}</span>}
                         {r.goal && <span className="sub">цель — выпасть реже, в лучшие и худшие не входит</span>}
                       </td>
                       <td className="r num">{nf.format(r.checked)}</td>
                       <td className="r num">{nf.format(r.half)}</td>
                       <td className="r num">{share(r.share)}</td>
-                      <td className="r num">{num(r.expected, 1)}<span className="sub">{share(r.expected_share)}</span></td>
-                      <td className="r num">{r.p_better == null ? <span className="muted">мало данных</span> : pval(r.p_better)}</td>
+                      <td className="r num">{num(r.expected, r.expected < 10 ? 2 : 1)}<span className="sub">{share(r.expected_share)}</span></td>
+                      <td className="r num" style={{ whiteSpace: 'nowrap' }}>{r.p_better == null ? <span className="muted">мало данных</span> : pval(r.p_better)}</td>
                     </tr>
                   )
                 }))}
@@ -101,8 +101,8 @@ export function StatsView() {
             </table>
           </div>
           <p className="muted small">
-            p — шанс, что случайный выбор угадал бы половину чисел так же часто или чаще; считается от {MIN_RELIABLE}
-            сверенных прогнозов. Среди многих игр и методов p &lt; 0,05 у одного-двух бывает просто случайно.
+            p — шанс, что случайный выбор угадал бы половину чисел так же часто или чаще; считается от{' '}
+            {MIN_RELIABLE} сверенных прогнозов. Среди многих игр и методов p &lt; 0,05 у одного-двух бывает просто случайно.
           </p>
         </>
       )}
