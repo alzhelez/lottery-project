@@ -310,9 +310,8 @@ def journal_message(title: str, entries: list[dict]) -> str | None:
     return "\n".join(lines)
 
 
-def auto_message(status: dict, predictions: dict[str, dict], recommendations: list[dict] | None = None) -> str:
-    """Итог автозапуска: по каждой игре и тиражу — подпункты Л, К, Х, Б с числами, в конце —
-    рекомендации."""
+def auto_message(status: dict, predictions: dict[str, dict]) -> str:
+    """Итог автозапуска: по каждой игре и тиражу — подпункты Л, К, Х, Б, Э, Н с числами."""
     games = status.get("games", {})
     added = sum(g.get("added", 0) or 0 for g in games.values())
     checked = sum(g.get("journal_checked", 0) or 0 for g in games.values())
@@ -336,20 +335,6 @@ def auto_message(status: dict, predictions: dict[str, dict], recommendations: li
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))
-    if recommendations:
-        rec = ["<b>Рекомендации</b> — игры с лучшим ожидаемым возвратом ближайшего тиража:"]
-        for i, r in enumerate(recommendations, 1):
-            usual = f" (обычно {_dec(r['usual_return'], 2)})" if r.get("usual_return") else ""
-            win = f", выигрыш хоть что-то — 1 из {max(1, round(1 / r['p_win']))}" if r.get("p_win") else ""
-            rec.append(f"{i}. <b>{esc(r['title'])}</b> №{r['next_no']}: {_dec(r['return'], 2)} ₽ с рубля{usual}{win}")
-            label = SHORT.get(r["source"], "К")
-            why = (f"метод {label} по журналу этой игры устойчиво лучше случайного (p={_dec(r['proven']['p'], 3)})"
-                   if r.get("proven") else "ни один метод пока не лучше случайного выбора — числа консенсуса")
-            pop = ("; комбинация похожа на популярную — при выигрыше приз чаще делят" if r.get("popular")
-                   else "; комбинация не похожа на популярную" if r.get("popular") is False else "")
-            rec.append(f"   {label}: <code>{esc(fmt_blocks(r['numbers']))}</code> — {why}{pop}")
-        rec.append("<i>Возврат меньше 1 — в среднем билет возвращает меньше, чем стоит; почти все билеты проигрывают.</i>")
-        parts.append("\n".join(rec))
     return "\n\n".join(parts)
 
 

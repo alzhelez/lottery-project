@@ -199,17 +199,15 @@ def test_journal_digest_one_message_for_all_games():
     assert notify.journal_digest([("x", [])]) is None
 
 
-def test_auto_message_lists_methods_and_recommendations():
+def test_auto_message_lists_methods_without_recommendations():
     status = {"started_at": "2026-10-23T20:05:01", "games": {"4x20": {"added": 3, "journal_checked": 4}}}
     preds = {"4x20": {"title": "4 из 20", "next_no": 15944, "numbers": [[6, 14], [2, 12]],
                       "consensus": [[1, 2], [3, 4]], "chaos": {"title": "ГСЧ", "numbers": [[9, 1], [7, 8]]},
                       "godmode": [[5, 6], [7, 8]]}}
-    recs = [{"title": "4 из 20", "next_no": 15944, "return": 0.62, "usual_return": 0.47, "p_win": 0.14,
-             "source": "analysis_consensus", "proven": None, "numbers": [[1, 2], [3, 4]], "popular": False}]
-    text = notify.auto_message(status, preds, recs)
+    text = notify.auto_message(status, preds)
     assert ("Новых тиражей: 3, сверено прогнозов: 4\nЛ — лучший метод, К — консенсус, Х — порядок из хаоса, "
             "Б — режим Бога, Э — эксперимент «эхо ±3», Н — наименее вероятные (их лучше не брать)\nПрогнозы на следующие тиражи:") in text
     assert ("<b>4 из 20</b> №15944\n  Л: <code>6 14 | 2 12</code>\n  К: <code>1 2 | 3 4</code>\n"
             "  Х (ГСЧ): <code>9 1 | 7 8</code>\n  Б: <code>5 6 | 7 8</code>") in text
-    assert "1. <b>4 из 20</b> №15944: 0,62 ₽ с рубля (обычно 0,47), выигрыш хоть что-то — 1 из 7" in text
-    assert "К: <code>1 2 | 3 4</code> — ни один метод пока не лучше случайного выбора" in text
+    # рекомендации из итога убраны (02.11.2026): только засоряли чат
+    assert "Рекомендации" not in text and "с рубля" not in text

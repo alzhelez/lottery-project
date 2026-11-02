@@ -217,6 +217,21 @@ test('итоги прогнозов по всем играм', async ({ page }) 
   await page.screenshot({ path: 'tests/e2e/.data/overview.png', fullPage: true })
 })
 
+test('статистика: сколько раз метод угадал половину чисел, лучший и худший метод', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Статистика' }).click()
+  // 4 из 20: после сверки тиража №13896 у каждого из шести источников — по одному прогнозу
+  const game = page.getByTestId('stats-game').filter({ hasText: '4 из 20' })
+  await expect(game).toContainText('от 4 из 8')
+  await expect(game.getByTestId('stats-best')).toContainText('из 1')
+  await expect(game.getByTestId('stats-best')).toContainText('мало прогнозов')
+  const rows = page.getByTestId('stats-row')
+  await expect(rows).toHaveCount(6)
+  await expect(rows.filter({ hasText: 'Наименее вероятные' })).toContainText('цель — выпасть реже')
+  await expect(page.getByTestId('stats-methods')).toContainText('мало данных')
+  await page.screenshot({ path: 'tests/e2e/.data/stats.png', fullPage: true })
+})
+
 test('шансы: точные вероятности и возврат по введённым призам', async ({ page }) => {
   await page.goto('/games/4x20')
   await page.getByTestId('tab-odds').click()

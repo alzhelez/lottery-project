@@ -640,7 +640,7 @@ def auto_once(args) -> dict:
         status["seconds"] = round((datetime.now() - datetime.fromisoformat(started)).total_seconds())
         status["status"] = "done"
         log("Автозапуск: готово")
-        notify.send(notify.auto_message(status, predictions, recommend(predictions)), "auto")
+        notify.send(notify.auto_message(status, predictions), "auto")
     except Exception as exc:  # статус ошибки должен попасть в файл, иначе интерфейс покажет «идёт»
         status["status"] = "error"
         status["error"] = f"{type(exc).__name__}: {exc}"
@@ -782,37 +782,6 @@ def settle_my_tickets(log) -> dict:
         if msg:
             notify.send(msg, "tickets")
     return {"checked_now": sum(len(t) for _, t in fresh), **{k: total[k] for k in ("total", "pending", "spent", "won")}}
-
-
-def recommend(predictions: dict, top: int = 3) -> list[dict]:
-    """Рекомендации для рассылки: игры с лучшим ожидаемым возвратом ближайшего тиража (и шанс
-    выиграть хоть что-то), числа — метода, который по журналу этой игры устойчиво лучше
-    случайного выбора (последовательное p < 0,05), иначе консенсус; проверка на непопулярность."""
-    from lottery import journal, tickets
-    nd = (_read_json(results_dir() / "nextdraw.json") or {}).get("games", {})
-    rows = []
-    for slug, p in predictions.items():
-        r = nd.get(slug)
-        if not r:
-            continue
-        rows.append((r["return"], slug, r))
-    out = []
-    for ret, slug, r in sorted(rows, reverse=True)[:top]:
-        p = predictions[slug]
-        best = journal.proven_source(slug)
-        key = best["source"] if best else "analysis_consensus"
-        numbers = {"analysis_best": p.get("numbers"), "analysis_consensus": p.get("consensus"),
-                   "chaos": (p.get("chaos") or {}).get("numbers"), "godmode": p.get("godmode")}.get(key) \
-            or p.get("consensus") or p.get("numbers")
-        try:
-            check = tickets.check(load_game_data(get_game(slug)), [sorted(b) for b in numbers])
-            popular = bool(check.get("valid") and check.get("score", 0) > 0)
-        except Exception:  # noqa: BLE001
-            popular = None
-        out.append({"slug": slug, "title": p["title"], "next_no": p["next_no"], "return": ret,
-                    "usual_return": r.get("usual_return"), "p_win": r.get("p_win"), "source": key,
-                    "proven": best, "numbers": numbers, "popular": popular})
-    return out
 
 
 def auto_log(text: str) -> None:

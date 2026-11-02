@@ -254,20 +254,6 @@ def test_auto_skips_games_with_few_draws(data_dir):
     assert not (data_dir / "journal" / "5x36.json").exists()
 
 
-def test_recommend_uses_expected_return_and_proven_source(data_dir):
-    import lp
-    from lottery.fsutil import write_text
-    write_draws(draws_path("5x36"), fresh_draws(400))
-    results_dir().mkdir(parents=True, exist_ok=True)
-    write_text(results_dir() / "nextdraw.json", json.dumps({"games": {
-        "5x36": {"return": 0.71, "usual_return": 0.5, "p_win": 0.1}, "6x45": {"return": 0.4}}}))
-    preds = {"5x36": {"title": "5 из 36", "next_no": 401, "numbers": [[1, 2, 3, 4, 5]],
-                      "consensus": [[7, 13, 22, 29, 34]]}}
-    recs = lp.recommend(preds)
-    assert len(recs) == 1 and recs[0]["return"] == 0.71 and recs[0]["source"] == "analysis_consensus"
-    assert recs[0]["numbers"] == [[7, 13, 22, 29, 34]] and recs[0]["proven"] is None
-
-
 def test_auto_godmode_targets_future_draw_at_record_time(data_dir):
     """Режим Бога в автозапуске идёт после анализа всех игр: если тираж, на который был анализ,
     уже прошёл, прогноз Б пишется на ближайший будущий тираж (раньше 44% таких прогнозов

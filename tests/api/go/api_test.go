@@ -1,5 +1,5 @@
 // api_test.go — API-автотесты приложения на Go (стандартный пакет testing).
-// Сценарии API-01…API-15 те же, что в Java и Python (см. tests/api/README.md).
+// Сценарии API-01…API-16 те же, что в Java и Python (см. tests/api/README.md).
 // Запуск: python tests/api/env.py start, затем в этой папке: go test -v ./...
 package lotteryapi
 
@@ -450,5 +450,67 @@ func TestAPI15MyTickets(t *testing.T) {
 	}
 	if r := do(t, http.MethodDelete, path, nil); r.Status != 400 {
 		t.Errorf("повторное удаление: код %d", r.Status)
+	}
+}
+
+// TestAPI16Stats — статистика: сколько раз метод угадал половину чисел, лучший и худший метод.
+func TestAPI16Stats(t *testing.T) {
+	// GET /api/stats — статистика по журналу всех игр.
+	resp := get(t, "/api/stats")
+	// Сервер должен ответить 200 OK.
+	if resp.Status != 200 {
+		t.Fatalf("код %d, тело %s", resp.Status, resp.Body)
+	}
+	// Ищем игру 6 из 45: её журнал подготовило окружение (tests/api/env.py, seed_stats_journal).
+	var game map[string]any
+	for _, g := range resp.JSON(t)["games"].([]any) {
+		if g.(map[string]any)["slug"] == "6x45" {
+			game = g.(map[string]any)
+		}
+	}
+	// Игры нет — дальше проверять нечего.
+	if game == nil {
+		t.Fatalf("в статистике нет 6x45: %s", resp.Body)
+	}
+	// Порог «половина и больше» для 6 чисел — от 3.
+	if game["threshold"] != "от 3 из 6" {
+		t.Errorf("порог: %v", game["threshold"])
+	}
+	// Строки по методам — в порядке журнала; собираем их в словарь по источнику.
+	rows := map[string]map[string]any{}
+	var order []string
+	for _, r := range game["rows"].([]any) {
+		row := r.(map[string]any)
+		rows[row["source"].(string)] = row
+		order = append(order, row["source"].(string))
+	}
+	// Ожидаем: лучший метод анализа, порядок из хаоса, наименее вероятные.
+	if strings.Join(order, ",") != "analysis_best,chaos,least" {
+		t.Errorf("методы: %v", order)
+	}
+	// Лучший метод угадал 3 из 6 и 1 из 6: половину и больше — 1 раз из 2.
+	if rows["analysis_best"]["checked"] != 2.0 || rows["analysis_best"]["half"] != 1.0 {
+		t.Errorf("лучший метод: %v", rows["analysis_best"])
+	}
+	// Порядок из хаоса — 0 и 2 из 6: ни разу.
+	if rows["chaos"]["half"] != 0.0 {
+		t.Errorf("порядок из хаоса: %v", rows["chaos"])
+	}
+	// Случайные 6 чисел угадывают 3 и больше с шансом ≈ 0,0238 — за 2 прогноза в среднем 0,048 раза.
+	if math.Abs(rows["analysis_best"]["expected"].(float64)-2*0.023834) > 1e-4 {
+		t.Errorf("ожидание случайного: %v", rows["analysis_best"]["expected"])
+	}
+	// Двух прогнозов мало для p-value — null.
+	if rows["analysis_best"]["p_better"] != nil {
+		t.Errorf("p при двух прогнозах: %v", rows["analysis_best"]["p_better"])
+	}
+	// У «наименее вероятных» цель обратная.
+	if rows["least"]["goal"] != "fewer" {
+		t.Errorf("наименее вероятные: %v", rows["least"])
+	}
+	// Поэтому лучший — «лучший метод анализа» (50%), худший — «порядок из хаоса» (0%), ничьей нет.
+	best, worst := game["best"].(map[string]any), game["worst"].(map[string]any)
+	if best["source"] != "analysis_best" || worst["source"] != "chaos" || game["tie"] != false {
+		t.Errorf("лучший %v, худший %v, ничья %v", best["source"], worst["source"], game["tie"])
 	}
 }

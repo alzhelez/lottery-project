@@ -1,5 +1,5 @@
 # test_api.py — API-автотесты приложения на Python (pytest + requests + Allure).
-# Набор сценариев API-01…API-15 одинаков для Java, Python и Go (см. tests/api/README.md).
+# Набор сценариев API-01…API-16 одинаков для Java, Python и Go (см. tests/api/README.md).
 # Перед запуском нужно окружение: python tests/api/env.py start
 
 # math.comb — число сочетаний: из него считаем точный шанс главного приза.
@@ -308,3 +308,33 @@ def test_my_tickets(api):
         params = {"game": "4x20", "id": ticket["id"]}
         assert api.delete("/api/my-tickets", params=params).status_code == 200
         assert api.delete("/api/my-tickets", params=params).status_code == 400
+
+
+@allure.feature("Статистика")
+@allure.title("API-16. Статистика: сколько раз метод угадал половину чисел, лучший и худший метод")
+def test_stats(api):
+    # GET /api/stats — статистика по журналу всех игр.
+    response = api.get("/api/stats")
+    # Сервер должен ответить 200 OK.
+    assert response.status_code == 200
+    # Берём игру 6 из 45: её журнал подготовило окружение (tests/api/env.py, seed_stats_journal).
+    game = next(g for g in response.json()["games"] if g["slug"] == "6x45")
+    # Порог «половина и больше» для 6 чисел — от 3.
+    assert game["threshold"] == "от 3 из 6"
+    # Строки по методам в порядке журнала: лучший метод, порядок из хаоса, наименее вероятные.
+    rows = {r["source"]: r for r in game["rows"]}
+    assert list(rows) == ["analysis_best", "chaos", "least"]
+    # Лучший метод угадал 3 из 6 и 1 из 6: половину и больше — 1 раз из 2.
+    assert rows["analysis_best"]["checked"] == 2 and rows["analysis_best"]["half"] == 1
+    # Порядок из хаоса — 0 и 2 из 6: ни разу.
+    assert rows["chaos"]["half"] == 0
+    # Случайные 6 чисел угадывают 3 и больше с шансом ≈ 0,0238 — за 2 прогноза в среднем 0,048 раза.
+    assert abs(rows["analysis_best"]["expected"] - 2 * 0.023834) < 1e-4
+    # Двух прогнозов мало для p-value.
+    assert rows["analysis_best"]["p_better"] is None
+    # У «наименее вероятных» цель обратная…
+    assert rows["least"]["goal"] == "fewer"
+    # …поэтому лучший — «лучший метод анализа» (50%), худший — «порядок из хаоса» (0%).
+    assert game["best"]["source"] == "analysis_best" and game["worst"]["source"] == "chaos"
+    # Доли разные — ничьей нет.
+    assert game["tie"] is False

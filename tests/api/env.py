@@ -69,11 +69,32 @@ def start() -> None:
     print("Загружаю тиражи с мока API…", flush=True)
     subprocess.run([_python(), "python/lp.py", "fetch"], cwd=ROOT, env=env, check=True,
                    stdout=subprocess.DEVNULL, timeout=600)
+    seed_stats_journal()
     npx = "npx.cmd" if WIN else "npx"
     app = _spawn([npx, "next", "start", "-p", str(APP_PORT)], env, HERE / "app.log")
     _wait(f"{BASE_URL}/api/games", 120)
     STATE.write_text(json.dumps({"pids": [mock.pid, app.pid], "base_url": BASE_URL}), encoding="utf-8")
     print(f"Окружение готово: {BASE_URL}", flush=True)
+
+
+def seed_stats_journal() -> None:
+    """Журнал «6 из 45» с известными сверенными прогнозами — для сценария API-16 (статистика):
+    лучший метод угадал 3 из 6 и 1 из 6 (половина и больше — 1 раз из 2), «порядок из хаоса» —
+    0 и 2 (ни разу), «наименее вероятные» — 4 (у них цель обратная, в лучшие не входят)."""
+    block = {"name": "Числа", "source": 0, "position": None, "count": 6, "lo": 1, "hi": 45, "mode": "set", "avg": 0.0}
+    actual = [1, 2, 3, 4, 5, 6]
+    picks = {0: [7, 8, 9, 10, 11, 12], 1: [1, 8, 9, 10, 11, 12], 2: [1, 2, 9, 10, 11, 12],
+             3: [1, 2, 3, 10, 11, 12], 4: [1, 2, 3, 4, 11, 12]}
+    entries = []
+    for i, (source, hits) in enumerate([("analysis_best", 3), ("analysis_best", 1), ("chaos", 0), ("chaos", 2),
+                                        ("least", 4)]):
+        entries.append({"id": f"seed{i}", "draw_no": 100 + i, "source": source, "detail": "", "made_at": "2026-11-01T10:00:00",
+                        "based_on": 99 + i, "blocks": [block], "numbers": [picks[hits]], "status": "checked",
+                        "checked_at": "2026-11-01T12:00:00", "actual": [actual], "hits_by_block": [hits], "hits": hits,
+                        "expected": 0.8, "variance": 0.6145})
+    (DATA / "journal").mkdir(parents=True, exist_ok=True)
+    (DATA / "journal" / "6x45.json").write_text(json.dumps({"game": "6x45", "entries": entries}, ensure_ascii=False),
+                                                 encoding="utf-8")
 
 
 def _kill(pid: int) -> None:
