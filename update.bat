@@ -45,6 +45,9 @@ git branch -q --set-upstream-to=origin/%BRANCH%
 goto deps
 
 :pull
+rem package-lock.json и next-env.d.ts меняют сами npm install и next dev, а не вы, — без этого
+rem git pull отказывался обновлять («local changes would be overwritten»)
+git checkout -q -- package-lock.json next-env.d.ts 2>nul
 echo Скачиваю изменения...
 git pull --ff-only
 if errorlevel 1 (
