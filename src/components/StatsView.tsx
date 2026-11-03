@@ -32,22 +32,26 @@ function method(r: Row | null, g: Game) {
 }
 
 /** Статистика: сколько раз каждый метод угадал не меньше половины чисел, лучший и худший метод игры. */
-export function StatsView() {
-  const [games, setGames] = useState<Game[] | null>(null)
-  useEffect(() => { fetch('/api/stats', { cache: 'no-store' }).then((r) => r.json()).then((d) => setGames(d.games)) }, [])
-  if (!games) return <main className="page"><p className="muted">Загрузка…</p></main>
+export function StatsView({ slug }: { slug?: string } = {}) {
+  const [all, setAll] = useState<Game[] | null>(null)
+  useEffect(() => { fetch('/api/stats', { cache: 'no-store' }).then((r) => r.json()).then((d) => setAll(d.games)) }, [])
+  // на странице игры — вкладка «Статистика» только этой игры; в боковой панели — все игры
+  const Wrap = slug ? 'section' : 'main'
+  const games = all && (slug ? all.filter((g) => g.slug === slug) : all)
+  if (!games) return <Wrap className={slug ? '' : 'page'}><p className="muted">Загрузка…</p></Wrap>
   return (
-    <main className="page" data-testid="stats">
-      <h1>Статистика</h1>
+    <Wrap className={slug ? '' : 'page'} data-testid={slug ? 'stats-tab' : 'stats'}>
+      {!slug && <h1>Статистика</h1>}
       <p className="note">
         По журналу прогнозов — только тем, что записаны до тиража и сверены после него. Для каждой игры и метода —
         сколько раз прогноз угадал <b>половину своих чисел или больше</b> (в «6 из 45» — от 3 из 6, в «4 из 20» — от 4 из
         8, считая все поля). Рядом — сколько таких раз в среднем дал бы случайный выбор того же числа чисел: метод
         полезен, только если заметно его обгоняет. Лучший и худший — по доле таких прогнозов.
+        {slug && <> Все игры сразу — в разделе <Link href="/stats">Статистика</Link> боковой панели.</>}
       </p>
 
       {games.length === 0 ? (
-        <p className="empty">Сверенных прогнозов пока нет — они появятся после анализа и следующего тиража.</p>
+        <p className="empty">Сверенных прогнозов {slug ? 'по этой игре ' : ''}пока нет — они появятся после анализа и следующего тиража.</p>
       ) : (
         <>
           <div className="table-wrap">
@@ -106,6 +110,6 @@ export function StatsView() {
           </p>
         </>
       )}
-    </main>
+    </Wrap>
   )
 }

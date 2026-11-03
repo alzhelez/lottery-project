@@ -230,6 +230,15 @@ test('статистика: сколько раз метод угадал пол
   await expect(rows.filter({ hasText: 'Наименее вероятные' })).toContainText('цель — выпасть реже')
   await expect(page.getByTestId('stats-methods')).toContainText('мало данных')
   await page.screenshot({ path: 'tests/e2e/.data/stats.png', fullPage: true })
+
+  // та же статистика — вкладкой на странице игры, только по этой игре
+  await page.goto('/games/4x20')
+  await page.getByTestId('tab-stats').click()
+  const tab = page.getByTestId('stats-tab')
+  await expect(tab.getByTestId('stats-game')).toHaveCount(1)
+  await expect(tab).toContainText('от 4 из 8')
+  await expect(tab.getByTestId('stats-row')).toHaveCount(6)
+  await page.screenshot({ path: 'tests/e2e/.data/stats-tab.png', fullPage: true })
 })
 
 test('шансы: точные вероятности и возврат по введённым призам', async ({ page }) => {

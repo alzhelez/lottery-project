@@ -8,6 +8,7 @@ import { GodModePanel } from './GodModePanel'
 import { JournalPanel } from './JournalPanel'
 import { OddsPanel } from './OddsPanel'
 import { RulesPanel } from './RulesPanel'
+import { StatsView } from './StatsView'
 import { APP_VERSION } from '@/lib/version'
 import { MyTickets } from './MyTickets'
 import { NextDrawCard } from './NextDrawCard'
@@ -32,6 +33,7 @@ const TABS = [
   { id: 'chaos', label: 'Порядок из хаоса' },
   { id: 'god', label: 'Режим Бога' },
   { id: 'journal', label: 'Журнал прогнозов' },
+  { id: 'stats', label: 'Статистика' },
   { id: 'odds', label: 'Шансы' },
   { id: 'tickets', label: 'Билеты' },
   { id: 'mine', label: 'Мои билеты' },
@@ -175,6 +177,7 @@ export function GameView({ info }: { info: Info }) {
           {tab === 'chaos' && <ChaosPanel slug={info.slug} chaos={analysis?.chaos} loaded={loaded} onDone={loadAnalysis} />}
           {tab === 'god' && <GodModePanel info={info} />}
           {tab === 'journal' && <JournalPanel info={info} />}
+          {tab === 'stats' && <StatsView slug={info.slug} />}
           {tab === 'odds' && <OddsPanel slug={info.slug} />}
           {tab === 'tickets' && <TicketsPanel slug={info.slug} />}
           {tab === 'mine' && <MyTickets slug={info.slug} />}
