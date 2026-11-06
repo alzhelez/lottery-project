@@ -46,12 +46,12 @@ interface Summary {
   goal?: 'fewer'
 }
 
-const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', least: 'Н' }
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', golden: 'З', least: 'Н' }
 const SOURCE_TITLE: Record<string, string> = {
   analysis_best: 'лучший метод', analysis_consensus: 'консенсус', chaos: 'порядок из хаоса', godmode: 'режим Бога',
-  experiment: 'эксперимент «эхо ±3»', least: 'наименее вероятные',
+  experiment: 'эксперимент «эхо ±3»', golden: 'золотая середина', least: 'наименее вероятные',
 }
-const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'experiment', 'least']
+const ORDER = ['chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'experiment', 'golden', 'least']
 
 const STATUS: Record<Entry['status'], string> = {
   pending: 'ждёт тиража',

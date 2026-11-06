@@ -126,8 +126,36 @@ class Evaluator:
         return [_numbers(p[row], s.lo) for p, s in zip(picks, self.data.fmt.blocks)]
 
 
-def evaluate_game(data: GameData, progress=None, models: list[Model] | None = None) -> dict:
-    """models — свой набор методов (по умолчанию стандартный); первый метод-контроль обязателен."""
+GOLDEN_TITLE = "Золотая середина"
+
+
+def _mask(picks: np.ndarray, size: int) -> np.ndarray:
+    m = np.zeros((picks.shape[0], size), bool)
+    np.put_along_axis(m, picks, True, axis=1)
+    return m
+
+
+def golden_picks(best_picks: list[np.ndarray], least_picks: list[np.ndarray], voter_picks: list[list[np.ndarray]],
+                 specs) -> list[np.ndarray]:
+    """«Золотая середина»: числа лучшего метода, кроме тех, что попали в «наименее вероятные»;
+    вместо исключённых — числа, за которые голосует больше всего методов (как в консенсусе),
+    тоже не из «наименее вероятных». На каждый тираж — только по предыдущим тиражам: и лучший
+    метод, и лучший анти-метод выбраны на отрезке отбора, их оценки — пошаговые."""
+    out = []
+    for b, spec in enumerate(specs):
+        votes = consensus_votes([p[b] for p in voter_picks], spec.size)
+        score = votes + _mask(best_picks[b], spec.size) * (len(voter_picks) + 1.0)
+        # ниже любого голоса (голоса ≥ 0); не −∞: top_k масштабирует шум ничьих по max|score|
+        score[_mask(least_picks[b], spec.size)] = -1.0
+        out.append(top_k(score, spec.count, seed=41 + b))
+    return out
+
+
+def evaluate_game(data: GameData, progress=None, models: list[Model] | None = None,
+                  keep_picks: bool = False) -> dict:
+    """models — свой набор методов (по умолчанию стандартный); первый метод-контроль обязателен.
+    keep_picks — вернуть в "_picks" прогнозы лучшего метода, консенсуса, эксперимента,
+    наименее вероятных и «Золотой середины» на каждый тираж (ретро-проверка, retro.py; не JSON)."""
     t_total = data.T
     ev = Evaluator(data)
     warm = warmup_size(t_total)
@@ -261,6 +289,18 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         least = least_mod.evaluate(data, ev, models, warm, split)
     except Exception as exc:  # noqa: BLE001 — дополнительный раздел не должен ронять анализ
         least = {"status": "error", "message": f"{type(exc).__name__}: {exc}"}
+    least_picks = least.pop("_best_picks", None)
+
+    golden = None
+    gold = None
+    if least_picks is not None and least.get("status") == "ok":
+        gold = golden_picks(best_picks, least_picks, [all_picks[k] for k in voters], data.fmt.blocks)
+        hg = ev.hits(gold)
+        golden = {"title": GOLDEN_TITLE,
+                  "detail": ru(f"«{best['title']}» без чисел «{least['next_prediction']['model']}»"),
+                  "selection": metrics(hg[warm:split], m0[warm:split], v0[warm:split]),
+                  "holdout": metrics(hg[split:], m0[split:], v0[split:]),
+                  "next": ev.numbers(gold, t_total)}
 
     pmf = baseline_pmf(data, slice(warm, None))
     best_h = next(h for m, h in results if m.key == best["key"])[warm:]
@@ -290,4 +330,8 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         },
         "distribution": {"observed": dist_obs.tolist(), "expected": (pmf * len(best_h)).round(1).tolist()},
         "least": least,
+        "golden": golden,
+        **({"_picks": {"analysis_best": best_picks, "analysis_consensus": cons_picks,
+                       "experiment": all_picks.get("experiment_echo3"), "least": least_picks, "golden": gold,
+                       "split": split}} if keep_picks else {}),
     }

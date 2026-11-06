@@ -338,3 +338,10 @@ def test_stats(api):
     assert game["best"]["source"] == "analysis_best" and game["worst"]["source"] == "chaos"
     # Доли разные — ничьей нет.
     assert game["tie"] is False
+    # Игра считается по порогу «половина и больше» (в «Топ-3» было бы среднее угаданных).
+    assert game["metric"] == "half"
+    # Сравнивать методы между собой по двум прогнозам нельзя — проверки различий нет.
+    assert game["heterogeneity"] is None
+    # Пар «Под наблюдением» нет; раздел ретро-проверки есть, но ещё не считался.
+    body = response.json()
+    assert body["watch"] == [] and body["retro"]["status"] is None and body["retro"]["games"] == []

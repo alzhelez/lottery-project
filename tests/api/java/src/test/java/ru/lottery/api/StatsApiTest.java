@@ -57,5 +57,12 @@ public class StatsApiTest extends BaseApiTest {
         assertThat(obj(game, "best").get("source")).isEqualTo("analysis_best");
         assertThat(obj(game, "worst").get("source")).isEqualTo("chaos");
         assertThat(game.get("tie")).isEqualTo(false);
+        // Игра считается по порогу «половина и больше»; по двум прогнозам методы не сравниваются.
+        assertThat(game.get("metric")).isEqualTo("half");
+        assertThat(game.get("heterogeneity")).isNull();
+        // Пар «Под наблюдением» нет; ретро-проверка ещё не считалась.
+        assertThat(response.jsonPath().getList("watch")).isEmpty();
+        assertThat((Object) response.jsonPath().get("retro.status")).isNull();
+        assertThat(response.jsonPath().getList("retro.games")).isEmpty();
     }
 }

@@ -44,6 +44,8 @@ export default defineConfig({
         STOLOTO_DELAY: '0',
         // всеобъемлющий режим Бога в тестах — минута на игру
         LOTTERY_GODMODE_ALL_BUDGET: '1',
+        // ретро-проверка в тестах — без режима Бога (иначе по 3 минуты на игру)
+        LOTTERY_RETRO_GODMODE_MIN: '0',
         ...(process.env.PYTHON_BIN ? { PYTHON_BIN: process.env.PYTHON_BIN } : {}),
       },
     },

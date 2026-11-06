@@ -196,20 +196,39 @@ def godmode_target(data, res: dict) -> None:
                         "numbers": ordered_prediction(data, res["next"]["numbers"], target["no"], mech)})
 
 
+# прогноз записывается на все тиражи до следующего цикла автозапуска (раз в час) — с запасом,
+# если цикл задержится; следующий цикл заменит ещё не сыгранные прогнозы свежими
+FORECAST_HORIZON_MIN = float(os.environ.get("LOTTERY_FORECAST_HORIZON_MIN", "75") or 0)
+FORECAST_MAX_AHEAD = 12
+
+
+def forecast_targets(data, draw_no: int | None = None, mechanism: str | None = None) -> list[dict]:
+    """Тиражи для прогноза: draw_no (или ближайший будущий) и следующие до горизонта
+    FORECAST_HORIZON_MIN; у каждого — способ розыгрыша для порядка выпадения."""
+    from lottery.journal import target_draws
+    ahead = target_draws(data, horizon_s=FORECAST_HORIZON_MIN * 60, max_n=FORECAST_MAX_AHEAD)
+    if draw_no is None:
+        first = ahead[0]
+        out = [{"no": first["no"], "mechanism": mechanism or target_mechanism(data, first)}]
+    else:
+        out = [{"no": int(draw_no), "mechanism": mechanism}]
+    out += [{"no": t["no"], "mechanism": target_mechanism(data, t)} for t in ahead if t["no"] > out[0]["no"]]
+    return out
+
+
 def journal_record(data, source: str, numbers, detail: str, draw_no: int | None = None,
                    mechanism: str | None = None, ordered: bool = True) -> None:
     """Прогноз в журнал — только для активной игры (иначе тираж не наступит). Номер тиража —
-    ближайший будущий (journal.target_draw), если не задан; числа — в предсказанном порядке
-    выпадения."""
-    from lottery.journal import record, target_draw
-    if data.draws and game_activity(data)["active"]:
-        if draw_no is None:
-            target = target_draw(data)
-            draw_no, mechanism = target["no"], mechanism or target_mechanism(data, target)
-        if ordered:
-            numbers = ordered_prediction(data, numbers, draw_no, mechanism)
-        record(data, source, [sorted(b) for b in numbers] if not ordered else numbers, detail,
-               draw_no=draw_no, ordered=ordered)
+    ближайший будущий (journal.target_draw), если не задан, и следующие до горизонта
+    (forecast_targets); числа — в предсказанном порядке выпадения."""
+    from lottery.journal import record_many
+    if not (data.draws and game_activity(data)["active"]):
+        return
+    items = []
+    for t in forecast_targets(data, draw_no, mechanism):
+        nums = ordered_prediction(data, numbers, t["no"], t["mechanism"]) if ordered else [sorted(b) for b in numbers]
+        items.append((t["no"], nums))
+    record_many(data, source, items, detail, ordered=ordered)
 
 
 def game_info(slug: str) -> dict:
@@ -385,6 +404,11 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
             # наименее вероятные: порядок выпадения для них смысла не имеет — числа по возрастанию
             journal_record(data, "least", least["next_prediction"]["numbers"], least["next_prediction"]["model"],
                            draw_no=target["no"], mechanism=mech_next, ordered=False)
+        golden = evaluation.get("golden")
+        if golden:
+            golden["next"] = ordered_prediction(data, golden["next"], target["no"], mech_next)
+            evaluation["next_golden"] = golden["next"]
+            journal_record(data, "golden", golden["next"], golden["detail"], draw_no=target["no"], mechanism=mech_next)
     if cache:
         popularity = cache.get("popularity") or {}
     else:
@@ -622,6 +646,8 @@ def auto_once(args) -> dict:
                                      "consensus": ev["next_consensus"]}
                 if ev.get("next_experiment"):
                     predictions[slug]["experiment"] = ev["next_experiment"]
+                if ev.get("next_golden"):
+                    predictions[slug]["golden"] = ev["next_golden"]
                 if (ev.get("least") or {}).get("status") == "ok":
                     predictions[slug]["least"] = sorted_blocks(ev["least"]["next_prediction"]["numbers"])
                 ch = (payload.get("chaos") or {}).get("next") or {}
@@ -641,6 +667,13 @@ def auto_once(args) -> dict:
         status["status"] = "done"
         log("Автозапуск: готово")
         notify.send(notify.auto_message(status, predictions), "auto")
+        # ретро-проверка за неделю — раз в неделю (и после изменения расчёта), после прогнозов цикла
+        from lottery import retro
+        if not args.game and retro.due() and not _lock_alive(data_dir() / "retro.lock"):
+            stage("ретро-проверка за неделю")
+            run_retro(log, godmode_budget=RETRO_GODMODE_MIN if args.godmode_budget > 0 else 0)
+            status.pop("current", None)
+            save_json(status_path, status)
     except Exception as exc:  # статус ошибки должен попасть в файл, иначе интерфейс покажет «идёт»
         status["status"] = "error"
         status["error"] = f"{type(exc).__name__}: {exc}"
@@ -654,6 +687,53 @@ def auto_once(args) -> dict:
 
 
 STUCK_HOURS = 3
+RETRO_GODMODE_MIN = float(os.environ.get("LOTTERY_RETRO_GODMODE_MIN", "3") or 0)
+
+
+def forecast_slugs() -> list[str]:
+    """Игры, для которых автозапуск пишет прогнозы: активные, поддерживаемые, с достаточной
+    историей, без двойников (игры с теми же тиражами)."""
+    from lottery.drawfile import same_draws
+    out, seen = [], []
+    for slug in local_slugs():
+        try:
+            data = load_game_data(get_game(slug))
+        except ValueError:
+            continue
+        if any(same_draws(d, data.draws) for d in seen):
+            continue
+        seen.append(data.draws)
+        if data.fmt.supported and data.draws and game_activity(data)["active"] and data.T >= MIN_AUTO_DRAWS:
+            out.append(slug)
+    return out
+
+
+def run_retro(log, slugs: list[str] | None = None, days: int = 7, godmode_budget: float = RETRO_GODMODE_MIN) -> dict:
+    """Ретро-проверка (lottery/retro.py) под блокировкой data/retro.lock."""
+    from lottery import retro
+    from lottery.games import data_dir
+    lock = data_dir() / "retro.lock"
+    save_json(lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds")})
+    try:
+        t0 = time.time()
+        res = retro.run(slugs or forecast_slugs(), days=days, godmode_budget=godmode_budget, log=log)
+        n = sum(g.get("entries", 0) for g in res["games"].values())
+        log(f"Ретро-проверка за {days} дн.: {n} прогнозов по {len(res['games'])} играм за {time.time() - t0:.0f} с")
+        return res
+    finally:
+        lock.unlink(missing_ok=True)
+
+
+def cmd_retro(args) -> None:
+    """Ретро-проверка: прогнозы всех источников на каждый тираж последних --days дней по
+    тиражам до него (отдельно от журнала, см. lottery/retro.py)."""
+    from lottery.games import data_dir
+    if _lock_alive(data_dir() / "retro.lock"):
+        say("Ретро-проверка уже идёт — пропускаю.")
+        emit({"type": "result", "skipped": True})
+        return
+    res = run_retro(lambda m: emit({"type": "log", "message": m}), args.game or None, args.days, args.godmode_budget)
+    emit({"type": "result", "status": res})
 from lottery.games import MIN_FORECAST_DRAWS as MIN_AUTO_DRAWS  # noqa: E402
 GODMODE_PER_CYCLE = 6       # режим Бога: не больше стольких игр за цикл (по 2 одновременно)
 GODMODE_MAX_DRAWS = 60_000
@@ -1548,6 +1628,11 @@ def main() -> None:
     p.add_argument("--every", type=float, default=0.0, help="повторять каждые N часов (для Docker)")
     p.add_argument("--skip-fetch", action="store_true")
     p.add_argument("--skip-scan", action="store_true")
+    p = sub.add_parser("retro", help="ретро-проверка: прогнозы всех методов на каждый тираж последней недели")
+    p.add_argument("--game", action="append")
+    p.add_argument("--days", type=int, default=7)
+    p.add_argument("--godmode-budget", type=float, default=RETRO_GODMODE_MIN,
+                   help="минут режима Бога на игру (0 — без Б; по умолчанию LOTTERY_RETRO_GODMODE_MIN или 3)")
     p = sub.add_parser("rules", help="правила игр со stoloto.ru: как проходят розыгрыши, таблица выигрышей")
     p.add_argument("--game", action="append")
     p = sub.add_parser("nextdraw", help="ожидаемый возврат ближайших тиражей")
@@ -1584,7 +1669,7 @@ def main() -> None:
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
                 "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos,
                 "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup,
-                "godmode-all": cmd_godmode_all}
+                "godmode-all": cmd_godmode_all, "retro": cmd_retro}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

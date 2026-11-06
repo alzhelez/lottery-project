@@ -248,12 +248,13 @@ def _dec(v: float, digits: int) -> str:
 
 
 SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б", "experiment": "Э",
-         "least": "Н"}
+         "golden": "З", "least": "Н"}
 
 
 LEGEND = ("Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога, "
-          "Э — эксперимент «эхо ±3», Н — наименее вероятные (их лучше не брать)")
-ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode", "experiment", "least")
+          "Э — эксперимент «эхо ±3», З — золотая середина (Л без наименее вероятных), "
+          "Н — наименее вероятные (их лучше не брать)")
+ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode", "experiment", "golden", "least")
 
 
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
@@ -268,6 +269,27 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
         by_draw: dict[int, list[dict]] = {}
         for e in checked:
             by_draw.setdefault(e["draw_no"], []).append(e)
+        if len(by_draw) > 1:
+            # прогноз пишется на все тиражи до следующего цикла: по игре — одна сводка за все
+            # сверенные тиражи, иначе сообщение растягивается на десятки экранов
+            lines = [f"<b>{esc(title)}</b> №{min(by_draw)}–{max(by_draw)} ({_draws_word(len(by_draw))})"]
+            for source in sorted({e["source"] for e in checked}, key=lambda s: ORDER.index(s) if s in ORDER else 9):
+                es = [e for e in checked if e["source"] == source]
+                h = sum(e["hits"] for e in es)
+                total = sum(sum(len(b) for b in e["numbers"]) for e in es)
+                label = SHORT.get(source, esc(es[0]["source_title"]))
+                if source == "least":
+                    lines.append(f"  Н: выпало {h} из {total} (меньше — лучше)")
+                    continue
+                w = sum(e.get("won") or 0 for e in es)
+                lines.append(f"  {label}: {h} из {total} при ожидаемых {_dec(sum(e['expected'] for e in es), 1)}"
+                             + (f" — выигрыш {_rub(w)} ₽" if w else ""))
+                n += len(es)
+                hits += h
+                expected += sum(e["expected"] for e in es)
+                won += w
+            blocks.append("\n".join(lines))
+            continue
         for no in sorted(by_draw):
             group = sorted(by_draw[no], key=lambda e: ORDER.index(e["source"]) if e["source"] in ORDER else 9)
             lines = [f"<b>{esc(title)}</b> №{no} (выпало <code>{esc(fmt_blocks(group[0]['actual']))}</code>)"]
@@ -311,7 +333,8 @@ def journal_message(title: str, entries: list[dict]) -> str | None:
 
 
 def auto_message(status: dict, predictions: dict[str, dict]) -> str:
-    """Итог автозапуска: по каждой игре и тиражу — подпункты Л, К, Х, Б, Э, Н с числами."""
+    """Итог автозапуска: по каждой игре и тиражу — подпункты Л, К, Х, Б, Э, З, Н с числами
+    (Л и К с одинаковыми числами — одной строкой «Л = К»)."""
     games = status.get("games", {})
     added = sum(g.get("added", 0) or 0 for g in games.values())
     checked = sum(g.get("journal_checked", 0) or 0 for g in games.values())
@@ -327,15 +350,32 @@ def auto_message(status: dict, predictions: dict[str, dict]) -> str:
     parts = ["\n".join(head)]
     for p in predictions.values():
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
-        for label, nums in (("Л", p.get("numbers")), ("К", p.get("consensus")),
+        same = _same_numbers(p.get("numbers"), p.get("consensus"))
+        for label, nums in (("Л = К" if same else "Л", p.get("numbers")), ("К", None if same else p.get("consensus")),
                             (f"Х ({esc(p['chaos']['title'])})" if p.get("chaos") else "Х",
                              (p.get("chaos") or {}).get("numbers")),
                             (f"Б (на №{p['godmode_no']})" if p.get("godmode_no") else "Б", p.get("godmode")),
-                            ("Э", p.get("experiment")), ("Н (не брать)", p.get("least"))):
+                            ("Э", p.get("experiment")), ("З", p.get("golden")), ("Н (не брать)", p.get("least"))):
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))
     return "\n\n".join(parts)
+
+
+def _draws_word(n: int) -> str:
+    """«3 тиража», «5 тиражей», «21 тираж»."""
+    if n % 10 == 1 and n % 100 != 11:
+        return f"{n} тираж"
+    if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
+        return f"{n} тиража"
+    return f"{n} тиражей"
+
+
+def _same_numbers(a, b) -> bool:
+    """Л и К с одинаковыми числами (порядок не важен) — в сообщении одна строка «Л = К»."""
+    if not a or not b or len(a) != len(b):
+        return False
+    return all(sorted(x) == sorted(y) for x, y in zip(a, b))
 
 
 def godmode_message(title: str, res: dict) -> str:

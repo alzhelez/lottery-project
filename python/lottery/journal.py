@@ -5,7 +5,8 @@
 тиража (время берётся из архива); прогноз, сделанный по устаревшим данным уже после
 тиража, помечается «после тиража» и в статистику не идёт.
 
-Файл: data/journal/<игра>.json
+Файл: data/journal/<игра>.json. Ретро-проверка (retro.py) — отдельно, data/journal_retro/<игра>.json:
+это прогнозы, восстановленные задним числом по тиражам до каждого тиража, а не записанные заранее.
 """
 from __future__ import annotations
 
@@ -31,24 +32,25 @@ SOURCES = {
     "chaos": "Порядок из хаоса",
     "least": "Наименее вероятные",
     "experiment": "Эксперимент: эхо ±3",
+    "golden": "Золотая середина",
 }
 # у этих источников цель — угадать МЕНЬШЕ случайного выбора (числа, которые не выпадут)
 LOWER = {"least"}
 
 
-def journal_path(slug: str):
-    return data_dir() / "journal" / f"{slug}.json"
+def journal_path(slug: str, retro: bool = False):
+    return data_dir() / ("journal_retro" if retro else "journal") / f"{slug}.json"
 
 
-def load(slug: str) -> dict:
+def load(slug: str, retro: bool = False) -> dict:
     try:
-        return json.loads(journal_path(slug).read_text(encoding="utf-8"))
+        return json.loads(journal_path(slug, retro).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {"game": slug, "entries": []}
 
 
-def save(slug: str, journal: dict) -> None:
-    write_text(journal_path(slug), json.dumps(journal, ensure_ascii=False, indent=1))
+def save(slug: str, journal: dict, retro: bool = False) -> None:
+    write_text(journal_path(slug, retro), json.dumps(journal, ensure_ascii=False, indent=1))
 
 
 TARGET_MARGIN_S = 90      # прогноз должен быть записан хотя бы за полторы минуты до тиража
@@ -115,17 +117,35 @@ def target_draw(data: GameData, now: datetime | None = None) -> dict:
             "how": "ближайший будущий тираж по интервалу между тиражами"}
 
 
-def record(data: GameData, source: str, numbers: list[list[int]], detail: str = "",
-           now: datetime | None = None, draw_no: int | None = None, ordered: bool = False) -> dict:
-    """Записывает прогноз на тираж draw_no (по умолчанию — ближайший будущий, target_draw).
-    Повторный прогноз того же источника на тот же тираж заменяет прежний, пока тираж не
-    сыгран."""
+def target_draws(data: GameData, now: datetime | None = None, horizon_s: float = 0.0, max_n: int = 1) -> list[dict]:
+    """Ближайший будущий тираж (target_draw) и следующие за ним, чьё ожидаемое время — не
+    позже now + horizon_s, всего не больше max_n. Автозапуск идёт раз в час, а быстрые игры
+    разыгрываются каждые 5–15 минут: прогноз одного цикла записывается на все тиражи до
+    следующего цикла — числа между циклами всё равно не меняются, а журнал набирает данные
+    в разы быстрее. Следующий цикл заменяет ещё не сыгранные прогнозы свежими."""
+    from datetime import timedelta
     now = now or datetime.now()
-    draw_no = draw_no or target_draw(data, now)["no"]
-    journal = load(data.game.slug)
-    entry = {
+    first = target_draw(data, now)
+    out = [first]
+    if first["date"] is None:
+        return out
+    end = now + timedelta(seconds=horizon_s)
+    cur = first
+    while len(out) < max_n:
+        # тираж сразу после cur: target_draw ищет первый, что позже now + TARGET_MARGIN_S
+        nxt = target_draw(data, cur["date"] - timedelta(seconds=TARGET_MARGIN_S - 1))
+        if nxt["date"] is None or nxt["no"] <= cur["no"] or nxt["date"] > end:
+            break
+        out.append(nxt)
+        cur = nxt
+    return out
+
+
+def _entry(data: GameData, source: str, numbers, detail: str, now: datetime, draw_no: int,
+           ordered: bool) -> dict:
+    return {
         "id": uuid.uuid4().hex[:12],
-        "draw_no": draw_no,
+        "draw_no": int(draw_no),
         "source": source,
         "source_title": SOURCES.get(source, source),
         "detail": detail,
@@ -136,12 +156,65 @@ def record(data: GameData, source: str, numbers: list[list[int]], detail: str = 
         "status": "pending",
         **({"ordered": True} if ordered else {}),
     }
+
+
+def record_many(data: GameData, source: str, items: list[tuple[int, list[list[int]]]], detail: str = "",
+                now: datetime | None = None, ordered: bool = False) -> list[dict]:
+    """Прогнозы источника на несколько тиражей [(номер, числа)] — журнал читается и пишется один раз.
+    Прогноз того же источника на тот же тираж заменяет прежний, пока тираж не сыгран."""
+    now = now or datetime.now()
+    journal = load(data.game.slug)
+    nos = {int(no) for no, _ in items}
     entries = [e for e in journal["entries"]
-               if not (e["draw_no"] == draw_no and e["source"] == source and e["status"] == "pending")]
-    entries.append(entry)
-    journal["entries"] = entries
+               if not (e["draw_no"] in nos and e["source"] == source and e["status"] == "pending")]
+    new = [_entry(data, source, numbers, detail, now, no, ordered) for no, numbers in items]
+    journal["entries"] = entries + new
     save(data.game.slug, journal)
-    return entry
+    return new
+
+
+def record(data: GameData, source: str, numbers: list[list[int]], detail: str = "",
+           now: datetime | None = None, draw_no: int | None = None, ordered: bool = False) -> dict:
+    """Записывает прогноз на тираж draw_no (по умолчанию — ближайший будущий, target_draw)."""
+    now = now or datetime.now()
+    draw_no = draw_no or target_draw(data, now)["no"]
+    return record_many(data, source, [(draw_no, numbers)], detail, now, ordered)[0]
+
+
+# игры с фиксированными призами, у которых в ответе API о тираже нет выплат: призы — из
+# официальной таблицы правил игры (rules.py, вкладка «Правила»), цена ставки — оттуда же.
+# Кено 2.0: прогноз — 10 чисел, выигрыш — по строке «10 чисел в ставке, угадано k».
+RULES_PRIZE_GAMES = {"keno2"}
+
+
+def rules_prize_table(slug: str, counts: list[int]) -> dict | None:
+    """Таблица призов из правил игры в формате архива выплат (None — игра не из списка или
+    таблицы нет)."""
+    if slug not in RULES_PRIZE_GAMES:
+        return None
+    from .rules import load_rules, official_prizes
+    rules = load_rules(slug) or {}
+    off = official_prizes(rules, len(counts), counts)
+    if not off["prizes"]:
+        return None
+    return {"categories": {k: {"prize": v} for k, v in off["prizes"].items()},
+            "price": (rules.get("next_draw") or {}).get("price"), "source": "rules"}
+
+
+class PrizeLookup:
+    """Таблица выплат тиража: из архива выплат (prizes.py), а если там тиража нет — из
+    правил игры (RULES_PRIZE_GAMES)."""
+
+    def __init__(self, slug: str, counts: list[int]):
+        from . import prizes as prizes_mod
+        self.archive = prizes_mod.keyed_history(slug, counts)
+        self.rules = rules_prize_table(slug, counts)
+
+    def get(self, draw_no: int) -> dict | None:
+        return self.archive.get(draw_no) or self.rules
+
+    def __contains__(self, draw_no: int) -> bool:
+        return self.get(draw_no) is not None
 
 
 def _payout(entry: dict, hits_by_block: list[int], prize_table: dict | None) -> float | None:
@@ -181,7 +254,9 @@ def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = No
             # «на своём месте»: число прогноза на той же позиции, что и в тираже
             in_place += sum(1 for a, b in zip(pred, act) if a == b)
             in_place_exp += min(len(pred), len(act)) / s.size
-    late = draw_dt is not None and made >= draw_dt
+    # ретро-проверка (retro.py) считает прогноз задним числом по тиражам ДО этого — «после
+    # тиража» к ней не относится, она хранится отдельно и помечена retro
+    late = not entry.get("retro") and draw_dt is not None and made >= draw_dt
     return {
         **entry,
         "status": "late" if late else "checked",
@@ -195,6 +270,8 @@ def _check(entry: dict, draw: Draw, now: datetime, prize_table: dict | None = No
         # «наименее вероятные» — не билет: выигрыш и цену не считаем
         "won": None if entry["source"] in LOWER else _payout(entry, hits_by_block, prize_table),
         "spent": None if entry["source"] in LOWER else _price(prize_table),
+        **({"prize_source": "rules"} if prize_table and prize_table.get("source") == "rules"
+           and entry["source"] not in LOWER else {}),
         **({"in_place": in_place, "in_place_expected": in_place_exp} if entry.get("ordered") else {}),
     }
 
@@ -207,7 +284,7 @@ def reconcile(game: Game, now: datetime | None = None, collect: list | None = No
     now = now or datetime.now()
     by_no = {d.no: d for d in load_game_draws(game)}
     from . import prizes as prizes_mod
-    tables = None
+    tables: PrizeLookup | None = None
     changed = 0
     from .mechanics import mechanism_of_draw
     from .rules import load_rules
@@ -216,8 +293,7 @@ def reconcile(game: Game, now: datetime | None = None, collect: list | None = No
     for i, e in enumerate(journal["entries"]):
         if e["status"] == "pending" and e["draw_no"] in by_no:
             if tables is None:
-                counts = [b["count"] for b in e["blocks"]]
-                tables = prizes_mod.keyed_history(game.slug, counts)
+                tables = PrizeLookup(game.slug, [b["count"] for b in e["blocks"]])
                 stored = prizes_mod.mechanisms(game.slug)
             d = by_no[e["draw_no"]]
             journal["entries"][i] = {**_check(e, d, now, tables.get(e["draw_no"])),
@@ -230,16 +306,18 @@ def reconcile(game: Game, now: datetime | None = None, collect: list | None = No
         elif e["status"] in ("checked", "late") and e.get("won") is not None and "spent" not in e:
             # записи до 41.5.0: цены билета не было — дописываем из архива выплат
             if tables is None:
-                tables = prizes_mod.keyed_history(game.slug, [b["count"] for b in e["blocks"]])
+                tables = PrizeLookup(game.slug, [b["count"] for b in e["blocks"]])
             journal["entries"][i] = {**e, "spent": _price(tables.get(e["draw_no"]))}
             changed += 1
         elif e["status"] in ("checked", "late") and e.get("won") is None:
             # выплаты могли появиться в архиве позже самого тиража
             if tables is None:
-                tables = prizes_mod.keyed_history(game.slug, [b["count"] for b in e["blocks"]])
-            if e["draw_no"] in tables and e.get("hits_by_block") is not None:
-                journal["entries"][i] = {**e, "won": _payout(e, e["hits_by_block"], tables[e["draw_no"]]),
-                                         "spent": _price(tables[e["draw_no"]])}
+                tables = PrizeLookup(game.slug, [b["count"] for b in e["blocks"]])
+            table = tables.get(e["draw_no"])
+            won = _payout(e, e["hits_by_block"], table) if table and e.get("hits_by_block") is not None else None
+            if won is not None:
+                # «Топ-3» и другие игры со ставками на цифры: _payout вернёт None — запись не меняется
+                journal["entries"][i] = {**e, "won": won, "spent": _price(table)}
                 changed += 1
     if changed:
         save(game.slug, journal)

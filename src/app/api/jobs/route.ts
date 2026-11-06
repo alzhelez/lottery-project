@@ -4,7 +4,7 @@ import { isValidSlug } from '@/lib/paths'
 
 export const dynamic = 'force-dynamic'
 
-const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules', 'chaos', 'godmode_all']
+const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules', 'chaos', 'godmode_all', 'retro']
 const NEEDS_GAME: JobKind[] = ['analyze', 'godmode', 'chaos']
 
 function parse(kind: unknown, game: unknown): { kind: JobKind; game: string | null } | string {

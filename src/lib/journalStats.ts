@@ -8,6 +8,7 @@ export const SOURCES: Record<string, string> = {
   chaos: 'Порядок из хаоса',
   godmode: 'Режим Бога',
   experiment: 'Эксперимент: эхо ±3',
+  golden: 'Золотая середина',
   least: 'Наименее вероятные',
 }
 

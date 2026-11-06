@@ -513,4 +513,14 @@ func TestAPI16Stats(t *testing.T) {
 	if best["source"] != "analysis_best" || worst["source"] != "chaos" || game["tie"] != false {
 		t.Errorf("лучший %v, худший %v, ничья %v", best["source"], worst["source"], game["tie"])
 	}
+	// Игра считается по порогу «половина и больше»; по двум прогнозам методы не сравниваются.
+	if game["metric"] != "half" || game["heterogeneity"] != nil {
+		t.Errorf("метрика %v, проверка различий %v", game["metric"], game["heterogeneity"])
+	}
+	// Пар «Под наблюдением» нет; ретро-проверка ещё не считалась.
+	body := resp.JSON(t)
+	retro := body["retro"].(map[string]any)
+	if len(body["watch"].([]any)) != 0 || retro["status"] != nil || len(retro["games"].([]any)) != 0 {
+		t.Errorf("под наблюдением %v, ретро %v", body["watch"], retro)
+	}
 }

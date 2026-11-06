@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dataDir, PROJECT_ROOT, resultsFile } from './paths'
 
-export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos' | 'godmode_all'
+export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos' | 'godmode_all' | 'retro'
 export type JobStatus = 'running' | 'done' | 'error' | 'cancelled'
 
 export interface Job {
@@ -75,6 +75,7 @@ function lockFile(kind: JobKind, game: string | null): string | null {
   if (kind === 'godmode' && game) return resultsFile(game, 'godmode.lock')
   if (kind === 'auto') return path.join(dataDir(), 'auto.lock')
   if (kind === 'godmode_all') return path.join(dataDir(), 'godmode_all.lock')
+  if (kind === 'retro') return path.join(dataDir(), 'retro.lock')
   return null
 }
 
@@ -133,6 +134,8 @@ function argsFor(kind: JobKind, game: string | null, params: Record<string, unkn
       return ['chaos', '--game', game!]
     case 'godmode_all':
       return ['godmode-all', ...(params.resume ? ['--resume'] : [])]
+    case 'retro':
+      return ['retro', '--days', '7']
   }
 }
 

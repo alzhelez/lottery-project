@@ -352,6 +352,13 @@ def summarize(pool: ExpertPool, strategies: list[dict], stage: str, complete: bo
         },
         "switches": switches,
         "timeline": timeline,
+        # ретро-проверка (retro.py): прогноз «лидера за всю историю» на каждый тираж начиная с
+        # retro_from_no — на тираж только по предыдущим (лидер выбирается по прошлым тиражам,
+        # эксперты отобраны по первой половине истории)
+        **({"retro": [{"no": data.draws[warm + r].no,
+                       "predicted": [sorted(int(v) + s.lo for v in p[r]) for p, s in zip(chosen["picks"], data.fmt.blocks)]}
+                      for r in range(half, r0) if data.draws[warm + r].no >= pool.retro_from_no]}
+           if getattr(pool, "retro_from_no", None) is not None else {}),
         "next": {"no": data.draws[-1].no + 1, "numbers": next_numbers, "model": next_model,
                  "strategy": chosen["title"], "leader": leader},
         "verdict": ru(verdict),
@@ -464,7 +471,8 @@ def thread_limit():
 
 
 def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_checkpoint=None,
-                state_path=None, resume: bool = False, eval_from: int | None = None) -> dict:
+                state_path=None, resume: bool = False, eval_from: int | None = None,
+                retro_from_no: int | None = None) -> dict:
     """Режим Бога. budget_minutes — время этого запуска; при resume=True работа продолжается
     с сохранённого состояния (пройденные стадии и найденные эксперты не пересчитываются).
     eval_from — индекс тиража, с которого эксперты проверяются (всеобъемлющий режим: с
@@ -480,6 +488,7 @@ def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_che
     if pool is None:
         pool = ExpertPool(data, warm=eval_from)
         pool.fixed_warm = eval_from
+    pool.retro_from_no = retro_from_no
     meta = meta if isinstance(meta, dict) else {}
     stages_done: list[str] = list(meta.get("stages_done", []))
     elapsed_before = float(meta.get("elapsed", 0.0))
@@ -656,14 +665,15 @@ def predict_leader(data: GameData, leader: dict | None) -> list[list[int]] | Non
     return ev.numbers(ev.picks(m), data.T)
 
 
-def auto_run(slug: str, budget_minutes: float, max_draws: int) -> dict:
+def auto_run(slug: str, budget_minutes: float, max_draws: int, retro_from_no: int | None = None) -> dict:
     """Режим Бога для автозапуска (запускается в отдельном процессе): последние max_draws
-    тиражей, без сохранения состояния для продолжения."""
+    тиражей, без сохранения состояния для продолжения. retro_from_no — вернуть и прогнозы
+    лидера на тиражи начиная с этого номера (ретро-проверка)."""
     from .drawfile import load_game_data
     from .games import get_game
     from .mechanics import subset
     data = load_game_data(get_game(slug))
     if data.T > max_draws:
         data = subset(data, np.arange(data.T - max_draws, data.T))
-    res = run_godmode(data, budget_minutes, state_path=None)
+    res = run_godmode(data, budget_minutes, state_path=None, retro_from_no=retro_from_no)
     return json.loads(json.dumps(res, default=float))

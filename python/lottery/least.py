@@ -69,6 +69,7 @@ def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> 
 
     m0, v0 = ev.mean0, ev.var0
     out = []
+    picks_by_key = {key: picks for key, _, _, picks in rows}
     for key, title, is_control, picks in rows:
         h = ev.hits(picks)
         out.append({"key": key, "title": ru(title), "control": is_control,
@@ -103,4 +104,7 @@ def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> 
         "conclusion": ru(conclusion),
         "next_prediction": {"model": best["title"], "numbers": best["next"]},
         "next_consensus": next(r["next"] for r in out if r["key"] == "least_consensus"),
+        # оценки лучшего анти-метода по всем тиражам — для «Золотой середины» (evaluate.py);
+        # не JSON — evaluate_game забирает их из результата
+        "_best_picks": picks_by_key[best["key"]],
     }

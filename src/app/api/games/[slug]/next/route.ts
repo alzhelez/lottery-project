@@ -7,7 +7,7 @@ import { dataDir, isValidSlug } from '@/lib/paths'
 export const dynamic = 'force-dynamic'
 
 type Entry = JournalEntry & { numbers: number[][]; detail?: string; source_title?: string; id: string }
-const ORDER = ['analysis_best', 'analysis_consensus', 'chaos', 'godmode', 'experiment']
+const ORDER = ['analysis_best', 'analysis_consensus', 'chaos', 'godmode', 'experiment', 'golden']
 
 /**
  * Ближайший тираж игры: прогнозы всех источников, записанные в журнал на этот тираж (те же
@@ -26,15 +26,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const ev = analysis?.evaluation ?? {}
   const lastNo = info.last?.no ?? 0
 
-  // тираж — тот, на который записано больше всего источников (при равенстве — более поздний):
-  // у быстрых игр режим Бога может писать прогноз на тираж позже, чем анализ
+  // тираж — тот, на который записано больше всего источников (при равенстве — ближайший):
+  // прогноз пишется на все тиражи до следующего цикла, а режим Бога у быстрых игр может начинать
+  // с более позднего тиража
   const pending = entries.filter((e) => e.status === 'pending' && e.draw_no > lastNo)
   const bySources = new Map<number, Set<string>>()
   for (const e of pending) {
     if (!bySources.has(e.draw_no)) bySources.set(e.draw_no, new Set())
     bySources.get(e.draw_no)!.add(e.source)
   }
-  const ranked = [...bySources.entries()].sort((a, b) => b[1].size - a[1].size || b[0] - a[0])
+  const ranked = [...bySources.entries()].sort((a, b) => b[1].size - a[1].size || a[0] - b[0])
   const drawNo: number | null = ranked.length ? ranked[0][0] : ev.target?.no ?? null
   if (drawNo == null) {
     return NextResponse.json({ draw_no: null, active: info.activity.active, draws: info.draws, sources: [], least: null })
@@ -57,6 +58,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       if (source === 'chaos' && analysis?.chaos?.next?.draw_no === drawNo) { numbers = analysis.chaos.next.numbers; detail = analysis.chaos.next.model ?? '' }
       if (source === 'godmode' && godmode?.next?.no === drawNo) { numbers = godmode.next.numbers; detail = godmode.next.strategy ?? '' }
       if (source === 'experiment') numbers = ev.next_experiment ?? null
+      if (source === 'golden') { numbers = ev.next_golden ?? null; detail = ev.golden?.detail ?? '' }
     }
     return { source, title: SOURCES[source], detail, numbers, made_at: e?.made_at ?? null, record: record[source] ?? null }
   }).filter((s) => s.numbers)
