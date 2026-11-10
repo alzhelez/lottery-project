@@ -218,52 +218,48 @@ test('итоги прогнозов по всем играм', async ({ page }) 
   await page.screenshot({ path: 'tests/e2e/.data/overview.png', fullPage: true })
 })
 
-test('статистика: сколько раз метод угадал половину чисел, лучший и худший метод', async ({ page }) => {
+test('статистика: анализ за период, доверие к методам и «По методам» по играм', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Статистика' }).click()
-  // 4 из 20: после сверки тиража №13896 у каждого из восьми источников — по одному прогнозу
+  // по игре — раскрывающийся блок; до анализа в нём только журнал: у восьми источников по одному прогнозу
   const game = page.getByTestId('stats-game').filter({ hasText: '4 из 20' })
-  await expect(game).toContainText('от 4 из 8')
-  await expect(game.getByTestId('stats-best')).toContainText('из 1')
-  await expect(game.getByTestId('stats-best')).toContainText('мало прогнозов')
-  const rows = page.getByTestId('stats-row')
-  await expect(rows).toHaveCount(8)
-  await expect(rows.filter({ hasText: 'Наименее вероятные' })).toContainText('цель — выпасть реже')
-  await expect(page.getByTestId('stats-methods')).toContainText('мало данных')
-  // одного прогноза на метод мало, чтобы сравнивать методы между собой
+  await expect(game).toContainText('анализ за период не проводился')
+  await expect(game.getByTestId('journal-methods')).toBeHidden()
+  await game.locator('summary').click()
+  await expect(game.getByTestId('journal-row')).toHaveCount(8)
+  await expect(game.getByTestId('journal-row').filter({ hasText: 'Наименее вероятные' })).toContainText('цель — выпасть реже')
   await expect(game).toContainText('нужно от 30 прогнозов')
-  await expect(page.getByTestId('stats-watch-empty')).toBeVisible()
-
-  // ретро-проверка за неделю: прогнозы всех методов на каждый тираж недели (в тестах — без режима Бога)
   await expect(page.getByTestId('retro-status')).toContainText('ещё не проводился')
   await expect(page.getByTestId('trust-empty')).toBeVisible()
-  // «Провести анализ за …»: выбор периода, запуск всех методов на всех играх
+  await page.getByTestId('stats-watch-block').locator('summary').click()
+  await expect(page.getByTestId('stats-watch-empty')).toBeVisible()
+
+  // «Провести анализ за …»: выбор периода, запуск всех методов на всех играх (в тестах — без режима Бога)
   await page.getByTestId('trust-period').selectOption('3')
   await expect(page.getByTestId('retro-run')).toHaveText('Провести анализ за 3 дня')
   await page.getByTestId('retro-run').click()
-  await expect(page.getByTestId('retro-summary')).toBeVisible({ timeout: 300_000 })
-  await expect(page.getByTestId('retro-status')).toContainText('посчитано')
+  await expect(game.getByTestId('trust-table')).toBeVisible({ timeout: 300_000 })
   await expect(page.getByTestId('retro-status')).toContainText('за 3 дн.')
-  // после анализа — рейтинг доверия: место, шкала 0–100; у «наименее вероятных» шкала обратная
-  const trustRows = page.getByTestId('trust-row')
-  await expect(trustRows.first()).toContainText('4 из 20')
-  await expect(trustRows.filter({ hasText: 'Наименее вероятные' }).first()).toContainText('чем меньше выпало')
-  await expect(page.getByTestId('trust-table')).toContainText('Золотая середина')
-  const retroGame = page.getByTestId('retro-game').filter({ hasText: '4 из 20' })
-  await expect(retroGame).toContainText('от 4 из 8')
+  // кнопка обновила оба раздела игры: рейтинг доверия (у «наименее вероятных» шкала обратная) …
+  await expect(game.getByTestId('stats-top')).toContainText('выше всех доверие')
+  await expect(game.getByTestId('trust-row').filter({ hasText: 'Наименее вероятные' })).toContainText('чем меньше выпало')
+  await expect(game.getByTestId('trust-table')).toContainText('Золотая середина')
+  // … и «По методам» за тот же период: десятки тиражей вместо одного журнального прогноза
+  await expect(game).toContainText('половина и больше — от 4 из 8')
+  const periodRow = game.getByTestId('stats-row').filter({ hasText: 'Золотая середина' })
+  await expect(periodRow).toBeVisible()
+  expect(Number((await periodRow.locator('td').nth(1).innerText()).replace(/\s/g, ''))).toBeGreaterThan(5)
   // в тестовом «Топ-3» три цифры: 2 из 3 случайно — около 3%, считается по порогу (в настоящем — 12 позиций)
-  await expect(page.getByTestId('retro-game').filter({ hasText: 'Топ-3' })).toContainText('от 2 из 3')
-  const retroRows = page.getByTestId('retro-row')
-  await expect(retroRows.filter({ hasText: 'Золотая середина' }).first()).toBeVisible()
+  await expect(page.getByTestId('stats-game').filter({ hasText: 'Топ-3' })).toContainText('от 2 из 3')
   await page.screenshot({ path: 'tests/e2e/.data/stats.png', fullPage: true })
 
-  // та же статистика — вкладкой на странице игры, только по этой игре
+  // та же статистика — вкладкой на странице игры: блок этой игры сразу раскрыт
   await page.goto('/games/4x20')
   await page.getByTestId('tab-stats').click()
   const tab = page.getByTestId('stats-tab')
   await expect(tab.getByTestId('stats-game')).toHaveCount(1)
-  await expect(tab).toContainText('от 4 из 8')
-  await expect(tab.getByTestId('stats-row')).toHaveCount(8)
+  await expect(tab.getByTestId('trust-table')).toBeVisible()
+  await expect(tab.getByTestId('journal-row')).toHaveCount(8)
   await page.screenshot({ path: 'tests/e2e/.data/stats-tab.png', fullPage: true })
 })
 

@@ -44,6 +44,34 @@ function gameStats(slug: string, entries: StatEntry[]) {
   }
 }
 
+/** Время тиража записи журнала: «дд.мм.гггг чч:мм» из draw_date, иначе время сверки. */
+function entryTime(e: StatEntry & { draw_date?: string; checked_at?: string }): number {
+  const m = /^(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/.exec(e.draw_date ?? '')
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime()
+  return e.checked_at ? new Date(e.checked_at).getTime() : 0
+}
+
+const periodCache = new Map<string, { key: string; stats: ReturnType<typeof gameStats> }>()
+
+/** «По методам» за период анализа — те же данные, что у рейтинга доверия (trust.py): анализ за
+ * период + настоящие прогнозы журнала с того же времени; на тираж у метода одна запись,
+ * журнальная — если есть. */
+function periodStats(slug: string, since: number) {
+  const files = [path.join(dataDir(), 'journal_retro', `${slug}.json`), path.join(dataDir(), 'journal', `${slug}.json`)]
+  const key = files.map((f) => { try { return fs.statSync(f).mtimeMs } catch { return 0 } }).join(':') + ':' + since
+  const hit = periodCache.get(slug)
+  if (hit && hit.key === key) return hit.stats
+  const byKey = new Map<string, StatEntry>()
+  for (const f of files) {                        // журнал — вторым: перекрывает запись анализа
+    for (const e of readJson<{ entries?: StatEntry[] }>(f)?.entries ?? []) {
+      if (e.status === 'checked' && entryTime(e) >= since) byKey.set(`${e.source}:${e.draw_no}`, e)
+    }
+  }
+  const stats = gameStats(slug, [...byKey.values()])
+  periodCache.set(slug, { key, stats })
+  return stats
+}
+
 /** Статистика по играм: сколько раз каждый метод журнала угадал не меньше половины своих чисел
  * (в «Топ-3» — среднее угаданных), сколько дал бы случайный выбор, лучший и худший метод игры,
  * отличаются ли методы больше случайного, пары «Под наблюдением» и та же статистика по
@@ -72,9 +100,16 @@ export async function GET() {
       rows: g.ranking.map((source) => ({ source, title: SOURCES[source] ?? source, ...g.sources[source] })),
     })).sort((a, b) => a.title.localeCompare(b.title, 'ru')),
   } : null
+  const since = trustRaw?.since ? new Date(trustRaw.since).getTime() : null
+  const period = since == null ? null : {
+    days: trustRaw?.days, since: trustRaw?.since,
+    games: [...new Set([...slugsIn(journalDir), ...slugsIn(retroDir)])].map((slug) => periodStats(slug, since))
+      .filter((g) => g.rows.length > 0).sort((a, b) => a.title.localeCompare(b.title, 'ru')),
+  }
   return NextResponse.json({
     games,
     trust,
+    period,
     watch: watchList(games),
     retro: {
       status: status ? { status: status.status, started_at: status.started_at, finished_at: status.finished_at,
