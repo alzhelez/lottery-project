@@ -154,31 +154,6 @@ def forest_batch(f: Features) -> np.ndarray:
 
 # ── Эксперимент (зафиксирован 26.10.2026) ──────────────────────────────────
 
-ECHO_DISTANCE = 3
-
-
-def echo_scores(f: Features, d: int = ECHO_DISTANCE) -> np.ndarray:
-    """«Эхо ±3»: числа, отстоящие ровно на 3 от чисел прошлого тиража (n−3 и n+3).
-
-    Гипотеза выбрана перебором 25 закономерностей на реальных архивах 13 игр (17 полей,
-    26.10.2026): отбор — первые 70% тиражей каждой игры, проверка — последние 30%. У «эха ±3»
-    самый сильный общий сигнал на отборе среди гипотез, которые сохранили знак на проверке:
-    z = +1,62 на отборе и +0,90 на проверке (сумма по полям). Параметры заморожены: дальше
-    метод только записывает прогнозы в журнал и проверяется на новых тиражах."""
-    def calc():
-        last = f.last()
-        s = np.zeros_like(last)
-        if d < f.N:
-            s[:, d:] += last[:, :-d]
-            s[:, :-d] += last[:, d:]
-        return s
-    return f.memo(("echo", d), calc)
-
-
-def experiment_model() -> Model:
-    return Model("experiment_echo3", "Эксперимент: эхо ±3 от прошлого тиража", "experiment", echo_scores,
-                 params={"distance": ECHO_DISTANCE})
-
 
 def trend_scores(f: Features, short: int = 25, long: int = 200) -> np.ndarray:
     """«Тренд»: число выпадает в последних short тиражах чаще, чем в последних long, — частота
@@ -213,7 +188,6 @@ def extra_models() -> list[Model]:
         Model("trend_25_200", "Тренд: частота растёт (25 против 200 тиражей)", "trend",
               lambda f: trend_scores(f, 25, 200), params={"short": 25, "long": 200}),
         Model("rhythm", "Ритм: числу пора по его среднему промежутку", "gap", rhythm_scores),
-        experiment_model(),
     ]
 
 

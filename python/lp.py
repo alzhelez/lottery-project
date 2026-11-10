@@ -421,11 +421,6 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
                        evaluation["next_prediction"]["model"], draw_no=target["no"], mechanism=mech_next)
         journal_record(data, "analysis_consensus", evaluation["next_consensus"], "", draw_no=target["no"],
                        mechanism=mech_next)
-        exp_row = next((m for m in evaluation["models"] if m["key"] == "experiment_echo3"), None)
-        if exp_row:
-            evaluation["next_experiment"] = ordered_prediction(data, exp_row["next"], target["no"], mech_next)
-            journal_record(data, "experiment", evaluation["next_experiment"], exp_row["title"],
-                           draw_no=target["no"], mechanism=mech_next)
         least = evaluation.get("least") or {}
         if least.get("status") == "ok":
             # наименее вероятные: порядок выпадения для них смысла не имеет — числа по возрастанию
@@ -677,8 +672,6 @@ def auto_once(args) -> dict:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
                                      "numbers": ev["next_prediction"]["numbers"],
                                      "consensus": ev["next_consensus"]}
-                if ev.get("next_experiment"):
-                    predictions[slug]["experiment"] = ev["next_experiment"]
                 if ev.get("next_golden"):
                     predictions[slug]["golden"] = ev["next_golden"]
                 if (ev.get("least") or {}).get("status") == "ok":
@@ -793,6 +786,9 @@ def cmd_retro(args) -> None:
         emit({"type": "result", "skipped": True})
         return
     res = run_retro(lambda m: emit({"type": "log", "message": m}), args.game or None, args.days, args.godmode_budget)
+    if args.notify:                    # запуск кнопкой бота: итог — сообщением
+        from lottery import bot, notify, trust
+        notify.send(bot.analysis_done_message(args.days, trust.load_trust()), "auto", force=True)
     emit({"type": "result", "status": res})
 from lottery.games import MIN_FORECAST_DRAWS as MIN_AUTO_DRAWS  # noqa: E402
 GODMODE_PER_CYCLE = 6       # режим Бога: не больше стольких игр за цикл (по 2 одновременно)
@@ -1692,6 +1688,7 @@ def main() -> None:
     p = sub.add_parser("retro", help="ретро-проверка: прогнозы всех методов на каждый тираж последней недели")
     p.add_argument("--game", action="append")
     p.add_argument("--days", type=int, default=7, choices=[1, 3, 7, 14, 30])
+    p.add_argument("--notify", action="store_true", help="прислать итог в Telegram (так запускает бот)")
     p.add_argument("--godmode-budget", type=float, default=RETRO_GODMODE_MIN,
                    help="минут режима Бога на игру (0 — без Б; по умолчанию LOTTERY_RETRO_GODMODE_MIN или 3)")
     p = sub.add_parser("rules", help="правила игр со stoloto.ru: как проходят розыгрыши, таблица выигрышей")

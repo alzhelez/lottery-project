@@ -165,9 +165,7 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
                 "message": f"Для проверки методов нужно хотя бы {warm + MIN_TEST} тиражей, есть {t_total}."}
     split = warm + int(test_len * SELECTION_SHARE)
     if not models:
-        # методы под конкретную игру (идеи ветки Fable) — кандидаты наравне с остальными
-        from .models_game_specific import game_models
-        models = standard_models() + game_models(data.game.slug)
+        models = standard_models()
     results = []
     all_picks: dict[str, list[np.ndarray]] = {}
     for i, m in enumerate(models):
@@ -332,6 +330,6 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         "least": least,
         "golden": golden,
         **({"_picks": {"analysis_best": best_picks, "analysis_consensus": cons_picks,
-                       "experiment": all_picks.get("experiment_echo3"), "least": least_picks, "golden": gold,
+                       "least": least_picks, "golden": gold,
                        "split": split}} if keep_picks else {}),
     }

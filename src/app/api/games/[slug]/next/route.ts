@@ -7,7 +7,8 @@ import { dataDir, isValidSlug } from '@/lib/paths'
 export const dynamic = 'force-dynamic'
 
 type Entry = JournalEntry & { numbers: number[][]; detail?: string; source_title?: string; id: string }
-const ORDER = ['final', 'analysis_best', 'analysis_consensus', 'chaos', 'godmode', 'experiment', 'golden']
+// «порядок из хаоса» остаётся в журнале и статистике, в карточке «Обзор» не показывается
+const ORDER = ['final', 'analysis_best', 'analysis_consensus', 'godmode', 'golden']
 
 /**
  * Ближайший тираж игры: прогнозы всех источников, записанные в журнал на этот тираж (те же
@@ -57,7 +58,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       if (source === 'analysis_consensus') numbers = ev.next_consensus ?? null
       if (source === 'chaos' && analysis?.chaos?.next?.draw_no === drawNo) { numbers = analysis.chaos.next.numbers; detail = analysis.chaos.next.model ?? '' }
       if (source === 'godmode' && godmode?.next?.no === drawNo) { numbers = godmode.next.numbers; detail = godmode.next.strategy ?? '' }
-      if (source === 'experiment') numbers = ev.next_experiment ?? null
       if (source === 'golden') { numbers = ev.next_golden ?? null; detail = ev.golden?.detail ?? '' }
     }
     return { source, title: SOURCES[source], detail, numbers, made_at: e?.made_at ?? null, record: record[source] ?? null }

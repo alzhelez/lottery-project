@@ -251,15 +251,17 @@ def _dec(v: float, digits: int) -> str:
     return f"{v:.{digits}f}".replace(".", ",")
 
 
-SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б", "experiment": "Э",
+SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б",
          "golden": "З", "least": "Н", "final": "Ф"}
 
 
 LEGEND = ("Ф — финальное предсказание (все методы с весами по доверию), "
-          "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога, "
-          "Э — эксперимент «эхо ±3», З — золотая середина (Л без наименее вероятных), "
+          "Л — лучший метод, К — консенсус, Б — режим Бога, "
+          "З — золотая середина (Л без наименее вероятных), "
           "Н — наименее вероятные (их лучше не брать)")
-ORDER = ("final", "analysis_best", "analysis_consensus", "chaos", "godmode", "experiment", "golden", "least")
+ORDER = ("final", "analysis_best", "analysis_consensus", "godmode", "golden", "least")
+# «порядок из хаоса» остаётся в журнале и статистике, но в Telegram не показывается (42.7.0)
+TELEGRAM_HIDDEN = {"chaos", "experiment"}
 
 
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
@@ -268,7 +270,7 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
     угадано из скольких и выигрыш."""
     blocks, n, hits, expected, won = [], 0, 0, 0.0, 0.0
     for title, entries in games:
-        checked = [e for e in entries if e.get("status") == "checked"]
+        checked = [e for e in entries if e.get("status") == "checked" and e.get("source") not in TELEGRAM_HIDDEN]
         if not checked:
             continue
         by_draw: dict[int, list[dict]] = {}
@@ -356,12 +358,13 @@ def auto_message(status: dict, predictions: dict[str, dict]) -> str:
     for p in predictions.values():
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
         same = _same_numbers(p.get("numbers"), p.get("consensus"))
-        for label, nums in (("Ф", p.get("final")),
-                            ("Л = К" if same else "Л", p.get("numbers")), ("К", None if same else p.get("consensus")),
-                            (f"Х ({esc(p['chaos']['title'])})" if p.get("chaos") else "Х",
-                             (p.get("chaos") or {}).get("numbers")),
+        # есть «Ф» — оно уже учитывает Л и К с весами по доверию: их строки не повторяем
+        final = p.get("final")
+        for label, nums in (("Ф", final),
+                            ("Л = К" if same else "Л", None if final else p.get("numbers")),
+                            ("К", None if final or same else p.get("consensus")),
                             (f"Б (на №{p['godmode_no']})" if p.get("godmode_no") else "Б", p.get("godmode")),
-                            ("Э", p.get("experiment")), ("З", p.get("golden")), ("Н (не брать)", p.get("least"))):
+                            ("З", p.get("golden")), ("Н (не брать)", p.get("least"))):
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))

@@ -161,7 +161,8 @@ def _kb(rows: list[list[tuple[str, str]]]) -> dict:
 def main_menu() -> tuple[str, dict]:
     m = muted()
     rows = [[(f"{'🔕' if e in m else '🔔'} {title}: {'выкл' if e in m else 'вкл'}", f"mute:{e}")] for e, title in MUTABLE.items()]
-    rows += [[("Проверить статус приложения", "status")], [("Выбор игры", "games")]]
+    rows += [[("Проверить статус приложения", "status")], [("Выбор игры", "games")],
+             [("Провести анализ за …", "analyze")]]
     return ("<b>Лотерейный анализатор</b>\nКнопки «вкл/выкл» управляют сообщениями: сама сверка и автозапуск "
             "продолжают работать.", _kb(rows))
 
@@ -179,6 +180,48 @@ def game_menu(slug: str) -> tuple[str, dict]:
     return text, _kb(rows + [[("← Игры", "games"), ("← Меню", "menu")]])
 
 
+PERIODS = {1: "сутки", 3: "3 дня", 7: "неделю", 14: "2 недели", 30: "месяц"}
+
+
+def analyze_menu() -> tuple[str, dict]:
+    rows = [[(f"за {t}", f"run:{d}") for d, t in list(PERIODS.items())[i:i + 3]] for i in range(0, len(PERIODS), 3)]
+    return ("<b>Провести анализ за …</b>\nВсе методы на каждом тираже периода по всем играм; после него "
+            "обновятся доверие и «По методам». Когда закончится — пришлю итог.", _kb(rows + [[("← Меню", "menu")]]))
+
+
+def start_analysis(days: int) -> str:
+    """Запускает «анализ за период» отдельным процессом (lp.py retro --notify): бот не ждёт его."""
+    import subprocess
+    import sys
+    from pathlib import Path
+    lock = data_dir() / "retro.lock"
+    try:
+        import psutil                 # не os.kill(pid, 0): на Windows он завершает процесс
+        if psutil.pid_exists(int(json.loads(lock.read_text(encoding="utf-8")).get("pid"))):
+            return "Анализ уже идёт — дождитесь сообщения о завершении."
+    except (OSError, ValueError, TypeError, ImportError):
+        pass
+    lp = Path(__file__).resolve().parents[1] / "lp.py"
+    flags = {"creationflags": 0x08000000} if os.name == "nt" else {"start_new_session": True}   # без окна
+    subprocess.Popen([sys.executable, str(lp), "retro", "--days", str(days), "--notify"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, **flags)
+    return (f"Анализ за {PERIODS[days]} запущен: все методы на каждом тираже периода, режим Бога по 3 минуты "
+            "на игру. Это от получаса до нескольких часов — пришлю итог, когда закончится.")
+
+
+def analysis_done_message(days: int, trust_table: dict) -> str:
+    """Итог анализа для Telegram: по каждой игре — метод с самым высоким доверием."""
+    lines = [f"<b>Анализ за {PERIODS.get(days, f'{days} дн.')} завершён</b>", "Выше всех доверие:"]
+    for slug, g in sorted((trust_table.get("games") or {}).items(), key=lambda x: get_game(x[0]).title if get_game(x[0]) else x[0]):
+        if not g.get("ranking") or get_game(slug) is None:
+            continue
+        top = g["ranking"][0]
+        r = g["sources"][top]
+        lines.append(f"{notify.esc(get_game(slug).title)}: {notify.SHORT.get(top, '')} {notify.esc(SOURCES.get(top, top))} — "
+                     f"{r['trust']:.0f}" + (" (мало данных)" if r.get("few") else ""))
+    return "\n".join(lines)
+
+
 def route(data: str) -> tuple[str, dict]:
     """Ответ на нажатие кнопки: (текст, клавиатура)."""
     if data.startswith("mute:") and data[5:] in MUTABLE:
@@ -188,6 +231,10 @@ def route(data: str) -> tuple[str, dict]:
         return app_status(), _kb([[("Проверить ещё раз", "status")], [("← Меню", "menu")]])
     if data == "games":
         return games_menu()
+    if data == "analyze":
+        return analyze_menu()
+    if data.startswith("run:") and data[4:].isdigit() and int(data[4:]) in PERIODS:
+        return start_analysis(int(data[4:])), _kb([[("← Меню", "menu")]])
     if data.startswith("g:") and get_game(data[2:]) is not None:
         return game_menu(data[2:])
     if data.startswith("m:"):

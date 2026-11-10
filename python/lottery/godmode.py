@@ -546,8 +546,7 @@ def _run_godmode(data: GameData, budget_minutes: float, on_progress=None, on_che
 
     # Стадия 1 — базовый пул (быстро)
     if "base" not in stages_done:
-        from .models_game_specific import game_models
-        base = expert_grid(1) + [m for m in standard_models() if not m.control] + game_models(data.game.slug)
+        base = expert_grid(1) + [m for m in standard_models() if not m.control]
         for i, m in enumerate(base):
             progress("Базовые модели", i, len(base), m.title)
             pool.add(m)
@@ -631,14 +630,6 @@ def run_godmode(*args, **kwargs) -> dict:
 # ── Автозапуск ─────────────────────────────────────────────────────────────
 
 
-def _game_slugs() -> list[str]:
-    from .models_game_specific import GAME_METHODS
-    return list(GAME_METHODS)
-
-
-GAME_SLUGS = _game_slugs()
-
-
 def model_by_key(key: str, params: dict | None = None) -> Model | None:
     """Эксперт по ключу — чтобы лидер прошлого запуска давал прогноз на новые тиражи без
     повторного перебора. Бустинг не восстанавливается (дорого) — None."""
@@ -646,9 +637,9 @@ def model_by_key(key: str, params: dict | None = None) -> Model | None:
     if key.startswith("rmix_") and params.get("w"):
         idx = int(key.split("_", 1)[1]) if key.split("_", 1)[1].isdigit() else 0
         return mixture_from_weights(np.asarray(params["w"], float), [], idx)
-    from .models_game_specific import game_models
-    for m in (expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2)
-              + [g for slug in GAME_SLUGS for g in game_models(slug)]):
+    # лидер прошлого запуска мог быть методом, которого больше нет (методы под игры gs_*,
+    # «эхо ±3» убраны в 42.7.0) — тогда None, и прогноз даст следующий запуск режима Бога
+    for m in expert_grid(1) + [m for m in standard_models() if not m.control] + expert_grid(2):
         if m.key == key:
             return m
     return None

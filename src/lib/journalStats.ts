@@ -7,7 +7,6 @@ export const SOURCES: Record<string, string> = {
   analysis_consensus: 'Консенсус методов',
   chaos: 'Порядок из хаоса',
   godmode: 'Режим Бога',
-  experiment: 'Эксперимент: эхо ±3',
   golden: 'Золотая середина',
   final: 'Финальное предсказание',
   least: 'Наименее вероятные',

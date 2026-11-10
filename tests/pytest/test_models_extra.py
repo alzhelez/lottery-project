@@ -58,14 +58,6 @@ def test_structure_finds_decade_bias():
     assert h.mean() > fair.mean() * 1.15
 
 
-def test_echo_marks_numbers_three_away():
-    x = np.zeros((3, 20), np.float32)
-    x[1, [4, 10]] = 1                          # числа 5 и 11
-    s = mx.echo_scores(Features(x, 2))
-    assert set(np.nonzero(s[2])[0] + 1) == {2, 8, 14}   # 5±3 и 11±3; 8 — дважды
-    assert s[2, 7] == 2
-
-
 def test_leaders_ensemble_uses_only_past_hits():
     t_len, n = 50, 10
     good = [np.tile(np.array([0, 1]), (t_len + 1, 1))]   # метод 0 всё время предлагает 1 и 2
@@ -83,7 +75,8 @@ def test_leaders_ensemble_uses_only_past_hits():
 
 def test_standard_models_include_new_families():
     keys = {m.key for m in standard_models()}
-    assert {"structure_100", "center_50", "positions_300", "mlp", "gbm", "forest", "experiment_echo3"} <= keys
+    assert {"structure_100", "center_50", "positions_300", "mlp", "gbm", "forest", "trend_25_200", "rhythm"} <= keys
+    assert "experiment_echo3" not in keys          # «эхо ±3» убрано в 42.7.0
 
 
 def test_features_trim_keeps_stack():

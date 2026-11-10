@@ -11,9 +11,10 @@
 программы, а не та, что работала в тот день. Поэтому ретро-прогнозы хранятся отдельно
 (data/journal_retro/<игра>.json) и в «Статистике» показываются своей таблицей.
 
-Источники: Л, К, Э, Н, З — из одного сравнения методов (evaluate_game), Х — «порядок из хаоса»
+Источники: Л, К, Н, З — из одного сравнения методов (evaluate_game), Х — «порядок из хаоса»
 по способу розыгрыша каждого тиража, Б — «лидер за всю историю» режима Бога (короткий
-запуск, эксперты отобраны по первой половине истории).
+запуск, эксперты отобраны по первой половине истории), Ф — «Финальное предсказание»: голосование
+этих источников с весами по доверию, накопленному к каждому тиражу.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from .fsutil import write_text
 from .games import data_dir, get_game
 from .journal import SOURCES, PrizeLookup, _check, _entry, save
 
-RETRO_VERSION = 1          # меняется, когда меняется расчёт, — тогда ретро пересчитывается
+RETRO_VERSION = 2          # меняется, когда меняется расчёт, — тогда ретро пересчитывается
 RETRO_DAYS = 7
 EVAL_MAX = 60_000          # как в анализе (lp.analyze_game)
 GODMODE_MAX_DRAWS = 60_000
@@ -81,10 +82,9 @@ def from_evaluation(data: GameData, since: datetime) -> tuple[dict[str, list[tup
     split = picks["split"]
     honest = [t for t in rows if t >= split]          # выбор метода не видел этих тиражей
     detail = {"analysis_best": ev["next_prediction"]["model"], "analysis_consensus": "",
-              "experiment": "Эксперимент: эхо ±3 от прошлого тиража",
               "least": (ev.get("least") or {}).get("next_prediction", {}).get("model", ""),
               "golden": (ev.get("golden") or {}).get("detail", "")}
-    for source in ("analysis_best", "analysis_consensus", "experiment", "least", "golden"):
+    for source in ("analysis_best", "analysis_consensus", "least", "golden"):
         p = picks.get(source)
         if p is None:
             continue
@@ -140,6 +140,37 @@ def _entries(data: GameData, items: dict[str, list], now: datetime) -> list[dict
     return out
 
 
+def final_rows(data: GameData, entries: list[dict]) -> list[tuple[int, list[list[int]], str]]:
+    """«Финальное предсказание» на каждый тираж периода: голосование источников с весами по
+    доверию, накопленному к этому тиражу (только по более ранним тиражам периода) — без
+    заглядывания: тираж не влияет на веса, с которыми на него строится прогноз."""
+    import math
+
+    from . import trust
+    from .journal import LOWER
+    by_no: dict[int, dict[str, dict]] = {}
+    for e in entries:
+        by_no.setdefault(e["draw_no"], {})[e["source"]] = e
+    blocks = [s.to_dict() for s in data.fmt.blocks]
+    acc: dict[str, list[float]] = {}                 # источник → [Σ(угадано − ожидалось), Σдисперсий, n]
+    out = []
+    for no in sorted(by_no):
+        w = {}
+        for s, (diff, var, n) in acc.items():
+            z = diff / math.sqrt(var) if var > 0 else 0.0
+            tr = 100 * trust._phi((-z if s in LOWER else z) * math.sqrt(n / (n + trust.SHRINK_N)))
+            w[s] = trust.BASE_WEIGHT + max(0.0, tr - 50.0) / 50.0
+        numbers = trust.final_numbers({s: e["numbers"] for s, e in by_no[no].items()}, blocks, w)
+        if numbers:
+            out.append((no, numbers, "голосование по доверию, накопленному к этому тиражу"))
+        for s, e in by_no[no].items():
+            a = acc.setdefault(s, [0.0, 0.0, 0])
+            a[0] += (e.get("hits") or 0) - (e.get("expected") or 0)
+            a[1] += e.get("variance") or 0
+            a[2] += 1
+    return out
+
+
 def run(slugs: list[str], days: int = RETRO_DAYS, godmode_budget: float = 3.0, log=print,
         now: datetime | None = None, workers: int = 2) -> dict:
     """Ретро-проверка игр slugs за последние days дней. Журнал каждой игры
@@ -191,6 +222,7 @@ def run(slugs: list[str], days: int = RETRO_DAYS, godmode_budget: float = 3.0, l
                 status["games"][slug]["godmode_experts"] = res.get("experts")
     for slug, data in datas.items():
         entries = _entries(data, items[slug], now)
+        entries += _entries(data, {"final": final_rows(data, entries)}, now)
         save(slug, {"game": slug, "retro": True, "made_at": now.isoformat(timespec="seconds"), "days": days,
                     "since": since.isoformat(timespec="minutes"), "retro_version": RETRO_VERSION,
                     "entries": entries}, retro=True)

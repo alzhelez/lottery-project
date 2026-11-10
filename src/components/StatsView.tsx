@@ -188,8 +188,13 @@ export function StatsView({ slug }: { slug?: string } = {}) {
   const journalBy = new Map(all.games.map((g) => [g.slug, g]))
   const titles = new Map<string, string>()
   for (const g of [...all.games, ...(all.period?.games ?? []), ...(all.trust?.games ?? [])]) titles.set(g.slug, g.title)
+  // сверху — игры, где у метода самое высокое доверие (оценки по малому числу прогнозов — ниже)
+  const topTrust = (s: string) => {
+    const r = trustBy.get(s)?.rows[0]
+    return r ? (r.few ? 0 : 1000) + r.trust : -1
+  }
   const slugs = [...titles.keys()].filter((s) => !slug || s === slug)
-    .sort((a, b) => titles.get(a)!.localeCompare(titles.get(b)!, 'ru'))
+    .sort((a, b) => topTrust(b) - topTrust(a) || titles.get(a)!.localeCompare(titles.get(b)!, 'ru'))
   const watch = slug ? all.watch.filter((w) => w.slug === slug) : all.watch
   const analysed = all.period?.days ? `за ${all.period.days} дн. (с ${when(all.period.since)})` : ''
 

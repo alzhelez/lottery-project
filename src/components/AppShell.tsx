@@ -13,7 +13,6 @@ interface AutoState {
 const NAV = [
   { href: '/', label: 'Игры', icon: 'M4 5h16M4 12h16M4 19h10' },
   { href: '/odds', label: 'Шансы игр', icon: 'M5 19V9m7 10V5m7 14v-7' },
-  { href: '/journal', label: 'Итоги прогнозов', icon: 'M4 17l5-5 4 4 7-8' },
   { href: '/stats', label: 'Статистика', icon: 'M4 20V10m5 10V4m5 16v-7m5 7v-11' },
   { href: '/my-tickets', label: 'Мои билеты', icon: 'M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z' },
 ]

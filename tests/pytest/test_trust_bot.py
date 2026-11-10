@@ -90,10 +90,43 @@ def test_final_is_recorded_after_two_sources(monkeypatch):
     assert len(final) == 1 and 1 not in final[0]["numbers"][0]
 
 
-def test_auto_message_starts_with_final():
+def test_auto_message_final_replaces_best_and_consensus():
     msg = notify.auto_message({"games": {}}, {"g": {"title": "Игра", "next_no": 5, "numbers": [[1, 2, 3]],
-                                                    "consensus": [[1, 2, 4]], "final": [[1, 2, 9]]}})
-    assert msg.index("Ф: ") < msg.index("Л: ")
+                                                    "consensus": [[1, 2, 4]], "final": [[1, 2, 9]], "golden": [[1, 2, 5]]}})
+    assert "  Ф: <code>1 2 9</code>\n  З: <code>1 2 5</code>" in msg and "Л: " not in msg and "К: " not in msg
+
+
+def test_retro_final_uses_only_earlier_draws():
+    """Ф в анализе за период: веса на тираж — по доверию, накопленному к нему; результат тиража
+    и более поздние тиражи на его прогноз не влияют."""
+    from lottery import retro
+    data, _ = _fast_game()
+    def e(source, no, numbers, hits):
+        return {"source": source, "draw_no": no, "numbers": [numbers], "hits": hits, "expected": 0.7, "variance": 0.5}
+    base = []
+    for no in range(300, 340):
+        base += [e("analysis_best", no, [1, 2, 3, 4, 5], 3), e("chaos", no, [6, 7, 8, 9, 10], 0),
+                 e("analysis_consensus", no, [1, 2, 3, 11, 12], 1)]
+    rows = dict((no, nums) for no, nums, _ in retro.final_rows(data, base))
+    assert rows[300] == [[1, 2, 3, 4, 5]] or len(rows[300][0]) == 5        # первый тираж — равные веса
+    assert rows[339] == [[1, 2, 3, 4, 5]]                                   # дальше ведёт метод с лучшим счётом
+    changed = [dict(x, hits=0) if x["draw_no"] >= 320 and x["source"] == "analysis_best" else x for x in base]
+    again = dict((no, nums) for no, nums, _ in retro.final_rows(data, changed))
+    assert all(again[no] == rows[no] for no in range(300, 321))             # прошлое и сам тираж 320 не изменились
+
+
+def test_bot_analysis_button(monkeypatch):
+    import subprocess
+    started = []
+    monkeypatch.setattr(subprocess, "Popen", lambda cmd, **k: started.append(cmd))
+    text, kb = bot.route("analyze")
+    assert [b["callback_data"] for row in kb["inline_keyboard"] for b in row][:5] == ["run:1", "run:3", "run:7", "run:14", "run:30"]
+    text, _ = bot.route("run:14")
+    assert "Анализ за 2 недели запущен" in text and started[0][-4:] == ["retro", "--days", "14", "--notify"]
+    bot.route("run:5")                                                      # нет такого периода — просто меню
+    assert len(started) == 1
+    done = bot.analysis_done_message(14, {"games": {"5x36": {"ranking": ["golden"], "sources": {"golden": {"trust": 71.0, "few": False}}}}})
+    assert "Анализ за 2 недели завершён" in done and "5 из 36: З Золотая середина — 71" in done
 
 
 # ── бот ───────────────────────────────────────────────────────────────────
