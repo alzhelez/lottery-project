@@ -197,3 +197,34 @@ def test_bot_game_stats_and_method_forecast():
     fc = bot.method_forecast("5x36", "analysis_best", now)
     assert "Ближайший тираж №402 — через " in fc and "Числа на №402: <code>1 2 3 4 5</code>" in fc
     assert "Прогноза этого метода на ближайший тираж нет" in bot.method_forecast("5x36", "godmode", now)
+
+
+def test_coverage_finds_draws_without_predictions_and_bot_offers_fix(monkeypatch):
+    import subprocess
+    from lottery import coverage
+    data, now = _fast_game(minutes=60, count=400, last_ago_min=10)
+    monkeypatch.setattr(coverage, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: now)}))
+    week = [d.no for d in data.draws if d.dt >= now - timedelta(days=7)]
+    made = now - timedelta(hours=1)
+    # у Л есть предсказания на все тиражи недели (часть — из анализа за период), у К — на все, кроме двух
+    journal.save("5x36", {"game": "5x36", "entries": [_checked("analysis_best", no, 1, made) for no in week[:50]]
+                          + [_checked("analysis_consensus", no, 1, made) for no in week[2:]]})
+    journal.save("5x36", {"game": "5x36", "entries": [_checked("analysis_best", no, 1, made) for no in week[50:]]}, retro=True)
+    c = coverage.coverage("5x36", 7, now)
+    assert c["draws"] == len(week) and not c["complete"]
+    assert "ЛМА" not in c["missing"] and c["missing"]["КМ"] == 2 and c["missing"]["ФП"] == len(week)
+    text, need = coverage.summary("5x36")
+    assert need and "не хватает предсказаний" in text and "КМ — 2" in text
+    # бот: в сообщении игры — автоанализ и кнопка «Пересчитать предсказания»
+    msg, kb = bot.game_menu("5x36")
+    assert msg.startswith("⚠️ Автоанализ") and kb["inline_keyboard"][0][0] == {"text": "Пересчитать предсказания", "callback_data": "fix:5x36"}
+    started = []
+    monkeypatch.setattr(subprocess, "Popen", lambda cmd, **k: started.append(cmd))
+    reply, _ = bot.route("fix:5x36")
+    assert "Пересчёт предсказаний «5 из 36»" in reply and started[0][-2:] == ["--game", "5x36"]
+    # всё на месте — кнопки нет
+    journal.save("5x36", {"game": "5x36", "entries": [_checked(s, no, 1, made) for no in week for s, _ in coverage.METHODS]})
+    text, need = coverage.summary("5x36")
+    assert not need and text.startswith("✅")
+    assert bot.game_menu("5x36")[1]["inline_keyboard"][0][0]["callback_data"] != "fix:5x36"
+

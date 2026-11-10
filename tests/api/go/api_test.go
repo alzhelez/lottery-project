@@ -1,5 +1,5 @@
 // api_test.go — API-автотесты приложения на Go (стандартный пакет testing).
-// Сценарии API-01…API-16 те же, что в Java и Python (см. tests/api/README.md).
+// Сценарии API-01…API-17 те же, что в Java и Python (см. tests/api/README.md).
 // Запуск: python tests/api/env.py start, затем в этой папке: go test -v ./...
 package lotteryapi
 
@@ -522,5 +522,44 @@ func TestAPI16Stats(t *testing.T) {
 	retro := body["retro"].(map[string]any)
 	if len(body["watch"].([]any)) != 0 || retro["status"] != nil || len(retro["games"].([]any)) != 0 {
 		t.Errorf("под наблюдением %v, ретро %v", body["watch"], retro)
+	}
+}
+
+// TestAPI17DigitalExport — выгрузка прогнозов в цифровом виде и автоанализ покрытия тиражей.
+func TestAPI17DigitalExport(t *testing.T) {
+	// GET /api/games/6x45/digital?days=0 — все тиражи, по которым есть сверенные прогнозы.
+	resp := get(t, "/api/games/6x45/digital?days=0")
+	// Сервер должен ответить 200 OK.
+	if resp.Status != 200 {
+		t.Fatalf("код %d, тело %s", resp.Status, resp.Body)
+	}
+	// В файле — строка тиражей от дальнего к ближайшему и по строке на метод.
+	for _, want := range []string{
+		"Тиражи: 100; 101; 102; 103; 104",  // номера тиражей
+		"ЛМА: 111000; 100000; -; -; -",     // лучший метод: 3 из 6 и 1 из 6
+		"ПиХ: -; -; 000000; 110000; -",     // порядок из хаоса: 0 и 2 из 6
+		"НВ: -; -; -; -; 111100",           // наименее вероятные: выпали 4 их числа
+	} {
+		// Каждая ожидаемая строка должна быть в ответе.
+		if !strings.Contains(string(resp.Body), want) {
+			t.Errorf("нет строки %q в %s", want, resp.Body)
+		}
+	}
+	// Недопустимый период — 400.
+	if bad := get(t, "/api/games/6x45/digital?days=5"); bad.Status != 400 {
+		t.Errorf("days=5: код %d", bad.Status)
+	}
+	// GET /api/games/4x20/coverage — автоанализ: семь методов, счётчики сходятся с числом тиражей.
+	cov := get(t, "/api/games/4x20/coverage").JSON(t)
+	methods := cov["methods"].([]any)
+	if len(methods) != 7 {
+		t.Fatalf("методов %d", len(methods))
+	}
+	// У каждого метода «есть» + «не хватает» = число тиражей периода.
+	for _, m := range methods {
+		row := m.(map[string]any)
+		if row["have"].(float64)+row["missing"].(float64) != cov["draws"].(float64) {
+			t.Errorf("счётчики метода %v не сходятся", row["short"])
+		}
 	}
 }

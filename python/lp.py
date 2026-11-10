@@ -747,10 +747,20 @@ def run_retro(log, slugs: list[str] | None = None, days: int = 7, godmode_budget
     save_json(lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds")})
     try:
         t0 = time.time()
-        slugs = slugs or forecast_slugs()
+        every = forecast_slugs()
+        partial = bool(slugs) and set(slugs) != set(every)
+        slugs = slugs or every
+        before = retro.load_status()
         res = retro.run(slugs, days=days, godmode_budget=godmode_budget, log=log)
+        if partial:
+            # пересчёт части игр: общий статус анализа (когда и за сколько дней считались все игры)
+            # сохраняется, обновляются только эти игры; общего анализа ещё не было — он остаётся «не проведён»
+            merged = ({**before, "games": {**before.get("games", {}), **res["games"]}} if before.get("status") == "done"
+                      else {**res, "status": "partial"})
+            save_json(retro.status_path(), merged)
         from lottery import trust
-        trust.build(slugs, days)
+        # пересчёт одной игры («Пересчитать предсказания») не должен стирать доверие остальных
+        trust.build(sorted(set(every) | set(slugs)), days)
         n = sum(g.get("entries", 0) for g in res["games"].values())
         log(f"Ретро-проверка за {days} дн.: {n} прогнозов по {len(res['games'])} играм за {time.time() - t0:.0f} с")
         return res

@@ -64,6 +64,7 @@ export function JournalPanel({ info }: { info: Info }) {
   const [data, setData] = useState<{ entries: Entry[]; summary: Summary[]; byMechanism?: Array<{ mechanism: string; title: string; summary: Summary[] }> } | null>(null)
   const [source, setSource] = useState('all')
   const [limit, setLimit] = useState(30)
+  const [exportDays, setExportDays] = useState(7)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const toggle = (no: number) => setExpanded((prev) => {
     const next = new Set(prev)
@@ -100,6 +101,21 @@ export function JournalPanel({ info }: { info: Info }) {
         её оценивают. Прогнозы, сделанные по устаревшим данным уже после тиража, помечаются «после тиража»
         и в итог не входят.
       </p>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', margin: '8px 0' }}>
+        <select className="input" value={exportDays} onChange={(e) => setExportDays(Number(e.target.value))}
+          data-testid="digital-period" aria-label="Период выгрузки">
+          <option value={1}>за сутки</option><option value={3}>за 3 дня</option><option value={7}>за неделю</option>
+          <option value={14}>за 2 недели</option><option value={30}>за месяц</option><option value={0}>все тиражи</option>
+        </select>
+        <a className="btn" data-testid="digital-export" href={`/api/games/${info.slug}/digital?days=${exportDays}`} download>
+          Выгрузить прогнозы в цифровом виде
+        </a>
+        <span className="muted small">
+          Текстовый файл: строка на метод (ФП, ЛМА, КМ, ПиХ, РБ, ЗС, НВ), тиражи от дальнего к ближайшему через «;»,
+          на каждое число прогноза — 1 (выпало) или 0, поля через «/». Например, «ФП: 1000/0001».
+        </span>
+      </div>
 
       {data.summary.length === 0 ? (
         <p className="empty">Журнал пуст. Запустите анализ или режим Бога — прогноз на тираж №{info.nextNo} попадёт сюда.</p>

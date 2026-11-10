@@ -252,6 +252,39 @@ test('статистика: анализ за период, доверие к м
   await page.screenshot({ path: 'tests/e2e/.data/stats-tab.png', fullPage: true })
 })
 
+test('автоанализ тиражей, «Пересчитать предсказания» и выгрузка прогнозов в цифровом виде', async ({ page, request }) => {
+  await page.goto('/games/4x20')
+  // автоанализ на странице игры: после анализа за 3 дня (в тестах — без режима Бога) не хватает только «РБ»
+  const cov = page.getByTestId('coverage')
+  await expect(cov.getByTestId('coverage-gaps')).toContainText('есть пропуски')
+  await expect(cov.getByTestId('coverage-gaps')).toContainText('РБ (Режим Бога)')
+  await expect(cov.getByTestId('coverage-gaps')).not.toContainText('ЛМА')
+  // «Пересчитать предсказания» — анализ за период только для этой игры
+  await cov.getByTestId('coverage-fix').click()
+  await expect(cov.getByTestId('coverage-fix')).toHaveText('Пересчитываю…')
+  await expect(cov.getByTestId('coverage-fix')).toHaveText('Пересчитать предсказания', { timeout: 300_000 })
+  // доверие остальных игр при пересчёте одной не стирается
+  const stats = await (await request.get('/api/stats')).json()
+  expect(stats.trust.games.map((g: { slug: string }) => g.slug)).toEqual(expect.arrayContaining(['4x20', 'top-3']))
+
+  // выгрузка в цифровом виде: кнопка на вкладке «Журнал прогнозов» с выбором периода
+  await page.getByTestId('tab-journal').click()
+  await page.getByTestId('digital-period').selectOption('0')
+  await expect(page.getByTestId('digital-export')).toHaveAttribute('href', '/api/games/4x20/digital?days=0')
+  const res = await request.get('/api/games/4x20/digital?days=0')
+  expect(res.headers()['content-disposition']).toContain('prognozy_4x20_all.txt')
+  const text = await res.text()
+  // строка на метод; в тираже по 0/1 на каждое из 4+4 чисел прогноза, «-» — прогноза нет
+  const cell = '(?:[01]{4}/[01]{4}|-)'
+  for (const short of ['ФП', 'ЛМА', 'КМ', 'ПиХ', 'ЗС', 'НВ']) {
+    expect(text).toMatch(new RegExp(`^${short}: ${cell}(?:; ${cell})*$`, 'm'))
+  }
+  const draws = text.match(/^Тиражи: (.*)$/m)![1].split('; ').map(Number)
+  expect(draws.length).toBeGreaterThan(5)
+  expect([...draws].sort((x, y) => x - y)).toEqual(draws)             // от самого дальнего к ближайшему
+  expect(text.match(/^ЛМА: (.*)$/m)![1].split('; ')).toHaveLength(draws.length)
+})
+
 test('шансы: точные вероятности и возврат по введённым призам', async ({ page }) => {
   await page.goto('/games/4x20')
   await page.getByTestId('tab-odds').click()

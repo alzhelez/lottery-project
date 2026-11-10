@@ -174,9 +174,18 @@ def games_menu() -> tuple[str, dict]:
 
 
 def game_menu(slug: str) -> tuple[str, dict]:
+    from .coverage import summary
     text, has = game_stats(slug)
+    try:
+        check, need_fix = summary(slug)
+    except (ValueError, OSError):
+        check, need_fix = "", False
+    if check:
+        text = f"{check}\n\n{text}"
     buttons = [(f"{notify.SHORT.get(s, '?')} {SOURCES[s]}", f"m:{slug}:{s}") for s in has]
     rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    if need_fix:
+        rows.insert(0, [("Пересчитать предсказания", f"fix:{slug}")])
     return text, _kb(rows + [[("← Игры", "games"), ("← Меню", "menu")]])
 
 
@@ -189,7 +198,7 @@ def analyze_menu() -> tuple[str, dict]:
             "обновятся доверие и «По методам». Когда закончится — пришлю итог.", _kb(rows + [[("← Меню", "menu")]]))
 
 
-def start_analysis(days: int) -> str:
+def start_analysis(days: int, slug: str | None = None) -> str:
     """Запускает «анализ за период» отдельным процессом (lp.py retro --notify): бот не ждёт его."""
     import subprocess
     import sys
@@ -203,8 +212,11 @@ def start_analysis(days: int) -> str:
         pass
     lp = Path(__file__).resolve().parents[1] / "lp.py"
     flags = {"creationflags": 0x08000000} if os.name == "nt" else {"start_new_session": True}   # без окна
-    subprocess.Popen([sys.executable, str(lp), "retro", "--days", str(days), "--notify"],
+    subprocess.Popen([sys.executable, str(lp), "retro", "--days", str(days), "--notify"] + (["--game", slug] if slug else []),
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, **flags)
+    if slug:
+        return (f"Пересчёт предсказаний «{notify.esc(get_game(slug).title)}» за {PERIODS[days]} запущен — пришлю итог, "
+                "когда закончится.")
     return (f"Анализ за {PERIODS[days]} запущен: все методы на каждом тираже периода, режим Бога по 3 минуты "
             "на игру. Это от получаса до нескольких часов — пришлю итог, когда закончится.")
 
@@ -237,6 +249,9 @@ def route(data: str) -> tuple[str, dict]:
         return start_analysis(int(data[4:])), _kb([[("← Меню", "menu")]])
     if data.startswith("g:") and get_game(data[2:]) is not None:
         return game_menu(data[2:])
+    if data.startswith("fix:") and get_game(data[4:]) is not None:
+        from .coverage import analysis_days
+        return start_analysis(analysis_days(), data[4:]), _kb([[("← К игре", f"g:{data[4:]}"), ("← Меню", "menu")]])
     if data.startswith("m:"):
         _, slug, source = (data.split(":", 2) + ["", ""])[:3]
         if get_game(slug) is not None and source in SOURCES:

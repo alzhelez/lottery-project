@@ -136,7 +136,7 @@ function argsFor(kind: JobKind, game: string | null, params: Record<string, unkn
       return ['godmode-all', ...(params.resume ? ['--resume'] : [])]
     case 'retro': {
       const days = [1, 3, 7, 14, 30].includes(Number(params.days)) ? Number(params.days) : 7
-      return ['retro', '--days', String(days)]
+      return ['retro', '--days', String(days), ...(game ? ['--game', game] : [])]
     }
   }
 }

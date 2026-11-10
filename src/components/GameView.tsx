@@ -11,6 +11,7 @@ import { RulesPanel } from './RulesPanel'
 import { StatsView } from './StatsView'
 import { APP_VERSION } from '@/lib/version'
 import { MyTickets } from './MyTickets'
+import { CoverageCheck } from './CoverageCheck'
 import { NextDrawCard } from './NextDrawCard'
 import { TicketsPanel } from './TicketsPanel'
 import { useJob } from './useJob'
@@ -146,6 +147,7 @@ export function GameView({ info }: { info: Info }) {
           </div>
 
           {tab === 'overview' && <NextDrawCard slug={info.slug} stamp={analysis?.generated_at} onAnalyzed={loadAnalysis} />}
+          {tab === 'overview' && <CoverageCheck slug={info.slug} />}
 
           {(tab === 'overview' || tab === 'methods' || tab === 'chaos') && (
             <div className="run-bar">

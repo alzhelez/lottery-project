@@ -1,5 +1,5 @@
 # test_api.py — API-автотесты приложения на Python (pytest + requests + Allure).
-# Набор сценариев API-01…API-16 одинаков для Java, Python и Go (см. tests/api/README.md).
+# Набор сценариев API-01…API-17 одинаков для Java, Python и Go (см. tests/api/README.md).
 # Перед запуском нужно окружение: python tests/api/env.py start
 
 # math.comb — число сочетаний: из него считаем точный шанс главного приза.
@@ -347,3 +347,35 @@ def test_stats(api):
     assert body["watch"] == [] and body["retro"]["status"] is None and body["retro"]["games"] == []
     # Рейтинга доверия нет, пока не проведён «анализ за период».
     assert body["trust"] is None
+
+
+@allure.feature("Журнал прогнозов")
+@allure.title("API-17. Выгрузка прогнозов в цифровом виде и автоанализ покрытия тиражей")
+def test_digital_export_and_coverage(api):
+    # GET /api/games/6x45/digital?days=0 — все тиражи, по которым есть сверенные прогнозы.
+    response = api.get("/api/games/6x45/digital", params={"days": 0})
+    # Сервер должен ответить 200 OK и отдать текстовый файл.
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    assert "prognozy_6x45_all.txt" in response.headers["content-disposition"]
+    # Строки без комментариев: тиражи и по строке на метод.
+    lines = [line for line in response.text.splitlines() if not line.startswith("#")]
+    # Тиражи идут от самого дальнего к ближайшему.
+    assert lines[0] == "Тиражи: 100; 101; 102; 103; 104"
+    # Лучший метод анализа угадал 1, 2, 3 из своих шести чисел в тираже 100 и только 1 — в тираже 101.
+    assert "ЛМА: 111000; 100000; -; -; -" in lines
+    # Порядок из хаоса: ни одного в тираже 102, два в тираже 103; в остальных прогноза не было.
+    assert "ПиХ: -; -; 000000; 110000; -" in lines
+    # Наименее вероятные: в тираже 104 выпали 4 их числа.
+    assert "НВ: -; -; -; -; 111100" in lines
+    # Методов без прогнозов в файле нет.
+    assert not any(line.startswith("ФП:") for line in lines)
+    # Недопустимый период — 400.
+    assert api.get("/api/games/6x45/digital", params={"days": 5}).status_code == 400
+    # GET /api/games/4x20/coverage — автоанализ: сколько тиражей периода и чего не хватает по методам.
+    cov = api.get("/api/games/4x20/coverage").json()
+    # В ответе все семь методов с сокращениями, а счётчики сходятся.
+    assert [m["short"] for m in cov["methods"]] == ["ФП", "ЛМА", "КМ", "ПиХ", "РБ", "ЗС", "НВ"]
+    assert all(m["have"] + m["missing"] == cov["draws"] for m in cov["methods"])
+    assert cov["complete"] == (cov["draws"] > 0 and cov["missing_total"] == 0)
+
