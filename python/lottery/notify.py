@@ -178,6 +178,10 @@ def send(text: str, event: str = "auto", cfg: dict | None = None, force: bool = 
     cfg = cfg or config()
     if not cfg["configured"] or (event not in cfg["events"] and not force):
         return False
+    if not force:
+        from .bot import muted          # кнопки бота «Сверка прогнозов / Автозапуск: выкл»
+        if event in muted():
+            return False
     item = {"text": text, "event": event, "queued_at": datetime.now().isoformat(timespec="seconds")}
     with _lock:
         if flush(cfg) == 0 and not (_down_until and datetime.now() < _down_until):
@@ -248,13 +252,14 @@ def _dec(v: float, digits: int) -> str:
 
 
 SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б", "experiment": "Э",
-         "golden": "З", "least": "Н"}
+         "golden": "З", "least": "Н", "final": "Ф"}
 
 
-LEGEND = ("Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога, "
+LEGEND = ("Ф — финальное предсказание (все методы с весами по доверию), "
+          "Л — лучший метод, К — консенсус, Х — порядок из хаоса, Б — режим Бога, "
           "Э — эксперимент «эхо ±3», З — золотая середина (Л без наименее вероятных), "
           "Н — наименее вероятные (их лучше не брать)")
-ORDER = ("analysis_best", "analysis_consensus", "chaos", "godmode", "experiment", "golden", "least")
+ORDER = ("final", "analysis_best", "analysis_consensus", "chaos", "godmode", "experiment", "golden", "least")
 
 
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
@@ -351,7 +356,8 @@ def auto_message(status: dict, predictions: dict[str, dict]) -> str:
     for p in predictions.values():
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
         same = _same_numbers(p.get("numbers"), p.get("consensus"))
-        for label, nums in (("Л = К" if same else "Л", p.get("numbers")), ("К", None if same else p.get("consensus")),
+        for label, nums in (("Ф", p.get("final")),
+                            ("Л = К" if same else "Л", p.get("numbers")), ("К", None if same else p.get("consensus")),
                             (f"Х ({esc(p['chaos']['title'])})" if p.get("chaos") else "Х",
                              (p.get("chaos") or {}).get("numbers")),
                             (f"Б (на №{p['godmode_no']})" if p.get("godmode_no") else "Б", p.get("godmode")),

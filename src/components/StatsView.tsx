@@ -18,13 +18,58 @@ interface Watch {
   slug: string; title: string; source: string; source_title: string; goal?: 'fewer'
   checked: number; excess_pct: number; p: number; p_holm: number; halves: [number | null, number | null]; holds: boolean
 }
+interface TrustRow {
+  source: string; title: string; n: number; hits: number; expected: number; excess_pct: number
+  trust: number; level: string; few: boolean; rank: number
+}
+interface Trust { made_at?: string; days?: number; since?: string; games: Array<{ slug: string; title: string; rows: TrustRow[] }> }
 interface Stats {
-  games: Game[]; watch: Watch[]
+  games: Game[]; watch: Watch[]; trust: Trust | null
   retro: { status: { status: string; started_at: string; finished_at: string | null; days: number; since: string } | null
     games: Game[]; watch: Watch[] }
 }
 
 const MIN_RELIABLE = 30
+const PERIODS: Array<[number, string]> = [[1, 'сутки'], [3, '3 дня'], [7, 'неделю'], [14, '2 недели'], [30, 'месяц']]
+const LOWER = 'least'
+
+function trustClass(t: number): string {
+  return t >= 65 ? 'st-done' : t < 35 ? 'st-error' : ''
+}
+
+/** Рейтинг доверия: шкала 0–100 по каждому методу игры за период анализа (журнал + анализ за период). */
+function TrustTable({ trust }: { trust: Trust }) {
+  return (
+    <div className="table-wrap">
+      <table className="data compact" data-testid="trust-table">
+        <thead>
+          <tr>
+            <th>Игра</th><th className="r">Место</th><th>Метод</th><th className="r">Доверие</th><th>Шкала</th>
+            <th className="r">Прогнозов</th><th className="r">Угадано</th><th className="r">Случайный выбор</th><th className="r">Разница</th>
+          </tr>
+        </thead>
+        <tbody>
+          {trust.games.flatMap((g) => g.rows.map((r, i) => (
+            <tr key={g.slug + r.source} data-testid="trust-row">
+              <td style={{ whiteSpace: 'nowrap' }}>{i === 0 ? <Link href={`/games/${g.slug}`}>{g.title}</Link> : ''}</td>
+              <td className="r num">{r.rank}</td>
+              <td>{r.title}{r.source === LOWER && <span className="sub">чем меньше выпало его чисел, тем выше доверие</span>}</td>
+              <td className="r num"><b>{num(r.trust, 0)}</b></td>
+              <td>
+                <span className={`status-tag ${r.few ? '' : trustClass(r.trust)}`}>{r.level}</span>
+                {r.few && <span className="sub">меньше 30 прогнозов — оценка прижата к 50</span>}
+              </td>
+              <td className="r num">{nf.format(r.n)}</td>
+              <td className="r num">{nf.format(r.hits)}</td>
+              <td className="r num">{num(r.expected, 1)}</td>
+              <td className="r num">{signed(r.excess_pct)}</td>
+            </tr>
+          )))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 const when = (s?: string | null) => (s ? s.replace('T', ' ').slice(0, 16) : '')
 
 function share(v: number | null | undefined): string {
@@ -170,6 +215,7 @@ export function StatsView({ slug }: { slug?: string } = {}) {
     fetch('/api/stats', { cache: 'no-store' }).then((r) => r.json()).then(setAll).catch(() => {})
   }, [])
   const job = useJob('retro', null, () => load())
+  const [days, setDays] = useState(7)
   useEffect(() => { load() }, [load])
   const Wrap = slug ? 'section' : 'main'
   const only = <T extends { slug: string }>(xs: T[]) => (slug ? xs.filter((g) => g.slug === slug) : xs)
@@ -178,6 +224,8 @@ export function StatsView({ slug }: { slug?: string } = {}) {
   const watch = only(all.watch)
   const retro = only(all.retro.games)
   const st = all.retro.status
+  const trust = all.trust && { ...all.trust, games: only(all.trust.games) }
+  const period = PERIODS.find(([d]) => d === days)?.[1] ?? `${days} дн.`
 
   return (
     <Wrap className={slug ? '' : 'page'} data-testid={slug ? 'stats-tab' : 'stats'}>
@@ -191,6 +239,35 @@ export function StatsView({ slug }: { slug?: string } = {}) {
         {slug && <> Все игры сразу — в разделе <Link href="/stats">Статистика</Link> боковой панели.</>}
       </p>
 
+      <h2>Доверие к методам</h2>
+      <p className="note">
+        Шкала 0–100 для каждого метода в каждой игре: 50 — как случайный выбор, выше — угадывал больше (у «наименее
+        вероятных» наоборот: чем меньше выпало их чисел, тем выше), ниже — хуже случайного. Считается по анализу за
+        выбранный период (все методы на каждом тираже периода) и настоящим прогнозам журнала за то же время. По этому
+        рейтингу строится <b>«Финальное предсказание»</b> (Ф): голосование всех методов с весами по доверию. Доверие —
+        не шанс выиграть: оно показывает, кому в этот период везло больше.
+      </p>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <select className="input" value={days} onChange={(e) => setDays(Number(e.target.value))} disabled={job.running}
+          data-testid="trust-period" aria-label="Период анализа">
+          {PERIODS.map(([d, label]) => <option key={d} value={d}>за {label}</option>)}
+        </select>
+        <button type="button" className="btn" data-testid="retro-run" disabled={job.running}
+          onClick={() => job.start({ days })}>
+          {job.running ? 'Анализирую…' : `Провести анализ за ${period}`}
+        </button>
+        <span className="muted small" data-testid="retro-status">
+          {job.running ? (job.job?.log?.slice(-1)[0] ?? 'идёт анализ: все методы на каждом тираже периода, режим Бога по 3 минуты на игру')
+            : st?.status === 'done' ? `посчитано ${when(st.finished_at)} за ${st.days} дн., тиражи с ${when(st.since)}`
+              : st?.status === 'running' ? `идёт с ${when(st.started_at)}` : 'ещё не проводился'}
+        </span>
+        {job.error && <span className="error">{job.error}</span>}
+      </div>
+      {trust && trust.games.length > 0
+        ? <TrustTable trust={trust} />
+        : <p className="empty" data-testid="trust-empty">Рейтинга пока нет — проведите анализ за период.</p>}
+
+      <h2>Журнал прогнозов</h2>
       {games.length === 0 ? (
         <p className="empty">Сверенных прогнозов {slug ? 'по этой игре ' : ''}пока нет — они появятся после анализа и следующего тиража.</p>
       ) : (
@@ -215,25 +292,14 @@ export function StatsView({ slug }: { slug?: string } = {}) {
         </>
       )}
 
-      <h2>Ретро-проверка за неделю</h2>
+      <h2>Анализ за период: все методы на каждом тираже</h2>
       <p className="note">
-        Журнал успевает записать прогноз не на каждый тираж. Ретро-проверка восстанавливает, что дал бы каждый метод на
-        <b> каждый</b> тираж последней недели, — только по тиражам до него; лучший метод выбран на отрезке истории,
+        Журнал успевает записать прогноз не на каждый тираж. Анализ за период восстанавливает, что дал бы каждый метод на
+        <b> каждый</b> тираж выбранного периода, — только по тиражам до него; лучший метод выбран на отрезке истории,
         который закончился раньше этой недели. Это не то же самое, что прогноз, записанный заранее (так считает текущая
-        версия программы), поэтому ретро — отдельно от журнала. Автозапуск пересчитывает её раз в неделю.
+        версия программы), поэтому он показан отдельно от журнала. Запускается кнопкой «Провести анализ за …» выше;
+        автозапуск повторяет его раз в неделю за тот же период.
       </p>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button type="button" className="btn" data-testid="retro-run" disabled={job.running}
-          onClick={() => job.start({})}>
-          {job.running ? 'Пересчитываю…' : 'Пересчитать за неделю'}
-        </button>
-        <span className="muted small" data-testid="retro-status">
-          {job.running ? (job.job?.log?.slice(-1)[0] ?? 'идёт пересчёт — 30–90 минут, режим Бога по 3 минуты на игру')
-            : st?.status === 'done' ? `посчитано ${when(st.finished_at)}, тиражи с ${when(st.since)}`
-              : st?.status === 'running' ? `идёт с ${when(st.started_at)}` : 'ещё не считалась'}
-        </span>
-        {job.error && <span className="error">{job.error}</span>}
-      </div>
       {retro.length > 0 && (
         <>
           <GameTables games={retro} testid="retro" />

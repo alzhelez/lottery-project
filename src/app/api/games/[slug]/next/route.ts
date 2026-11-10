@@ -7,7 +7,7 @@ import { dataDir, isValidSlug } from '@/lib/paths'
 export const dynamic = 'force-dynamic'
 
 type Entry = JournalEntry & { numbers: number[][]; detail?: string; source_title?: string; id: string }
-const ORDER = ['analysis_best', 'analysis_consensus', 'chaos', 'godmode', 'experiment', 'golden']
+const ORDER = ['final', 'analysis_best', 'analysis_consensus', 'chaos', 'godmode', 'experiment', 'golden']
 
 /**
  * Ближайший тираж игры: прогнозы всех источников, записанные в журнал на этот тираж (те же

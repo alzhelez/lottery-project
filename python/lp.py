@@ -229,6 +229,33 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
         nums = ordered_prediction(data, numbers, t["no"], t["mechanism"]) if ordered else [sorted(b) for b in numbers]
         items.append((t["no"], nums))
     record_many(data, source, items, detail, ordered=ordered)
+    if source != "final":
+        record_final(data)
+
+
+def record_final(data) -> dict[int, list[list[int]]]:
+    """«Финальное предсказание» на каждый будущий тираж, где уже есть прогнозы хотя бы двух
+    источников: голосование с весами по доверию (lottery/trust.py). Пересчитывается после
+    каждого нового прогноза — к концу цикла в нём участвуют все источники."""
+    from lottery import trust
+    from lottery.journal import load, record_many
+    pending: dict[int, dict[str, list]] = {}
+    for e in load(data.game.slug)["entries"]:
+        if e["status"] == "pending" and e["draw_no"] > data.draws[-1].no:
+            pending.setdefault(e["draw_no"], {})[e["source"]] = e["numbers"]
+    table = trust.load_trust()
+    w = trust.weights(data.game.slug, table)
+    rows = (table.get("games") or {}).get(data.game.slug, {}).get("sources", {})
+    blocks = [s.to_dict() for s in data.fmt.blocks]
+    out = {}
+    for no, by_source in pending.items():
+        numbers = trust.final_numbers(by_source, blocks, w)
+        if numbers:
+            out[no] = numbers
+    if out:
+        any_sources = max(pending.values(), key=len)
+        record_many(data, "final", sorted(out.items()), trust.final_detail(any_sources, w, rows), ordered=False)
+    return out
 
 
 def game_info(slug: str) -> dict:
@@ -595,6 +622,12 @@ def auto_once(args) -> dict:
     try:
         stage("загрузка тиражей")
         fetched = {} if args.skip_fetch else fetch_all(args.game or None, emit, workers=2)
+        # доверие к методам — по свежесверенному журналу и последнему «анализу за период»
+        try:
+            from lottery import retro, trust
+            trust.build(forecast_slugs(), int(retro.load_status().get("days") or trust.load_trust().get("days") or 7))
+        except Exception as exc:  # noqa: BLE001 — рейтинг не должен ронять цикл
+            log(f"Доверие к методам не пересчитано: {type(exc).__name__}: {exc}")
         for slug, r in fetched.items():
             status["games"].setdefault(slug, {}).update(
                 {"fetch": r.get("status"), "added": r.get("added", 0), "journal_checked": r.get("journal_checked", 0)})
@@ -666,12 +699,17 @@ def auto_once(args) -> dict:
         status["seconds"] = round((datetime.now() - datetime.fromisoformat(started)).total_seconds())
         status["status"] = "done"
         log("Автозапуск: готово")
+        from lottery.journal import load as load_journal
+        for slug, p in predictions.items():
+            p["final"] = next((e["numbers"] for e in load_journal(slug)["entries"]
+                               if e["source"] == "final" and e["status"] == "pending" and e["draw_no"] == p.get("next_no")), None)
         notify.send(notify.auto_message(status, predictions), "auto")
         # ретро-проверка за неделю — раз в неделю (и после изменения расчёта), после прогнозов цикла
         from lottery import retro
         if not args.game and retro.due() and not _lock_alive(data_dir() / "retro.lock"):
             stage("ретро-проверка за неделю")
-            run_retro(log, godmode_budget=RETRO_GODMODE_MIN if args.godmode_budget > 0 else 0)
+            run_retro(log, days=int(retro.load_status().get("days") or 7),
+                      godmode_budget=RETRO_GODMODE_MIN if args.godmode_budget > 0 else 0)
             status.pop("current", None)
             save_json(status_path, status)
     except Exception as exc:  # статус ошибки должен попасть в файл, иначе интерфейс покажет «идёт»
@@ -716,10 +754,32 @@ def run_retro(log, slugs: list[str] | None = None, days: int = 7, godmode_budget
     save_json(lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds")})
     try:
         t0 = time.time()
-        res = retro.run(slugs or forecast_slugs(), days=days, godmode_budget=godmode_budget, log=log)
+        slugs = slugs or forecast_slugs()
+        res = retro.run(slugs, days=days, godmode_budget=godmode_budget, log=log)
+        from lottery import trust
+        trust.build(slugs, days)
         n = sum(g.get("entries", 0) for g in res["games"].values())
         log(f"Ретро-проверка за {days} дн.: {n} прогнозов по {len(res['games'])} играм за {time.time() - t0:.0f} с")
         return res
+    finally:
+        lock.unlink(missing_ok=True)
+
+
+def cmd_bot(args) -> None:
+    """Telegram-бот с кнопками (lottery/bot.py): слушает бота, пока окно открыто. Один экземпляр."""
+    from lottery import bot
+    from lottery.games import data_dir
+    lock = data_dir() / "bot.lock"
+    if _lock_alive(lock):
+        say("Бот уже запущен — второй экземпляр не нужен.")
+        return
+    save_json(lock, {"pid": os.getpid(), "started_at": datetime.now().isoformat(timespec="seconds")})
+    try:
+        bot.run(log=lambda m: say(f"{datetime.now():%H:%M:%S} {m}"))
+    except KeyboardInterrupt:
+        pass
+    except RuntimeError as exc:
+        say(str(exc))
     finally:
         lock.unlink(missing_ok=True)
 
@@ -1628,9 +1688,10 @@ def main() -> None:
     p.add_argument("--every", type=float, default=0.0, help="повторять каждые N часов (для Docker)")
     p.add_argument("--skip-fetch", action="store_true")
     p.add_argument("--skip-scan", action="store_true")
+    sub.add_parser("bot", help="Telegram-бот с кнопками: статус приложения, игры, методы, уведомления")
     p = sub.add_parser("retro", help="ретро-проверка: прогнозы всех методов на каждый тираж последней недели")
     p.add_argument("--game", action="append")
-    p.add_argument("--days", type=int, default=7)
+    p.add_argument("--days", type=int, default=7, choices=[1, 3, 7, 14, 30])
     p.add_argument("--godmode-budget", type=float, default=RETRO_GODMODE_MIN,
                    help="минут режима Бога на игру (0 — без Б; по умолчанию LOTTERY_RETRO_GODMODE_MIN или 3)")
     p = sub.add_parser("rules", help="правила игр со stoloto.ru: как проходят розыгрыши, таблица выигрышей")
@@ -1669,7 +1730,7 @@ def main() -> None:
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
                 "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos,
                 "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup,
-                "godmode-all": cmd_godmode_all, "retro": cmd_retro}
+                "godmode-all": cmd_godmode_all, "retro": cmd_retro, "bot": cmd_bot}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

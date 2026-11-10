@@ -3,6 +3,7 @@ import path from 'node:path'
 import { NextResponse } from 'next/server'
 import { gameTitle, isExcluded, readJournal, readJson } from '@/lib/games'
 import { bestWorst, gameMetric, halfSummary, heterogeneity, type StatEntry, thresholdLabel, watchList } from '@/lib/halfStats'
+import { SOURCES } from '@/lib/journalStats'
 import { dataDir } from '@/lib/paths'
 
 export const dynamic = 'force-dynamic'
@@ -61,8 +62,19 @@ export async function GET() {
       () => readJson<{ entries?: StatEntry[] }>(path.join(retroDir, `${slug}.json`))?.entries ?? []))
     .filter((g): g is NonNullable<typeof g> => g != null && g.rows.length > 0)
     .sort((a, b) => a.title.localeCompare(b.title, 'ru'))
+  // доверие к методам (python/lottery/trust.py): рейтинг источников в каждой игре за период
+  const trustRaw = readJson<{ made_at?: string; days?: number; since?: string
+    games?: Record<string, { sources: Record<string, Record<string, unknown>>; ranking: string[] }> }>(path.join(dataDir(), 'trust.json'))
+  const trust = trustRaw?.games ? {
+    made_at: trustRaw.made_at, days: trustRaw.days, since: trustRaw.since,
+    games: Object.entries(trustRaw.games).filter(([slug]) => !isExcluded(slug)).map(([slug, g]) => ({
+      slug, title: gameTitle(slug),
+      rows: g.ranking.map((source) => ({ source, title: SOURCES[source] ?? source, ...g.sources[source] })),
+    })).sort((a, b) => a.title.localeCompare(b.title, 'ru')),
+  } : null
   return NextResponse.json({
     games,
+    trust,
     watch: watchList(games),
     retro: {
       status: status ? { status: status.status, started_at: status.started_at, finished_at: status.finished_at,

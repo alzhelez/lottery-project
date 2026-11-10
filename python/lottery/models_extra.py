@@ -180,6 +180,22 @@ def experiment_model() -> Model:
                  params={"distance": ECHO_DISTANCE})
 
 
+def trend_scores(f: Features, short: int = 25, long: int = 200) -> np.ndarray:
+    """«Тренд»: число выпадает в последних short тиражах чаще, чем в последних long, — частота
+    растёт. Горячие смотрят на уровень частоты, тренд — на её изменение."""
+    return (f.window_rate(short) - f.window_rate(long)).astype(np.float32)
+
+
+def rhythm_scores(f: Features) -> np.ndarray:
+    """«Ритм»: у каждого числа свой средний промежуток между выпадениями (по прошлым тиражам);
+    выше оценка у чисел, которым «пора» — с последнего выпадения прошло около одного такого
+    промежутка. В отличие от «давно не выпадавших», сильно просроченные числа не поощряются."""
+    t = f.t_index.astype(np.float32)
+    mean_gap = (t + 1.0) / (f.cum + 1.0)                 # сглаженный средний промежуток к моменту t
+    waited = f.gap() + 1.0                               # столько тиражей пройдёт к следующему
+    return (-np.abs(np.log(np.maximum(waited, 1.0) / mean_gap))).astype(np.float32)
+
+
 def extra_models() -> list[Model]:
     """Новые методы для сравнения на странице игры (и в режиме Бога)."""
     return [
@@ -194,6 +210,9 @@ def extra_models() -> list[Model]:
         Model("mlp", "Нейросеть, обучение онлайн", "ml", lambda f: online_mlp(f)),
         Model("gbm", "Градиентный бустинг (переобучение по истории)", "ml", gbm_batch),
         Model("forest", "Случайный лес (переобучение по истории)", "ml", forest_batch),
+        Model("trend_25_200", "Тренд: частота растёт (25 против 200 тиражей)", "trend",
+              lambda f: trend_scores(f, 25, 200), params={"short": 25, "long": 200}),
+        Model("rhythm", "Ритм: числу пора по его среднему промежутку", "gap", rhythm_scores),
         experiment_model(),
     ]
 

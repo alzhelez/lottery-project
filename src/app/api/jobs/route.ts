@@ -42,5 +42,13 @@ export async function POST(req: Request) {
     params.resume = body.resume === true
   }
   if (p.kind === 'godmode_all') params.resume = body.resume === true
+  if (p.kind === 'retro') {
+    // «Провести анализ за …»: период в днях
+    const days = Number(body.days ?? 7)
+    if (![1, 3, 7, 14, 30].includes(days)) {
+      return NextResponse.json({ error: 'Период анализа — 1, 3, 7, 14 или 30 дней' }, { status: 400 })
+    }
+    params.days = days
+  }
   return NextResponse.json({ job: startJob(p.kind, p.game, params) })
 }

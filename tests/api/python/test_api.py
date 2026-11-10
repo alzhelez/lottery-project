@@ -345,3 +345,5 @@ def test_stats(api):
     # Пар «Под наблюдением» нет; раздел ретро-проверки есть, но ещё не считался.
     body = response.json()
     assert body["watch"] == [] and body["retro"]["status"] is None and body["retro"]["games"] == []
+    # Рейтинга доверия нет, пока не проведён «анализ за период».
+    assert body["trust"] is None
