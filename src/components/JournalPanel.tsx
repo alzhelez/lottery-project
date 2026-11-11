@@ -23,6 +23,7 @@ interface Entry {
   ordered?: boolean
   in_place?: number
   in_place_expected?: number
+  retro?: boolean
 }
 
 interface Summary {
@@ -61,7 +62,7 @@ const STATUS: Record<Entry['status'], string> = {
 }
 
 export function JournalPanel({ info }: { info: Info }) {
-  const [data, setData] = useState<{ entries: Entry[]; summary: Summary[]; byMechanism?: Array<{ mechanism: string; title: string; summary: Summary[] }> } | null>(null)
+  const [data, setData] = useState<{ entries: Entry[]; summary: Summary[]; counts?: { journal: number; retro: number }; byMechanism?: Array<{ mechanism: string; title: string; summary: Summary[] }> } | null>(null)
   const [source, setSource] = useState('all')
   const [limit, setLimit] = useState(30)
   const [exportDays, setExportDays] = useState(7)
@@ -92,6 +93,9 @@ export function JournalPanel({ info }: { info: Info }) {
   }
   for (const g of groups) g.items.sort((a, b) => (ORDER.indexOf(a.source) + 9) % 9 - (ORDER.indexOf(b.source) + 9) % 9)
   const lastNo = info.last?.no ?? 0
+  // фильтр — по всем источникам списка, включая те, что есть только в анализе за период
+  const chips = ORDER.filter((s) => data.entries.some((e) => e.source === s))
+    .map((s) => [s, data.entries.find((e) => e.source === s)!.source_title])
 
   return (
     <section className="panel" data-testid="journal">
@@ -117,7 +121,7 @@ export function JournalPanel({ info }: { info: Info }) {
         </span>
       </div>
 
-      {data.summary.length === 0 ? (
+      {data.entries.length === 0 ? (
         <p className="empty">Журнал пуст. Запустите анализ или режим Бога — прогноз на тираж №{info.nextNo} попадёт сюда.</p>
       ) : (
         <>
@@ -174,8 +178,16 @@ export function JournalPanel({ info }: { info: Info }) {
             </div>
           )}
 
+          {(data.counts?.retro ?? 0) > 0 && (
+            <p className="note" data-testid="journal-retro-note">
+              В списке ниже — все тиражи со всеми методами: {nf.format(data.counts!.journal)} прогнозов записаны в журнал до
+              тиража, ещё {nf.format(data.counts!.retro)} <b>восстановлены анализом за период</b> — только по тиражам до
+              каждого тиража, с пометкой в строке. Итоги по источникам выше считаются только по настоящему журналу;
+              вместе они учтены в «Статистике».
+            </p>
+          )}
           <div className="run-bar">
-            {[['all', 'Все'], ...data.summary.map((s) => [s.source, s.title])].map(([k, label]) => (
+            {[['all', 'Все'], ...chips].map(([k, label]) => (
               <button key={k} className={`chip ${source === k ? 'on' : ''}`} onClick={() => setSource(k)}>{label}</button>
             ))}
           </div>
@@ -219,7 +231,7 @@ export function JournalPanel({ info }: { info: Info }) {
                       for (const e of g.items) {
                         rows.push(
                           <tr key={e.id} className="sub-row" data-testid="journal-source-row">
-                            <td><span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
+                            <td><span className="sub">{e.retro ? 'анализ за период' : `прогноз ${e.made_at.replace('T', ' ').slice(0, 16)}`}</span></td>
                             <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
                             <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" />
                               {e.in_place != null && <span className="sub">на своём месте: {e.in_place}</span>}</td>
@@ -228,6 +240,7 @@ export function JournalPanel({ info }: { info: Info }) {
                             <td className="r num">{e.won != null ? nf.format(e.won) : '—'}</td>
                             <td>
                               <span className={`status-tag st-${e.status}`}>{STATUS[e.status]}</span>
+                              {e.retro && <span className="sub" data-testid="journal-retro">восстановлен анализом за период</span>}
                               {e.status === 'pending' && lastNo >= e.draw_no && <span className="sub">тиража нет в архиве</span>}
                             </td>
                           </tr>,
@@ -246,7 +259,7 @@ export function JournalPanel({ info }: { info: Info }) {
                 <tbody>
                   {entries.slice(0, limit).map((e) => (
                     <tr key={e.id}>
-                      <td>№{e.draw_no}{e.mechanism && <span className="sub">{e.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}<span className="sub">прогноз {e.made_at.replace('T', ' ').slice(0, 16)}</span></td>
+                      <td>№{e.draw_no}{e.mechanism && <span className="sub">{e.mechanism === 'L' ? 'лототрон' : 'ГСЧ'}</span>}<span className="sub">{e.retro ? 'анализ за период' : `прогноз ${e.made_at.replace('T', ' ').slice(0, 16)}`}</span></td>
                       <td>{e.source_title}{e.detail && <span className="sub">{e.detail}</span>}</td>
                       <td><BlockBalls blocks={e.numbers} actual={e.actual} size="sm" /></td>
                       <td>{e.actual ? <BlockBalls blocks={e.actual} tone="actual" size="sm" /> : <span className="muted">—</span>}</td>

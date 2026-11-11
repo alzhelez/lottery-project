@@ -66,8 +66,9 @@ export function analysisDays(): number {
 
 export interface Coverage {
   days: number; draws: number; first_no: number | null; last_no: number | null; complete: boolean
-  methods: Array<{ source: string; short: string; title: string; have: number; missing: number }>
+  methods: Array<{ source: string; short: string; title: string; have: number; missing: number; restored: number }>
   missing_total: number
+  restored_total: number      // предсказаний, восстановленных анализом за период (не записанных заранее)
 }
 
 /** Автоанализ: у каждого ли тиража последних days дней есть сверенное предсказание каждого метода. */
@@ -76,13 +77,14 @@ export function coverage(slug: string, days = analysisDays(), now = Date.now()):
   const draws = drawList(slug).filter((d) => d.time >= since)
   const by = checkedEntries(slug)
   const methods = METHODS.map((m) => {
-    const have = draws.filter((d) => by.has(`${m.source}:${d.no}`)).length
-    return { ...m, have, missing: draws.length - have }
+    const found = draws.map((d) => by.get(`${m.source}:${d.no}`)).filter((e): e is PEntry => e != null)
+    return { ...m, have: found.length, missing: draws.length - found.length, restored: found.filter((e) => e.retro).length }
   })
   const missing = methods.reduce((a, m) => a + m.missing, 0)
   return {
     days, draws: draws.length, first_no: draws[0]?.no ?? null, last_no: draws.at(-1)?.no ?? null,
     complete: draws.length > 0 && missing === 0, methods, missing_total: missing,
+    restored_total: methods.reduce((a, m) => a + m.restored, 0),
   }
 }
 

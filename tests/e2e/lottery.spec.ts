@@ -268,7 +268,15 @@ test('автоанализ тиражей, «Пересчитать предск
   expect(stats.trust.games.map((g: { slug: string }) => g.slug)).toEqual(expect.arrayContaining(['4x20', 'top-3']))
 
   // выгрузка в цифровом виде: кнопка на вкладке «Журнал прогнозов» с выбором периода
+  await expect(cov.getByTestId('coverage-origin')).toContainText('восстановлены анализом за период')
   await page.getByTestId('tab-journal').click()
+  // журнал показывает все тиражи со всеми методами: и записанные до тиража, и восстановленные анализом (с пометкой)
+  await expect(page.getByTestId('journal-retro-note')).toContainText('восстановлены анализом за период')
+  const draws = page.getByTestId('journal-draw')
+  expect(await draws.count()).toBeGreaterThan(5)
+  await draws.nth(4).click()
+  await expect(page.getByTestId('journal-source-row').filter({ hasText: 'Лучший метод анализа' })).toContainText('восстановлен анализом за период')
+  expect(await page.getByTestId('journal-source-row').count()).toBeGreaterThanOrEqual(6)   // все методы, кроме режима Бога
   await page.getByTestId('digital-period').selectOption('0')
   await expect(page.getByTestId('digital-export')).toHaveAttribute('href', '/api/games/4x20/digital?days=0')
   const res = await request.get('/api/games/4x20/digital?days=0')
@@ -279,10 +287,10 @@ test('автоанализ тиражей, «Пересчитать предск
   for (const short of ['ФП', 'ЛМА', 'КМ', 'ПиХ', 'ЗС', 'НВ']) {
     expect(text).toMatch(new RegExp(`^${short}: ${cell}(?:; ${cell})*$`, 'm'))
   }
-  const draws = text.match(/^Тиражи: (.*)$/m)![1].split('; ').map(Number)
-  expect(draws.length).toBeGreaterThan(5)
-  expect([...draws].sort((x, y) => x - y)).toEqual(draws)             // от самого дальнего к ближайшему
-  expect(text.match(/^ЛМА: (.*)$/m)![1].split('; ')).toHaveLength(draws.length)
+  const nos = text.match(/^Тиражи: (.*)$/m)![1].split('; ').map(Number)
+  expect(nos.length).toBeGreaterThan(5)
+  expect([...nos].sort((x, y) => x - y)).toEqual(nos)             // от самого дальнего к ближайшему
+  expect(text.match(/^ЛМА: (.*)$/m)![1].split('; ')).toHaveLength(nos.length)
 })
 
 test('шансы: точные вероятности и возврат по введённым призам', async ({ page }) => {
