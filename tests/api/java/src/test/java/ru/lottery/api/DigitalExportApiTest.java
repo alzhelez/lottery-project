@@ -43,10 +43,10 @@ public class DigitalExportApiTest extends BaseApiTest {
         Response cov = get("/api/games/4x20/coverage");
         List<Map<String, Object>> methods = cov.jsonPath().getList("methods");
         assertThat(methods).hasSize(7);
-        // У каждого метода «есть» + «не хватает» = число тиражей периода.
+        // У каждого метода «есть» + «пропуски» + «быть не может» = число тиражей архива.
         double draws = num(cov.jsonPath().get("draws"));
         for (Map<String, Object> m : methods) {
-            assertThat(num(m.get("have")) + num(m.get("missing"))).isEqualTo(draws);
+            assertThat(num(m.get("have")) + num(m.get("missing")) + num(m.get("na"))).isEqualTo(draws);
         }
     }
 }

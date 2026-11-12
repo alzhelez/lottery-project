@@ -84,6 +84,7 @@ def test_cli_records_only_for_active_games(data_dir):
     write_draws(draws_path("5x36"), [Draw(i + 1, (now - timedelta(hours=400 - i)).strftime("%d.%m.%Y %H:%M"),
                                           (tuple(range(1 + i % 30, 6 + i % 30)),)) for i in range(400)])
     write_meta("5x36", checked_at=now.isoformat())
+    env["LOTTERY_FORECAST_HORIZON_MIN"] = "0"       # только ближайший тираж (горизонт — test_golden_retro.py)
     subprocess.run([sys.executable, str(ROOT / "python" / "lp.py"), "analyze", "--game", "5x36"],
                    env=env, check=True, capture_output=True, timeout=300)
     entries = journal.load("5x36")["entries"]

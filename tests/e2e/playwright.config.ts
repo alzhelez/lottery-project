@@ -46,7 +46,7 @@ export default defineConfig({
         LOTTERY_GODMODE_ALL_BUDGET: '1',
         // ретро-проверка в тестах — без режима Бога (иначе по 3 минуты на игру)
         LOTTERY_RETRO_GODMODE_MIN: '0',
-        // прогноз — только на ближайший тираж: сколько тиражей попадёт в горизонт 75 минут, зависит
+        // прогноз — только на ближайший тираж: сколько тиражей попадёт в горизонт 130 минут, зависит
         // от времени запуска тестов (запись на несколько тиражей проверяет pytest, test_golden_retro.py)
         LOTTERY_FORECAST_HORIZON_MIN: '0',
         ...(process.env.PYTHON_BIN ? { PYTHON_BIN: process.env.PYTHON_BIN } : {}),

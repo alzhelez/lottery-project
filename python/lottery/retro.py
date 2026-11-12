@@ -29,7 +29,7 @@ from .fsutil import write_text
 from .games import data_dir, get_game
 from .journal import SOURCES, PrizeLookup, _check, _entry, save
 
-RETRO_VERSION = 2          # меняется, когда меняется расчёт, — тогда ретро пересчитывается
+RETRO_VERSION = 3          # меняется, когда меняется расчёт, — тогда ретро пересчитывается
 RETRO_DAYS = 7
 EVAL_MAX = 60_000          # как в анализе (lp.analyze_game)
 GODMODE_MAX_DRAWS = 60_000
@@ -66,57 +66,6 @@ def week_rows(data: GameData, since: datetime) -> list[int]:
     return [t for t, d in enumerate(data.draws) if d.dt is not None and d.dt >= since]
 
 
-def from_evaluation(data: GameData, since: datetime) -> tuple[dict[str, list[tuple[int, list[list[int]], str]]], dict]:
-    """Л, К, Э, Н, З на каждый тираж недели из одного сравнения методов."""
-    from .evaluate import evaluate_game
-    from .mechanics import subset
-    part = data if data.T <= EVAL_MAX else subset(data, np.arange(data.T - EVAL_MAX, data.T))
-    rows = week_rows(part, since)
-    out: dict[str, list] = {}
-    if not rows:
-        return out, {"rows": 0}
-    ev = evaluate_game(part, keep_picks=True)
-    if ev.get("status") != "ok":
-        return out, {"rows": len(rows), "skipped": ev.get("message", "мало тиражей")}
-    picks = ev.pop("_picks")
-    split = picks["split"]
-    honest = [t for t in rows if t >= split]          # выбор метода не видел этих тиражей
-    detail = {"analysis_best": ev["next_prediction"]["model"], "analysis_consensus": "",
-              "least": (ev.get("least") or {}).get("next_prediction", {}).get("model", ""),
-              "golden": (ev.get("golden") or {}).get("detail", "")}
-    for source in ("analysis_best", "analysis_consensus", "least", "golden"):
-        p = picks.get(source)
-        if p is None:
-            continue
-        out[source] = [(part.draws[t].no, _numbers(p, part.fmt.blocks, t), detail[source]) for t in honest]
-    return out, {"rows": len(rows), "honest": len(honest), "best": ev["next_prediction"]["model"]}
-
-
-def from_chaos(data: GameData, since: datetime) -> list[tuple[int, list[list[int]], str]]:
-    """«Порядок из хаоса»: тираж прогнозирует лучший метод набора его способа розыгрыша."""
-    from . import chaos
-    from .evaluate import evaluate_game
-    from .mechanics import subset
-    groups = {k: g for k, g in chaos._groups(data).items() if g.T >= chaos.MIN_DRAWS}
-    if not groups and data.T >= chaos.MIN_DRAWS:
-        groups = {"all": data}
-    out = []
-    for key, sub in groups.items():
-        if sub.T > chaos.MAX_DRAWS:
-            sub = subset(sub, np.arange(sub.T - chaos.MAX_DRAWS, sub.T))
-        rows = week_rows(sub, since)
-        if not rows:
-            continue
-        ev = evaluate_game(sub, models=chaos.chaos_models(), keep_picks=True)
-        if ev.get("status") != "ok":
-            continue
-        picks = ev.pop("_picks")
-        title = f"{ev['next_prediction']['model']} · {chaos.MECH_TITLES[key]}"
-        out += [(sub.draws[t].no, _numbers(picks["analysis_best"], sub.fmt.blocks, t), title)
-                for t in rows if t >= picks["split"]]
-    return out
-
-
 def _entries(data: GameData, items: dict[str, list], now: datetime) -> list[dict]:
     """Ретро-записи журнала, сразу сверенные с тиражами."""
     from .mechanics import mechanism_of_draw
@@ -140,14 +89,25 @@ def _entries(data: GameData, items: dict[str, list], now: datetime) -> list[dict
     return out
 
 
-def final_rows(data: GameData, entries: list[dict]) -> list[tuple[int, list[list[int]], str]]:
-    """«Финальное предсказание» на каждый тираж периода: голосование источников с весами по
-    доверию, накопленному к этому тиражу (только по более ранним тиражам периода) — без
-    заглядывания: тираж не влияет на веса, с которыми на него строится прогноз."""
+def final_weights(acc: dict[str, list[float]]) -> dict[str, float]:
+    """Веса источников по накопленному «угадано − ожидалось»: acc[источник] = [Σразниц, Σдисперсий, n]."""
     import math
 
     from . import trust
     from .journal import LOWER
+    w = {}
+    for s, (diff, var, n) in acc.items():
+        z = diff / math.sqrt(var) if var > 0 else 0.0
+        tr = 100 * trust._phi((-z if s in LOWER else z) * math.sqrt(n / (n + trust.SHRINK_N)))
+        w[s] = trust.BASE_WEIGHT + max(0.0, tr - 50.0) / 50.0
+    return w
+
+
+def final_rows(data: GameData, entries: list[dict]) -> list[tuple[int, list[list[int]], str]]:
+    """«Финальное предсказание» на каждый тираж: голосование источников с весами по доверию,
+    накопленному к этому тиражу (только по более ранним тиражам) — без заглядывания: тираж не
+    влияет на веса, с которыми на него строится прогноз."""
+    from . import trust
     by_no: dict[int, dict[str, dict]] = {}
     for e in entries:
         by_no.setdefault(e["draw_no"], {})[e["source"]] = e
@@ -155,12 +115,7 @@ def final_rows(data: GameData, entries: list[dict]) -> list[tuple[int, list[list
     acc: dict[str, list[float]] = {}                 # источник → [Σ(угадано − ожидалось), Σдисперсий, n]
     out = []
     for no in sorted(by_no):
-        w = {}
-        for s, (diff, var, n) in acc.items():
-            z = diff / math.sqrt(var) if var > 0 else 0.0
-            tr = 100 * trust._phi((-z if s in LOWER else z) * math.sqrt(n / (n + trust.SHRINK_N)))
-            w[s] = trust.BASE_WEIGHT + max(0.0, tr - 50.0) / 50.0
-        numbers = trust.final_numbers({s: e["numbers"] for s, e in by_no[no].items()}, blocks, w)
+        numbers = trust.final_numbers({s: e["numbers"] for s, e in by_no[no].items()}, blocks, final_weights(acc))
         if numbers:
             out.append((no, numbers, "голосование по доверию, накопленному к этому тиражу"))
         for s, e in by_no[no].items():
@@ -173,61 +128,69 @@ def final_rows(data: GameData, entries: list[dict]) -> list[tuple[int, list[list
 
 def run(slugs: list[str], days: int = RETRO_DAYS, godmode_budget: float = 3.0, log=print,
         now: datetime | None = None, workers: int = 2) -> dict:
-    """Ретро-проверка игр slugs за последние days дней. Журнал каждой игры
-    (data/journal_retro/<игра>.json) пересчитывается целиком."""
+    """Пересчёт игр slugs: история прогнозов на весь архив (history.py) и из неё — «анализ за
+    период» за последние days дней (data/journal_retro/<игра>.json, пересчитывается целиком)."""
+    from . import history
     now = now or datetime.now()
     since = now - timedelta(days=days)
     status = {"retro_version": RETRO_VERSION, "status": "running", "started_at": now.isoformat(timespec="seconds"),
               "finished_at": None, "days": days, "since": since.isoformat(timespec="minutes"), "games": {}}
     write_text(status_path(), json.dumps(status, ensure_ascii=False, indent=1))
     datas: dict[str, GameData] = {}
-    items: dict[str, dict[str, list]] = {}
     for slug in slugs:
-        t0 = time.time()
         try:
-            data = load_game_data(get_game(slug))
+            datas[slug] = load_game_data(get_game(slug))
         except ValueError:
             continue
-        if not week_rows(data, since):
-            status["games"][slug] = {"skipped": "за неделю тиражей нет"}
-            continue
-        try:
-            ev_items, info = from_evaluation(data, since)
-            ev_items["chaos"] = from_chaos(data, since)
-        except Exception as exc:  # noqa: BLE001 — одна игра не должна ронять пересчёт
-            status["games"][slug] = {"error": f"{type(exc).__name__}: {exc}"}
-            log(f"{slug}: ретро-проверка — ошибка {type(exc).__name__}: {exc}")
-            continue
-        datas[slug], items[slug] = data, ev_items
-        status["games"][slug] = {**info, "seconds": round(time.time() - t0, 1)}
-        log(f"{slug}: ретро — {info.get('honest', 0)} тиражей за {days} дн., методы анализа и порядок из хаоса")
-    # Б — режим Бога: короткий запуск на игру, по два процесса (как в автозапуске)
+    # Б — режим Бога: короткий запуск на игру, по два процесса (как в автозапуске); прогнозы
+    # «лидера за всю историю» на все тиражи второй половины его истории
+    godmode: dict[str, dict] = {}
     if godmode_budget > 0 and datas:
         import multiprocessing
         from concurrent.futures import ProcessPoolExecutor, as_completed
 
         from .godmode import auto_run
-        first_no = {s: next(d.no for d in datas[s].draws if d.dt is not None and d.dt >= since) for s in datas}
+        log(f"режим Бога: {len(datas)} игр по {godmode_budget:g} мин")
         with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn")) as pool:
-            futures = {pool.submit(auto_run, s, godmode_budget, GODMODE_MAX_DRAWS, first_no[s]): s for s in datas}
+            futures = {pool.submit(auto_run, s, godmode_budget, GODMODE_MAX_DRAWS, d.draws[0].no): s
+                       for s, d in datas.items() if d.draws}
             for fut in as_completed(futures):
                 slug = futures[fut]
                 try:
-                    res = fut.result()
+                    godmode[slug] = fut.result()
                 except Exception as exc:  # noqa: BLE001
-                    log(f"{slug}: ретро режима Бога — ошибка {type(exc).__name__}: {exc}")
-                    continue
-                leader = (res.get("next") or {}).get("strategy") or "Лидер за всю историю"
-                items[slug]["godmode"] = [(r["no"], r["predicted"], leader) for r in res.get("retro") or []]
-                status["games"][slug]["godmode_experts"] = res.get("experts")
+                    log(f"{slug}: режим Бога — ошибка {type(exc).__name__}: {exc}")
     for slug, data in datas.items():
-        entries = _entries(data, items[slug], now)
-        entries += _entries(data, {"final": final_rows(data, entries)}, now)
+        t0 = time.time()
+        gm = godmode.get(slug) or {}
+        try:
+            h, info = history.build(data, gm.get("retro"), (gm.get("next") or {}).get("strategy") or "Лидер за всю историю",
+                                    now=now)
+        except Exception as exc:  # noqa: BLE001 — одна игра не должна ронять пересчёт
+            status["games"][slug] = {"error": f"{type(exc).__name__}: {exc}"}
+            log(f"{slug}: пересчёт предсказаний — ошибка {type(exc).__name__}: {exc}")
+            continue
+        g = status["games"][slug] = {**info, "seconds": round(time.time() - t0, 1)}
+        if gm:
+            g["godmode_experts"] = gm.get("experts")
+        if not h:
+            continue
+        g["history"] = {s: len(v["nos"]) for s, v in h["sources"].items()}
+        period = {data.draws[t].no for t in week_rows(data, since)}
+        if not period:
+            g["skipped"] = "за период тиражей нет"
+            log(f"{slug}: история — {len(h['draws']['nos'])} тиражей; за {days} дн. тиражей нет")
+            continue
+        items = {s: [(no, history.dec(text), v.get("detail", "")) for no, text in zip(v["nos"], v["numbers"]) if no in period]
+                 for s, v in h["sources"].items()}
+        entries = _entries(data, items, now)
         save(slug, {"game": slug, "retro": True, "made_at": now.isoformat(timespec="seconds"), "days": days,
                     "since": since.isoformat(timespec="minutes"), "retro_version": RETRO_VERSION,
                     "entries": entries}, retro=True)
-        status["games"][slug]["entries"] = len(entries)
-        status["games"][slug]["by_source"] = {s: sum(e["source"] == s for e in entries) for s in SOURCES}
+        g["honest"] = len({e["draw_no"] for e in entries})
+        g["entries"] = len(entries)
+        g["by_source"] = {s: sum(e["source"] == s for e in entries) for s in SOURCES}
+        log(f"{slug}: история — {len(h['draws']['nos'])} тиражей, за {days} дн. — {g['honest']}")
     status.update({"status": "done", "finished_at": datetime.now().isoformat(timespec="seconds")})
     write_text(status_path(), json.dumps(status, ensure_ascii=False, indent=1))
     return status

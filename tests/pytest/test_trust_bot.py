@@ -193,38 +193,79 @@ def test_bot_game_stats_and_method_forecast():
     assert "Н Наименее вероятные: 40 · 0" in text and "Порядок из хаоса" not in text
     assert has == ["analysis_best"]
     _, kb = bot.game_menu("5x36")
-    assert kb["inline_keyboard"][0][0]["callback_data"] == "m:5x36:analysis_best"
+    # первая кнопка — «Пересчитать предсказания» (истории прогнозов ещё нет), дальше — методы
+    assert [r[0]["callback_data"] for r in kb["inline_keyboard"][:2]] == ["fix:5x36", "m:5x36:analysis_best"]
     fc = bot.method_forecast("5x36", "analysis_best", now)
     assert "Ближайший тираж №402 — через " in fc and "Числа на №402: <code>1 2 3 4 5</code>" in fc
     assert "Прогноза этого метода на ближайший тираж нет" in bot.method_forecast("5x36", "godmode", now)
 
 
 def test_coverage_finds_draws_without_predictions_and_bot_offers_fix(monkeypatch):
+    """Автоанализ — по всему архиву: пока истории прогнозов нет, бот предлагает пересчёт; после
+    пересчёта пропусков нет; новый тираж без прогноза — пропуск, пока история его не дополнит."""
     import subprocess
-    from lottery import coverage
+    from lottery import coverage, history, retro
+    from lottery.drawfile import Draw, load_game_data, write_draws
+    from lottery.games import draws_path, get_game
     data, now = _fast_game(minutes=60, count=400, last_ago_min=10)
-    monkeypatch.setattr(coverage, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: now)}))
-    week = [d.no for d in data.draws if d.dt >= now - timedelta(days=7)]
-    made = now - timedelta(hours=1)
-    # у Л есть предсказания на все тиражи недели (часть — из анализа за период), у К — на все, кроме двух
-    journal.save("5x36", {"game": "5x36", "entries": [_checked("analysis_best", no, 1, made) for no in week[:50]]
-                          + [_checked("analysis_consensus", no, 1, made) for no in week[2:]]})
-    journal.save("5x36", {"game": "5x36", "entries": [_checked("analysis_best", no, 1, made) for no in week[50:]]}, retro=True)
-    c = coverage.coverage("5x36", 7, now)
-    assert c["draws"] == len(week) and not c["complete"]
-    assert "ЛМА" not in c["missing"] and c["missing"]["КМ"] == 2 and c["missing"]["ФП"] == len(week)
     text, need = coverage.summary("5x36")
-    assert need and "не хватает предсказаний" in text and "КМ — 2" in text
-    # бот: в сообщении игры — автоанализ и кнопка «Пересчитать предсказания»
+    assert need and "ещё не посчитаны" in text
     msg, kb = bot.game_menu("5x36")
     assert msg.startswith("⚠️ Автоанализ") and kb["inline_keyboard"][0][0] == {"text": "Пересчитать предсказания", "callback_data": "fix:5x36"}
     started = []
     monkeypatch.setattr(subprocess, "Popen", lambda cmd, **k: started.append(cmd))
     reply, _ = bot.route("fix:5x36")
     assert "Пересчёт предсказаний «5 из 36»" in reply and started[0][-2:] == ["--game", "5x36"]
-    # всё на месте — кнопки нет
-    journal.save("5x36", {"game": "5x36", "entries": [_checked(s, no, 1, made) for no in week for s, _ in coverage.METHODS]})
+    retro.run(["5x36"], days=2, godmode_budget=0, now=now, log=lambda m: None)
+    c = coverage.coverage("5x36")
+    assert c["built"] and c["complete"] and c["draws"] == 400 and 300 < c["with_predictions"] < 400
     text, need = coverage.summary("5x36")
     assert not need and text.startswith("✅")
     assert bot.game_menu("5x36")[1]["inline_keyboard"][0][0]["callback_data"] != "fix:5x36"
+    # сыграны ещё три тиража, в журнале прогноз только у одного метода на один из них
+    rng = np.random.default_rng(5)
+    more = [Draw(400 + i, (now + timedelta(hours=i)).strftime("%d.%m.%Y %H:%M"),
+                 (tuple(sorted(int(v) + 1 for v in rng.choice(36, 5, replace=False))),)) for i in (1, 2, 3)]
+    write_draws(draws_path("5x36"), list(data.draws) + more)
+    journal.save("5x36", {"game": "5x36", "entries": [_checked("analysis_consensus", 402, 1, now)]})
+    c = coverage.coverage("5x36")
+    assert not c["complete"] and c["missing"]["КМ"] == 2 and c["missing"]["ЛМА"] == 3
+    res = history.fill(load_game_data(get_game("5x36")))
+    assert res["added"] == 3 and res["restored"] > 0
+    h = history.load("5x36")
+    assert h["last_no"] == 403 and coverage.coverage("5x36")["complete"]
+    rows = history.rows_of(h)
+    assert rows["analysis_consensus"][402] == "1,2,3,4,5"          # прогноз журнала — как записан
+    assert all(403 in rows[s] for s in ("analysis_best", "analysis_consensus", "least", "golden", "chaos", "final"))
+    assert history.fill(load_game_data(get_game("5x36")))["status"] == "up_to_date"
 
+
+def test_history_covers_whole_archive_without_lookahead():
+    """История: прогноз каждого метода на каждый тираж после разгона; тиражи после t на прогноз
+    тиража t не влияют (и там, где «лучший» выбирается пошагово, — до конца отрезка отбора)."""
+    from lottery import history, retro
+    from lottery.drawfile import Draw, write_draws
+    from lottery.evaluate import warmup_size
+    from lottery.games import draws_path
+    data, now = _fast_game(minutes=60, count=700, last_ago_min=10)
+    retro.run(["5x36"], days=2, godmode_budget=0, now=now, log=lambda m: None)
+    h = history.load("5x36")
+    rows = history.rows_of(h)
+    warm = warmup_size(700)
+    expect = [d.no for d in data.draws[warm:]]
+    for s in ("analysis_best", "analysis_consensus", "least", "golden", "final"):
+        assert sorted(rows[s]) == expect, s
+    assert 0 < len(rows["chaos"]) < len(expect) and max(rows["chaos"]) == 700     # только контрольный отрезок
+    assert h["draws"]["nos"] == expect and h["draws"]["actual"][0] == history.enc(data.draws[warm].blocks)
+    # «анализ за период» — те же числа, что в истории
+    for e in journal.load("5x36", retro=True)["entries"]:
+        assert history.enc(e["numbers"]) == rows[e["source"]][e["draw_no"]], e["source"]
+    cut = expect[150]                                  # ещё внутри отрезка отбора
+    rng = np.random.default_rng(99)
+    write_draws(draws_path("5x36"), [d if d.no <= cut else Draw(d.no, d.date, (tuple(sorted(int(v) + 1 for v in rng.choice(36, 5, replace=False))),))
+                                    for d in data.draws])
+    retro.run(["5x36"], days=2, godmode_budget=0, now=now, log=lambda m: None)
+    again = history.rows_of(history.load("5x36"))
+    for s in ("analysis_best", "analysis_consensus", "least", "golden", "final"):
+        for no in expect[:151]:
+            assert again[s][no] == rows[s][no], (s, no)

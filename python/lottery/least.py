@@ -46,6 +46,23 @@ def lower_metrics(h: np.ndarray, mean0, var0) -> dict:
     return m
 
 
+def walk_forward(picks: list[list[np.ndarray]], hits: list[np.ndarray], warm: int, split: int, fixed: int,
+                 lower: bool = False) -> list[np.ndarray]:
+    """Прогнозы «лучшего метода» на все тиражи без заглядывания. С тиража split — метод fixed
+    (выбран на отрезке отбора warm..split, как в анализе). До split выбор на отрезке отбора видел
+    бы сам тираж, поэтому там на каждый тираж t берётся метод с лучшим средним на warm..t —
+    только по тиражам до t. picks — по методам списки блоков, hits — угадано по тиражам."""
+    h = np.stack([np.asarray(x[warm:split], np.float64) for x in hits])
+    before = np.concatenate([np.zeros((h.shape[0], 1)), np.cumsum(h, axis=1)[:, :-1]], axis=1)
+    idx = before.argmin(axis=0) if lower else before.argmax(axis=0)
+    out = [p.copy() for p in picks[fixed]]
+    for k in np.unique(idx):
+        rows = warm + np.nonzero(idx == k)[0]
+        for b, p in enumerate(picks[int(k)]):
+            out[b][rows] = p[rows]
+    return out
+
+
 def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> dict:
     """Анти-методы на той же истории, что и обычные методы (ev — evaluate.Evaluator, оценки
     моделей уже посчитаны и лежат в его кэше)."""
@@ -107,4 +124,8 @@ def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> 
         # оценки лучшего анти-метода по всем тиражам — для «Золотой середины» (evaluate.py);
         # не JSON — evaluate_game забирает их из результата
         "_best_picks": picks_by_key[best["key"]],
+        # то же, но до конца отбора анти-метод на каждый тираж выбран только по тиражам до него
+        "_walk_picks": walk_forward([picks_by_key[r["key"]] for r in candidates],
+                                    [ev.hits(picks_by_key[r["key"]]) for r in candidates],
+                                    warm, split, candidates.index(best), lower=True),
     }

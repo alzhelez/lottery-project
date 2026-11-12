@@ -288,6 +288,7 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
     except Exception as exc:  # noqa: BLE001 — дополнительный раздел не должен ронять анализ
         least = {"status": "error", "message": f"{type(exc).__name__}: {exc}"}
     least_picks = least.pop("_best_picks", None)
+    least_walk = least.pop("_walk_picks", None)
 
     golden = None
     gold = None
@@ -299,6 +300,18 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
                   "selection": metrics(hg[warm:split], m0[warm:split], v0[warm:split]),
                   "holdout": metrics(hg[split:], m0[split:], v0[split:]),
                   "next": ev.numbers(gold, t_total)}
+
+    full = None
+    if keep_picks:
+        # прогнозы на ВСЕ тиражи после разгона: до конца отбора «лучший» выбирается пошагово,
+        # только по тиражам до каждого (least.walk_forward) — без заглядывания
+        hits_by_key = {m.key: h for m, h in results}
+        best_walk = least_mod.walk_forward([all_picks[r["key"]] for r in candidates],
+                                           [hits_by_key[r["key"]] for r in candidates], warm, split,
+                                           candidates.index(best))
+        full = {"analysis_best": best_walk, "analysis_consensus": cons_picks, "least": least_walk,
+                "golden": (golden_picks(best_walk, least_walk, [all_picks[k] for k in voters], data.fmt.blocks)
+                           if least_walk is not None and gold is not None else None)}
 
     pmf = baseline_pmf(data, slice(warm, None))
     best_h = next(h for m, h in results if m.key == best["key"])[warm:]
@@ -331,5 +344,5 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         "golden": golden,
         **({"_picks": {"analysis_best": best_picks, "analysis_consensus": cons_picks,
                        "least": least_picks, "golden": gold,
-                       "split": split}} if keep_picks else {}),
+                       "split": split, "warm": warm, "full": full}} if keep_picks else {}),
     }

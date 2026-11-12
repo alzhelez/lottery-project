@@ -198,8 +198,8 @@ def godmode_target(data, res: dict) -> None:
 
 # прогноз записывается на все тиражи до следующего цикла автозапуска (раз в час) — с запасом,
 # если цикл задержится; следующий цикл заменит ещё не сыгранные прогнозы свежими
-FORECAST_HORIZON_MIN = float(os.environ.get("LOTTERY_FORECAST_HORIZON_MIN", "75") or 0)
-FORECAST_MAX_AHEAD = 12
+FORECAST_HORIZON_MIN = float(os.environ.get("LOTTERY_FORECAST_HORIZON_MIN", "130") or 0)
+FORECAST_MAX_AHEAD = 30
 
 
 def forecast_targets(data, draw_no: int | None = None, mechanism: str | None = None) -> list[dict]:
@@ -633,6 +633,15 @@ def auto_once(args) -> dict:
             nd = after_fetch(args.game or None, log=log)
             status["nextdraw"] = {s: round(r["return"], 3) for s, r in nd.items()}
         status["my_tickets"] = settle_my_tickets(log)
+        # история прогнозов (lottery/history.py): новые тиражи — из журнала, а если прогноза на
+        # тираж не оказалось (цикл задержался, компьютер был выключен) — расчёт задним числом
+        from lottery import history
+        for slug in (args.game or forecast_slugs()):
+            try:
+                stage("предсказания на новые тиражи", slug)
+                history.fill(load_game_data(get_game(slug)), log=log)
+            except Exception as exc:  # noqa: BLE001 — история не должна ронять цикл
+                log(f"{slug}: история прогнозов не дополнена — {type(exc).__name__}: {exc}")
         slugs = args.game or local_slugs()
         from lottery.drawfile import same_draws
         seen: dict[str, list] = {}

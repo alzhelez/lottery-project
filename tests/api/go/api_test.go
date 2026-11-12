@@ -555,10 +555,10 @@ func TestAPI17DigitalExport(t *testing.T) {
 	if len(methods) != 7 {
 		t.Fatalf("методов %d", len(methods))
 	}
-	// У каждого метода «есть» + «не хватает» = число тиражей периода.
+	// У каждого метода «есть» + «пропуски» + «быть не может» = число тиражей архива.
 	for _, m := range methods {
 		row := m.(map[string]any)
-		if row["have"].(float64)+row["missing"].(float64) != cov["draws"].(float64) {
+		if row["have"].(float64)+row["missing"].(float64)+row["na"].(float64) != cov["draws"].(float64) {
 			t.Errorf("счётчики метода %v не сходятся", row["short"])
 		}
 	}

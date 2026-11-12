@@ -372,10 +372,12 @@ def test_digital_export_and_coverage(api):
     assert not any(line.startswith("ФП:") for line in lines)
     # Недопустимый период — 400.
     assert api.get("/api/games/6x45/digital", params={"days": 5}).status_code == 400
-    # GET /api/games/4x20/coverage — автоанализ: сколько тиражей периода и чего не хватает по методам.
+    # GET /api/games/4x20/coverage — автоанализ по всему архиву: чего не хватает по методам.
     cov = api.get("/api/games/4x20/coverage").json()
     # В ответе все семь методов с сокращениями, а счётчики сходятся.
     assert [m["short"] for m in cov["methods"]] == ["ФП", "ЛМА", "КМ", "ПиХ", "РБ", "ЗС", "НВ"]
-    assert all(m["have"] + m["missing"] == cov["draws"] for m in cov["methods"])
-    assert cov["complete"] == (cov["draws"] > 0 and cov["missing_total"] == 0)
+    # «есть» + «пропуски» + «быть не может» (разгон и т. п.) = число тиражей архива.
+    assert all(m["have"] + m["missing"] + m["na"] == cov["draws"] for m in cov["methods"])
+    # «Всё на месте» — только когда история прогнозов на весь архив посчитана и пропусков нет.
+    assert cov["complete"] == (cov["built"] and cov["draws"] > 0 and cov["missing_total"] == 0)
 

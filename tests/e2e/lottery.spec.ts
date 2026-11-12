@@ -254,21 +254,29 @@ test('статистика: анализ за период, доверие к м
 
 test('автоанализ тиражей, «Пересчитать предсказания» и выгрузка прогнозов в цифровом виде', async ({ page, request }) => {
   await page.goto('/games/4x20')
-  // автоанализ на странице игры: после анализа за 3 дня (в тестах — без режима Бога) не хватает только «РБ»
+  // автоанализ — по всему архиву: анализ за период уже посчитал историю прогнозов, пропусков нет
   const cov = page.getByTestId('coverage')
-  await expect(cov.getByTestId('coverage-gaps')).toContainText('есть пропуски')
-  await expect(cov.getByTestId('coverage-gaps')).toContainText('РБ (Режим Бога)')
-  await expect(cov.getByTestId('coverage-gaps')).not.toContainText('ЛМА')
-  // «Пересчитать предсказания» — анализ за период только для этой игры
+  await expect(cov.getByTestId('coverage-ok')).toContainText('пропусков нет')
+  const before = await (await request.get('/api/games/4x20/coverage')).json()
+  expect(before.built && before.complete).toBe(true)
+  expect(before.with_predictions).toBeGreaterThan(before.draws / 2)
+  // без истории прогнозов (как сразу после обновления программы) — предложение её посчитать
+  const historyFile = path.join(__dirname, '.data', 'history', '4x20.json')
+  const saved = fs.readFileSync(historyFile)
+  fs.rmSync(historyFile)
+  await page.reload()
+  await expect(cov.getByTestId('coverage-unbuilt')).toContainText('ещё не посчитаны')
+  // «Пересчитать предсказания» — пересчёт только этой игры
   await cov.getByTestId('coverage-fix').click()
   await expect(cov.getByTestId('coverage-fix')).toHaveText('Пересчитываю…')
-  await expect(cov.getByTestId('coverage-fix')).toHaveText('Пересчитать предсказания', { timeout: 300_000 })
+  await expect(cov.getByTestId('coverage-ok')).toContainText('пропусков нет', { timeout: 300_000 })
+  expect(fs.existsSync(historyFile) && saved.length > 0).toBe(true)
   // доверие остальных игр при пересчёте одной не стирается
   const stats = await (await request.get('/api/stats')).json()
   expect(stats.trust.games.map((g: { slug: string }) => g.slug)).toEqual(expect.arrayContaining(['4x20', 'top-3']))
 
   // выгрузка в цифровом виде: кнопка на вкладке «Журнал прогнозов» с выбором периода
-  await expect(cov.getByTestId('coverage-origin')).toContainText('восстановлены анализом за период')
+  await expect(cov.getByTestId('coverage-origin')).toContainText('посчитаны задним числом')
   await page.getByTestId('tab-journal').click()
   // журнал показывает все тиражи со всеми методами: и записанные до тиража, и восстановленные анализом (с пометкой)
   await expect(page.getByTestId('journal-retro-note')).toContainText('восстановлены анализом за период')
@@ -291,6 +299,11 @@ test('автоанализ тиражей, «Пересчитать предск
   expect(nos.length).toBeGreaterThan(5)
   expect([...nos].sort((x, y) => x - y)).toEqual(nos)             // от самого дальнего к ближайшему
   expect(text.match(/^ЛМА: (.*)$/m)![1].split('; ')).toHaveLength(nos.length)
+  // «все тиражи» — весь архив, по которому есть предсказания, а не только период анализа
+  const after = await (await request.get('/api/games/4x20/coverage')).json()
+  expect(nos.length).toBe(after.with_predictions)
+  const month = (await (await request.get('/api/games/4x20/digital?days=3')).text()).match(/^Тиражи: (.*)$/m)![1].split('; ')
+  expect(month.length).toBeLessThan(nos.length)
 })
 
 test('шансы: точные вероятности и возврат по введённым призам', async ({ page }) => {

@@ -50,7 +50,7 @@ def test_journal_record_writes_all_draws_until_next_cycle(monkeypatch):
     monkeypatch.setattr(journal, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: now)}))
     lp.journal_record(data, "analysis_consensus", [[1, 2, 3, 4, 5]], "", ordered=False)
     nos = sorted(e["draw_no"] for e in journal.load("5x36")["entries"])
-    assert nos == [402, 403, 404, 405, 406]
+    assert nos == list(range(402, 411))            # горизонт 130 минут — два цикла автозапуска
 
 
 def test_golden_excludes_least_and_keeps_best():
