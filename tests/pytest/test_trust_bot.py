@@ -90,6 +90,34 @@ def test_final_is_recorded_after_two_sources(monkeypatch):
     assert len(final) == 1 and 1 not in final[0]["numbers"][0]
 
 
+def test_final_keeps_record_time_for_started_draw(monkeypatch):
+    """Финальный прогноз на тираж, который уже мог пройти (но ещё не загружен), не переписывается:
+    иначе у записи новое время — после тиража, и сверка её не засчитывает. Не меняется время записи
+    и когда числа остались прежними."""
+    import lp
+    from datetime import timedelta
+    data, now = _fast_game()
+    clock = {"now": now}
+    monkeypatch.setattr(lp, "game_activity", lambda d: {"active": True})
+    monkeypatch.setattr(lp, "FORECAST_HORIZON_MIN", 40.0)
+    monkeypatch.setattr(journal, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: clock["now"])}))
+    lp.journal_record(data, "analysis_best", [[1, 2, 3, 4, 5]], "", ordered=False)
+    lp.journal_record(data, "analysis_consensus", [[1, 2, 3, 4, 6]], "", ordered=False)
+    first = {e["draw_no"]: e for e in journal.load("5x36")["entries"] if e["source"] == "final"}
+    assert len(first) >= 2
+    near, far = min(first), max(first)
+    # те же числа — запись не трогается
+    lp.record_final(data)
+    assert {e["id"] for e in journal.load("5x36")["entries"] if e["source"] == "final"} == {e["id"] for e in first.values()}
+    # прошло 20 минут: ближайший тираж уже сыгран, архив ещё не обновлён; «Режим Бога» дописывает прогноз
+    clock["now"] = now + timedelta(minutes=20)
+    lp.journal_record(data, "godmode", [[30, 31, 32, 33, 34]], "", ordered=False)
+    lp.journal_record(data, "least", [[1, 2, 20, 21, 22]], "", ordered=False)
+    after = {e["draw_no"]: e for e in journal.load("5x36")["entries"] if e["source"] == "final"}
+    assert after[near]["id"] == first[near]["id"] and after[near]["made_at"] == first[near]["made_at"]
+    assert after[far]["id"] != first[far]["id"] and 1 not in after[far]["numbers"][0]      # будущий — пересчитан
+
+
 def test_auto_message_final_replaces_best_and_consensus():
     msg = notify.auto_message({"games": {}}, {"g": {"title": "Игра", "next_no": 5, "numbers": [[1, 2, 3]],
                                                     "consensus": [[1, 2, 4]], "final": [[1, 2, 9]], "golden": [[1, 2, 5]]}})

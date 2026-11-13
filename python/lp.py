@@ -236,9 +236,15 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
 def record_final(data) -> dict[int, list[list[int]]]:
     """«Финальное предсказание» на каждый будущий тираж, где уже есть прогнозы хотя бы двух
     источников: голосование с весами по доверию (lottery/trust.py). Пересчитывается после
-    каждого нового прогноза — к концу цикла в нём участвуют все источники."""
+    каждого нового прогноза — к концу цикла в нём участвуют все источники.
+
+    Уже записанный финальный прогноз переписывается, только если тираж ещё впереди (не раньше
+    ближайшего по journal.target_draw) и числа изменились. Иначе запись, сделанная до тиража,
+    получала бы новое время — после тиража, который уже сыгран, но ещё не загружен (например,
+    когда «Режим Бога» дописывает свой прогноз через несколько минут), — и сверка её не
+    засчитывала («прогноз после тиража»): финальное предсказание теряло по тиражу за цикл."""
     from lottery import trust
-    from lottery.journal import load, record_many
+    from lottery.journal import load, record_many, target_draw
     pending: dict[int, dict[str, list]] = {}
     for e in load(data.game.slug)["entries"]:
         if e["status"] == "pending" and e["draw_no"] > data.draws[-1].no:
@@ -247,10 +253,14 @@ def record_final(data) -> dict[int, list[list[int]]]:
     w = trust.weights(data.game.slug, table)
     rows = (table.get("games") or {}).get(data.game.slug, {}).get("sources", {})
     blocks = [s.to_dict() for s in data.fmt.blocks]
+    nearest = target_draw(data)["no"]
     out = {}
     for no, by_source in pending.items():
+        had = by_source.get("final")
+        if had is not None and no < nearest:
+            continue                                  # тираж уже мог пройти — прежняя запись остаётся
         numbers = trust.final_numbers(by_source, blocks, w)
-        if numbers:
+        if numbers and numbers != had:
             out[no] = numbers
     if out:
         any_sources = max(pending.values(), key=len)

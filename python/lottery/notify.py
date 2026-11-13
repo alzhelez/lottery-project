@@ -285,12 +285,14 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
                 h = sum(e["hits"] for e in es)
                 total = sum(sum(len(b) for b in e["numbers"]) for e in es)
                 label = SHORT.get(source, esc(es[0]["source_title"]))
+                # у метода прогноз не на все тиражи сводки — иначе его «из N» не сравнить с остальными
+                part = f" · по {len(es)} из {len(by_draw)} тир." if len(es) < len(by_draw) else ""
                 if source == "least":
-                    lines.append(f"  Н: выпало {h} из {total} (меньше — лучше)")
+                    lines.append(f"  Н: выпало {h} из {total} (меньше — лучше){part}")
                     continue
                 w = sum(e.get("won") or 0 for e in es)
                 lines.append(f"  {label}: {h} из {total} при ожидаемых {_dec(sum(e['expected'] for e in es), 1)}"
-                             + (f" — выигрыш {_rub(w)} ₽" if w else ""))
+                             + (f" — выигрыш {_rub(w)} ₽" if w else "") + part)
                 n += len(es)
                 hits += h
                 expected += sum(e["expected"] for e in es)
