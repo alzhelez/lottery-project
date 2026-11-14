@@ -7,7 +7,7 @@
     Сверка прогнозов: вкл/выкл      — приходят ли сообщения о сверке (сама сверка идёт всегда)
     Автозапуск: вкл/выкл            — приходят ли итоги автозапуска (сам автозапуск идёт всегда)
     Проверить статус приложения     — отвечает ли сайт, когда был последний цикл автозапуска
-    Выбор игры → игра               — статистика каждого метода за две недели
+    Выбор игры → игра               — таблицы: методы за месяц и лидеры по месяцам за полгода
               → метод               — время до ближайшего тиража и числа этого метода
 
 Настройки кнопок — data/telegram_settings.json (их читает notify.send).
@@ -27,7 +27,6 @@ from .games import data_dir, get_game
 from .journal import LOWER, SOURCES, load
 
 MUTABLE = {"journal": "Сверка прогнозов", "auto": "Автозапуск"}
-STATS_DAYS = 14
 POLL_S = 25
 APP_URL_ENV = "LOTTERY_APP_URL"
 
@@ -87,29 +86,12 @@ def games() -> list[tuple[str, str]]:
 
 
 def game_stats(slug: str, now: datetime | None = None) -> tuple[str, list[str]]:
-    """Текст статистики методов игры за две недели (по журналу) и источники с прогнозами."""
-    from .trust import _when, score
-    now = now or datetime.now()
-    since = now - timedelta(days=STATS_DAYS)
-    entries = load(slug)["entries"]
+    """Статистика методов игры таблицами — за месяц и лидеры за полгода (botstats.py) — и
+    источники, у которых есть прогноз на ближайшие тиражи."""
+    from .botstats import game_report
     title = get_game(slug).title
-    lines = [f"<b>{notify.esc(title)}</b> — журнал за {STATS_DAYS} дней",
-             "метод: прогнозов · угадано / случайный выбор · разница · доверие"]
-    rows = []
-    for source in SOURCES:
-        done = [e for e in entries if e["source"] == source and e["status"] == "checked"
-                and (_when(e) or now) >= since]
-        if done:
-            rows.append((source, score(done, source in LOWER)))
-    for source, r in sorted(rows, key=lambda x: -x[1]["trust"]):
-        note = " (меньше — лучше)" if source in LOWER else ""
-        lines.append(f"{notify.SHORT.get(source, '?')} {notify.esc(SOURCES[source])}: {r['n']} · {r['hits']} / "
-                     f"{notify._dec(r['expected'], 1)} · {r['excess_pct']:+.1f}%{note} · доверие {r['trust']:.0f}")
-    if not rows:
-        lines.append("сверенных прогнозов за это время нет")
-    has = [s for s in SOURCES if any(e["source"] == s and e["status"] == "pending" for e in entries)]
-    lines.append("\nВыберите метод — пришлю его числа на ближайший тираж.")
-    return "\n".join(lines), has
+    has = [s for s in SOURCES if any(e["source"] == s and e["status"] == "pending" for e in load(slug)["entries"])]
+    return f"<b>{notify.esc(title)}</b>\n{game_report(slug, now)}", has
 
 
 def _left(delta: timedelta) -> str:
@@ -181,7 +163,8 @@ def game_menu(slug: str) -> tuple[str, dict]:
     except (ValueError, OSError):
         check, need_fix = "", False
     if check:
-        text = f"{check}\n\n{text}"
+        text = f"{text}\n\n{check}"
+    text += "\n\nВыберите метод — пришлю его числа на ближайший тираж."
     buttons = [(f"{notify.SHORT.get(s, '?')} {SOURCES[s]}", f"m:{slug}:{s}") for s in has]
     rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
     if need_fix:

@@ -217,8 +217,18 @@ def test_bot_game_stats_and_method_forecast():
     journal.save("5x36", j)
     assert ("5x36", "5 из 36") in bot.games()
     text, has = bot.game_stats("5x36", now)
-    assert "журнал за 14 дней" in text and "Л Лучший метод анализа: 40 · 80 / 40,0 · +100.0%" in text
-    assert "Н Наименее вероятные: 40 · 0" in text and "Порядок из хаоса" not in text
+    # таблица за месяц: метод, тиражей, угадано, ожидалось, разница, доверие; Н — последней строкой
+    month = text.split("<pre>")[1].split("</pre>")[0].splitlines()
+    assert month[0].split() == ["М", "Тир", "Угад", "Ожид", "±%", "Дов"]
+    assert month[1].split() == ["Л", "40", "80", "40", "+100,0", "100"] and month[2].split() == ["Н", "40", "0", "40", "−100,0", "100"]
+    assert len(month) == 3 and all(len(line) <= 32 for line in month)          # хаос 40 дней назад — не за месяц
+    # лидеры за полгода: шесть 30-дневных отрезков; хаос — лидер отрезка 40 дней назад (один тираж — «~»)
+    half = text.split("<pre>")[2].split("</pre>")[0].splitlines()
+    assert len(half) == 7 and all(len(line) <= 30 for line in half)
+    assert half[-1].split()[1:] == ["Л", "+100,0", "100"] and half[-2].split()[1:] == ["~Х", "+400,0", "79"]
+    assert half[1].split()[1:] == ["—", "—", "—"]
+    assert "За все полгода: <b>Л Лучший метод анализа</b> — 40 тиражей" in text
+    assert "ещё не посчитаны" in text and "~ — меньше 30 тиражей" in text
     assert has == ["analysis_best"]
     _, kb = bot.game_menu("5x36")
     # первая кнопка — «Пересчитать предсказания» (истории прогнозов ещё нет), дальше — методы
@@ -239,7 +249,7 @@ def test_coverage_finds_draws_without_predictions_and_bot_offers_fix(monkeypatch
     text, need = coverage.summary("5x36")
     assert need and "ещё не посчитаны" in text
     msg, kb = bot.game_menu("5x36")
-    assert msg.startswith("⚠️ Автоанализ") and kb["inline_keyboard"][0][0] == {"text": "Пересчитать предсказания", "callback_data": "fix:5x36"}
+    assert "\n\n⚠️ Автоанализ" in msg and kb["inline_keyboard"][0][0] == {"text": "Пересчитать предсказания", "callback_data": "fix:5x36"}
     started = []
     monkeypatch.setattr(subprocess, "Popen", lambda cmd, **k: started.append(cmd))
     reply, _ = bot.route("fix:5x36")
