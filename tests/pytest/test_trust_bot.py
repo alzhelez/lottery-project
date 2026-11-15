@@ -240,7 +240,7 @@ def test_bot_game_stats_and_method_forecast():
     assert has == ["analysis_consensus"]
     _, kb = bot.game_menu("5x36")
     # первая кнопка — «Пересчитать предсказания» (истории прогнозов ещё нет), дальше — методы
-    assert [r[0]["callback_data"] for r in kb["inline_keyboard"][:2]] == ["fix:5x36", "m:5x36:analysis_consensus"]
+    assert [r[0]["callback_data"] for r in kb["inline_keyboard"][:3]] == ["fix:5x36", "m:5x36:analysis_consensus", "arch:5x36"]
     fc = bot.method_forecast("5x36", "analysis_consensus", now)
     assert "Ближайший тираж №402 — через " in fc and "Числа на №402: <code>1 2 3 4 5</code>" in fc
     assert "Прогноза этого метода на ближайший тираж нет" in bot.method_forecast("5x36", "godmode", now)
@@ -289,7 +289,8 @@ def test_coverage_finds_draws_without_predictions_and_bot_offers_fix(monkeypatch
     assert rows["analysis_consensus"][402] == "1,2,3,4,5"          # прогноз журнала — как записан
     assert all(403 in rows[s] for s in ("analysis_consensus", "least", "final"))
     # архивные методы задним числом не восстанавливаются: в истории остаётся посчитанное при сборке
-    assert all(403 not in rows[s] and 400 in rows[s] for s in ("analysis_best", "golden", "chaos"))
+    assert all(403 not in rows[s] and 400 in rows[s] for s in ("analysis_best", "golden"))
+    assert "chaos" not in rows                         # «Порядок из хаоса» считается только по кнопке
     assert history.fill(load_game_data(get_game("5x36")))["status"] == "up_to_date"
 
 
@@ -308,7 +309,14 @@ def test_history_covers_whole_archive_without_lookahead():
     expect = [d.no for d in data.draws[warm:]]
     for s in ("analysis_best", "analysis_consensus", "least", "golden", "final"):
         assert sorted(rows[s]) == expect, s
+    # «Порядок из хаоса» — в архиве: обычная сборка его не считает, считает кнопка «Запустить архивные методы»
+    assert "chaos" not in rows and history.refresh_chaos(data) > 0
+    h = history.load("5x36")
+    assert {s: v for s, v in history.rows_of(h).items() if s != "chaos"} == rows       # остальное не тронуто
+    rows = history.rows_of(h)
     assert 0 < len(rows["chaos"]) < len(expect) and max(rows["chaos"]) == 700     # только контрольный отрезок
+    retro.run(["5x36"], days=2, godmode_budget=0, now=now, log=lambda m: None)
+    assert history.rows_of(history.load("5x36"))["chaos"] == rows["chaos"]           # следующая сборка его переносит
     assert h["draws"]["nos"] == expect and h["draws"]["actual"][0] == history.enc(data.draws[warm].blocks)
     # «анализ за период» — те же числа, что в истории
     for e in journal.load("5x36", retro=True)["entries"]:

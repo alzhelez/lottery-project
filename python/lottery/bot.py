@@ -7,7 +7,9 @@
     Сверка прогнозов: вкл/выкл      — приходят ли сообщения о сверке (сама сверка идёт всегда)
     Автозапуск: вкл/выкл            — приходят ли итоги автозапуска (сам автозапуск идёт всегда)
     Проверить статус приложения     — отвечает ли сайт, когда был последний цикл автозапуска
-    Выбор игры → игра               — таблицы: методы за месяц и лидеры по месяцам за полгода
+    Выбор игры → игра               — таблицы: методы за месяц и лидеры по месяцам за полгода;
+                                      ближайший тираж: возврат, общие числа Ф, К, Б, редкая комбинация;
+                                      «Запустить архивные методы» — их числа придут сообщением
               → метод               — время до ближайшего тиража и числа этого метода
 
 Настройки кнопок — data/telegram_settings.json (их читает notify.send).
@@ -68,6 +70,11 @@ def app_status() -> str:
             lines.append(f"Сейчас: {notify.esc(st['current'].get('stage', ''))}")
     except (OSError, ValueError):
         lines.append("Автозапуск ещё не запускался")
+    try:
+        from . import findings
+        lines.append(notify.esc(findings.summary()))
+    except Exception:  # noqa: BLE001 — строка о находках не должна ломать ответ
+        pass
     lines.append(f"Проверено {datetime.now():%d.%m %H:%M}")
     return "\n".join(lines)
 
@@ -155,9 +162,95 @@ def games_menu() -> tuple[str, dict]:
     return ("Список доступных игр:" if gs else "Игр с прогнозами пока нет.", _kb(rows + [[("← Меню", "menu")]]))
 
 
+def nearest(slug: str, now: datetime | None = None) -> tuple[int | None, datetime | None, dict[str, dict]]:
+    """Ближайший тираж игры: (номер, время, {метод: запись журнала с прогнозом на него})."""
+    from .drawfile import load_game_data
+    from .journal import target_draw
+    now = now or datetime.now()
+    try:
+        target = target_draw(load_game_data(get_game(slug)), now)
+    except (ValueError, OSError):
+        target = {"no": None, "date": None}
+    pending = sorted((e for e in load(slug)["entries"] if e["status"] == "pending"
+                      and (target["no"] is None or e["draw_no"] >= target["no"])), key=lambda e: e["draw_no"])
+    # номер — тиража, на который есть прогнозы (он может быть дальше расчётного ближайшего)
+    first = pending[0]["draw_no"] if pending else None
+    no = first if first is not None else target["no"]
+    return no, target.get("date") if no == target["no"] else None, {e["source"]: e for e in pending if e["draw_no"] == first}
+
+
+def next_draw_block(slug: str, now: datetime | None = None) -> str:
+    """То же, что карточка ближайшего тиража в «Обзоре» сайта: ожидаемый возврат, числа, общие для
+    Ф, К и Б, и «редкая комбинация»."""
+    from . import rarity
+    from .games import results_dir
+    now = now or datetime.now()
+    no, when, by = nearest(slug, now)
+    if no is None:
+        return ""
+    lines = [f"<b>Ближайший тираж №{no}</b>" + (f" — {_left(when - now)} ({when:%d.%m %H:%M})" if when else "")]
+    try:
+        money = json.loads((results_dir() / "nextdraw.json").read_text(encoding="utf-8")).get("games", {}).get(slug)
+    except (OSError, ValueError):
+        money = None
+    if money and money.get("number") == no:
+        peak = money.get("peak") or {}
+        line = f"Ожидаемый возврат: {notify._dec(money['return'], 2)} на рубль"
+        if money.get("usual_return") is not None:
+            line += f" (обычно {notify._dec(money['usual_return'], 2)})"
+        if peak.get("is_max"):
+            line += f" — максимум за {peak['days']} дн. наблюдений"
+        lines.append(line)
+    voters = [by[s]["numbers"] for s in ("final", "analysis_consensus", "godmode") if s in by]
+    if "analysis_consensus" in by and "godmode" in by:
+        common = [sorted(n for n in voters[0][b] if all(n in v[b] for v in voters)) for b in range(len(voters[0]))]
+        shown = " | ".join(" ".join(str(n) for n in b) or "—" for b in common)
+        lines.append("Есть у каждого метода (Ф, К, Б): " + (f"<code>{shown}</code>" if any(common) else "таких чисел нет"))
+    r = rarity.read(slug) or {}
+    last = max((e["based_on"] for e in by.values() if e.get("based_on") is not None), default=None)
+    if r.get("rare") and r.get("based_on") == last:
+        lines.append(f"Редкая комбинация (не прогноз — числа, которые редко ставят): "
+                     f"<code>{notify.esc(notify.fmt_blocks(r['rare']['numbers']))}</code>")
+    return "\n".join(lines)
+
+
+def start_archive(slug: str) -> str:
+    """Разовый запуск архивных методов (Л, З, Х) отдельным процессом — lp.py archive --notify."""
+    import subprocess
+    import sys
+    from pathlib import Path
+    lp = Path(__file__).resolve().parents[1] / "lp.py"
+    flags = {"creationflags": 0x08000000} if os.name == "nt" else {"start_new_session": True}   # без окна
+    subprocess.Popen([sys.executable, str(lp), "archive", "--game", slug, "--notify"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, **flags)
+    return (f"Архивные методы «{notify.esc(get_game(slug).title)}» запущены: лучший метод, золотая середина и порядок "
+            "из хаоса. Это несколько минут — пришлю их числа, когда посчитаются.")
+
+
+def archive_done_message(slug: str, now: datetime | None = None) -> str:
+    """Числа архивных методов на ближайший тираж — после запуска кнопкой бота."""
+    from .journal import ARCHIVED
+    no, when, by = nearest(slug, now)
+    lines = [f"<b>{notify.esc(get_game(slug).title)}</b> — архивные методы" + (f", тираж №{no}" if no else "")]
+    got = [s for s in SOURCES if s in ARCHIVED and s in by]
+    for s in got:
+        lines.append(f"  {notify.SHORT[s]} {notify.esc(SOURCES[s])}: <code>{notify.esc(notify.fmt_blocks(by[s]['numbers']))}</code>")
+    if not got:
+        lines.append("Прогнозов нет: игра неактивна или в архиве мало тиражей.")
+    else:
+        lines.append("Прогнозы записаны в журнал и будут сверены; в «Финальном предсказании» не участвуют.")
+    return "\n".join(lines)
+
+
 def game_menu(slug: str) -> tuple[str, dict]:
     from .coverage import summary
     text, has = game_stats(slug)
+    try:
+        block = next_draw_block(slug)
+    except Exception:  # noqa: BLE001 — блок ближайшего тиража не должен ломать меню игры
+        block = ""
+    if block:
+        text = f"{text}\n\n{block}"
     try:
         check, need_fix = summary(slug)
     except (ValueError, OSError):
@@ -169,6 +262,7 @@ def game_menu(slug: str) -> tuple[str, dict]:
     rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
     if need_fix:
         rows.insert(0, [("Пересчитать предсказания", f"fix:{slug}")])
+    rows.append([("Запустить архивные методы (Л, З, Х)", f"arch:{slug}")])
     return text, _kb(rows + [[("← Игры", "games"), ("← Меню", "menu")]])
 
 
@@ -233,6 +327,8 @@ def route(data: str) -> tuple[str, dict]:
         return start_analysis(int(data[4:])), _kb([[("← Меню", "menu")]])
     if data.startswith("g:") and get_game(data[2:]) is not None:
         return game_menu(data[2:])
+    if data.startswith("arch:") and get_game(data[5:]) is not None:
+        return start_archive(data[5:]), _kb([[("← К игре", f"g:{data[5:]}"), ("← Меню", "menu")]])
     if data.startswith("fix:") and get_game(data[4:]) is not None:
         from .coverage import analysis_days
         return start_analysis(analysis_days(), data[4:]), _kb([[("← К игре", f"g:{data[4:]}"), ("← Меню", "menu")]])

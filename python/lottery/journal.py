@@ -47,15 +47,73 @@ def journal_path(slug: str, retro: bool = False):
     return data_dir() / ("journal_retro" if retro else "journal") / f"{slug}.json"
 
 
+# ── хранение ────────────────────────────────────────────────────────────────
+# Формат файла 2 (42.12.0): описание полей (blocks) хранится один раз в шапке, у записи — его номер;
+# название источника в файл не пишется; запись — одна строка без отступов. Файл в 2,5 раза меньше,
+# сведения те же. Записи старше SLIM_DAYS дней (уже сверенные) хранятся без служебных полей
+# SLIM_DROP: числа, выпавшее, результат, выигрыш и время остаются — статистика не меняется.
+# load() возвращает записи в прежнем виде (blocks — список, source_title — название), поэтому
+# остальной код формата не замечает; старые файлы (формат 1) читаются как есть.
+STORE_FORMAT = 2
+SLIM_DAYS = 30
+SLIM_DROP = ("detail", "based_on", "checked_at")
+
+
+def _expand(journal: dict) -> dict:
+    shared = journal.pop("blocks", None)
+    journal.pop("format", None)
+    for e in journal.get("entries", []):
+        if shared is not None and isinstance(e.get("blocks"), int):
+            e["blocks"] = shared[e["blocks"]]
+        e.setdefault("source_title", SOURCES.get(e.get("source"), e.get("source")))
+        e.setdefault("detail", "")
+    return journal
+
+
+def _old(e: dict, now: datetime) -> bool:
+    if e.get("status") == "pending":
+        return False
+    try:
+        return (now - datetime.fromisoformat(e["made_at"])).days > SLIM_DAYS
+    except (KeyError, ValueError):
+        return False
+
+
+def _pack(journal: dict, now: datetime | None = None) -> str:
+    now = now or datetime.now()
+    shared: list = []
+    index: dict[str, int] = {}
+    lines = []
+    for e in journal.get("entries", []):
+        # название источника пишется, только если оно не из SOURCES (убранные методы: «эхо ±3» и т. п.)
+        row = {k: v for k, v in e.items() if k != "source_title" or v != SOURCES.get(e.get("source"))}
+        if isinstance(row.get("blocks"), list):
+            key = json.dumps(row["blocks"], ensure_ascii=False, sort_keys=True)
+            if key not in index:
+                index[key] = len(shared)
+                shared.append(row["blocks"])
+            row["blocks"] = index[key]
+        if _old(row, now):
+            for k in SLIM_DROP:
+                row.pop(k, None)
+        elif not row.get("detail"):
+            row.pop("detail", None)
+        lines.append(json.dumps(row, ensure_ascii=False, separators=(",", ":")))
+    head = {k: v for k, v in journal.items() if k not in ("entries", "blocks", "format")}
+    head.update({"format": STORE_FORMAT, "blocks": shared})
+    return (json.dumps(head, ensure_ascii=False, separators=(",", ":"))[:-1]
+            + ',"entries":[\n' + ",\n".join(lines) + "\n]}\n")
+
+
 def load(slug: str, retro: bool = False) -> dict:
     try:
-        return json.loads(journal_path(slug, retro).read_text(encoding="utf-8"))
+        return _expand(json.loads(journal_path(slug, retro).read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return {"game": slug, "entries": []}
 
 
 def save(slug: str, journal: dict, retro: bool = False) -> None:
-    write_text(journal_path(slug, retro), json.dumps(journal, ensure_ascii=False, indent=1))
+    write_text(journal_path(slug, retro), _pack(journal))
 
 
 TARGET_MARGIN_S = 90      # прогноз должен быть записан хотя бы за полторы минуты до тиража

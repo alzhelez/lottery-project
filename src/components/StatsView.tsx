@@ -25,7 +25,48 @@ interface TrustRow {
   mde_pct?: number | null; need?: number | null; proven?: boolean
 }
 interface TrustGame { slug: string; title: string; rows: TrustRow[] }
+interface FindingRow {
+  slug: string; title: string; source: string; source_title: string; n: number; excess_pct: number; z: number
+  need?: number | null; since?: string
+}
+interface Findings {
+  updated_at: string
+  rule: { n_min: number; alpha: number; pairs: number; z_crit: number }
+  confirmed: FindingRow[]; candidates: FindingRow[]; closest: FindingRow[]
+}
+
+/** «Находки»: заранее записанное правило, по которому метод считается отличимым от случайного выбора. */
+function FindingsBlock({ f, slug }: { f: Findings; slug?: string }) {
+  const mine = (rows: FindingRow[]) => (slug ? rows.filter((r) => r.slug === slug) : rows)
+  const confirmed = mine(f.confirmed)
+  const candidates = mine(f.candidates)
+  const line = (r: FindingRow) => `${slug ? '' : `${r.title} — `}${r.source_title}: ${nf.format(r.n)} прогнозов, ${signed(r.excess_pct)} к случайному, z = ${num(r.z, 2)}`
+  return (
+    <section className="card" data-testid="findings" style={{ margin: '12px 0' }}>
+      <b>Находки</b>{' '}
+      {confirmed.length
+        ? <span className="status-tag st-done" data-testid="findings-status">подтверждено: {confirmed.length}</span>
+        : <span className="status-tag st-skipped" data-testid="findings-status">подтверждённых нет</span>}
+      {confirmed.length > 0 && <ul className="small">{confirmed.map((r) => <li key={r.slug + r.source}><b>{line(r)}</b></li>)}</ul>}
+      {candidates.length > 0 && (
+        <p className="small" data-testid="findings-candidates">
+          Кандидаты — порог пройден, но прогнозов меньше {nf.format(f.rule.n_min)}, судить рано: {candidates.map(line).join('; ')}.
+        </p>
+      )}
+      <p className="muted small" style={{ marginBottom: 0 }}>
+        Правило записано заранее и под данные не подбирается: пара «игра + метод» должна набрать не меньше{' '}
+        {nf.format(f.rule.n_min)} прогнозов, записанных в журнал до тиража, и отрыв от случайного выбора должен быть значим с
+        поправкой на число пар — z ≥ {num(f.rule.z_crit, 2)} (сейчас пар {f.rule.pairs}). Расчёты задним числом не в счёт.
+        {!slug && f.closest.length > 0 && (
+          <> Ближе всего к порогу: {f.closest.filter((r) => r.z > 0).map((r) => `${r.title} — ${r.source_title} (z = ${num(r.z, 2)}, ${nf.format(r.n)} прогнозов)`).join('; ') || 'никто'}.</>
+        )}
+      </p>
+    </section>
+  )
+}
+
 interface Stats {
+  findings?: Findings | null
   games: Game[]; watch: Watch[]
   trust: { made_at?: string; days?: number; since?: string; games: TrustGame[] } | null
   period: { days?: number; since?: string; games: Game[] } | null
@@ -236,6 +277,8 @@ export function StatsView({ slug }: { slug?: string } = {}) {
         Кнопка пересчитывает «Доверие к методам» и «По методам» всех игр; автозапуск повторяет анализ раз в неделю за тот
         же период и обновляет доверие в каждом цикле.
       </p>
+
+      {all.findings?.rule && <FindingsBlock f={all.findings} slug={slug} />}
 
       {slugs.length === 0 && (
         <p className="empty" data-testid="trust-empty">Данных пока нет — проведите анализ за период или дождитесь первых сверенных прогнозов.</p>

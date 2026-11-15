@@ -416,6 +416,19 @@ def drift_message(title: str, alarms: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def finding_message(found: dict) -> str:
+    """Пара «игра + метод» впервые прошла заранее записанное правило находки (findings.py)."""
+    rule = found["rule"]
+    lines = ["<b>Подтверждённая находка</b> — метод прошёл заранее записанное правило"]
+    for r in found["new"]:
+        lines.append(f"• <b>{esc(r['title'])}</b> — {esc(r['source_title'])}: {r['n']} прогнозов журнала, "
+                     f"{_dec(r['excess_pct'], 1)} % к случайному выбору, z = {_dec(r['z'], 2)}")
+    lines.append(f"Правило: не меньше {rule['n_min']} прогнозов, записанных до тиража, и z ≥ {_dec(rule['z_crit'], 2)} "
+                 f"(поправка на {rule['pairs']} пар «игра + метод»). Это повод проверить игру вручную, а не гарантия выигрыша: "
+                 "отрыв в доли процента не покрывает долю организатора.")
+    return "\n".join(lines)
+
+
 def anomaly_message(changes: list[dict]) -> str:
     """Сторож аномалий: у каких игр проверка на случайность изменила вывод."""
     from .scan import LEVELS

@@ -98,8 +98,9 @@ def test_retro_is_honest_and_separate():
     es = rj["entries"]
     by_source = st["games"]["5x36"]["by_source"]
     week = sum(1 for d in data.draws if d.dt >= now - timedelta(days=2))
-    for s in ("analysis_best", "analysis_consensus", "least", "golden", "chaos"):
+    for s in ("analysis_best", "analysis_consensus", "least", "golden"):
         assert by_source[s] == week, s
+    assert by_source["chaos"] == 0          # «Порядок из хаоса» — в архиве: анализ за период его не считает
     assert all(e["status"] == "checked" and e["retro"] for e in es)
     first = min(e["draw_no"] for e in es)
     # те же тиражи, но всё после первого тиража недели — другое: прогноз на первый не меняется

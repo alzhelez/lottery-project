@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
-import { gameTitle, isExcluded, readJournal, readJson } from '@/lib/games'
+import { gameTitle, isExcluded, readJournal, readJournalFile, readJson } from '@/lib/games'
 import { bestWorst, gameMetric, halfSummary, heterogeneity, type StatEntry, thresholdLabel, watchList } from '@/lib/halfStats'
 import { SOURCES } from '@/lib/journalStats'
 import { dataDir } from '@/lib/paths'
@@ -63,7 +63,7 @@ function periodStats(slug: string, since: number) {
   if (hit && hit.key === key) return hit.stats
   const byKey = new Map<string, StatEntry>()
   for (const f of files) {                        // журнал — вторым: перекрывает запись анализа
-    for (const e of readJson<{ entries?: StatEntry[] }>(f)?.entries ?? []) {
+    for (const e of readJournalFile<StatEntry>(f)?.entries ?? []) {
       if (e.status === 'checked' && entryTime(e) >= since) byKey.set(`${e.source}:${e.draw_no}`, e)
     }
   }
@@ -87,7 +87,7 @@ export async function GET() {
   const status = readJson<Record<string, unknown>>(path.join(retroDir, 'status.json'))
   const retroGames = slugsIn(retroDir)
     .map((slug) => cachedStats(path.join(retroDir, `${slug}.json`), slug,
-      () => readJson<{ entries?: StatEntry[] }>(path.join(retroDir, `${slug}.json`))?.entries ?? []))
+      () => readJournalFile<StatEntry>(path.join(retroDir, `${slug}.json`))?.entries ?? []))
     .filter((g): g is NonNullable<typeof g> => g != null && g.rows.length > 0)
     .sort((a, b) => a.title.localeCompare(b.title, 'ru'))
   // доверие к методам (python/lottery/trust.py): рейтинг источников в каждой игре за период
@@ -109,6 +109,8 @@ export async function GET() {
   return NextResponse.json({
     games,
     trust,
+    // «находки» — заранее записанное правило (python/lottery/findings.py), пересчитывается каждый цикл
+    findings: readJson<Record<string, unknown>>(path.join(dataDir(), 'findings.json')),
     period,
     watch: watchList(games),
     retro: {

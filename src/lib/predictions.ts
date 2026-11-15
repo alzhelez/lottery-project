@@ -8,7 +8,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { readJson } from './games'
+import { readJournalFile, readJson } from './games'
 import { dataDir, drawsFile } from './paths'
 
 /** Методы, которые сейчас пишут прогнозы, и их сокращения для выгрузки. */
@@ -53,7 +53,7 @@ export function drawList(slug: string): Array<{ no: number; time: number; date: 
 export function checkedEntries(slug: string): Map<string, PEntry> {
   const by = new Map<string, PEntry>()
   for (const dir of ['journal_retro', 'journal']) {
-    const j = readJson<{ entries?: PEntry[] }>(path.join(dataDir(), dir, `${slug}.json`))
+    const j = readJournalFile<PEntry>(path.join(dataDir(), dir, `${slug}.json`))
     for (const e of j?.entries ?? []) if (e.status === 'checked') by.set(`${e.source}:${e.draw_no}`, e)
   }
   return by

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import path from 'node:path'
-import { readJournal, readJson } from '@/lib/games'
+import { readJournal, readJournalFile } from '@/lib/games'
 import { type JournalEntry as Entry, summarize } from '@/lib/journalStats'
 import { dataDir, isValidSlug } from '@/lib/paths'
 import { analysisDays, drawList, historyEntries } from '@/lib/predictions'
@@ -18,7 +18,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   // записи журнала на этот тираж у метода нет, — с пометкой retro; итоги по источникам выше считаются
   // только по настоящему журналу. Вся история (весь архив) — в выгрузке «в цифровом виде».
   const have = new Set(real.filter((e) => e.status === 'checked').map((e) => `${e.source}:${e.draw_no}`))
-  const retro = (readJson<{ entries?: Entry[] }>(path.join(dataDir(), 'journal_retro', `${slug}.json`))?.entries ?? [])
+  const retro = (readJournalFile<Entry>(path.join(dataDir(), 'journal_retro', `${slug}.json`))?.entries ?? [])
     .filter((e) => e.status === 'checked' && !have.has(`${e.source}:${e.draw_no}`))
     .map((e) => ({ ...e, retro: true }))
   for (const e of retro) have.add(`${e.source}:${e.draw_no}`)

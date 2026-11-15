@@ -523,6 +523,12 @@ def cmd_archive(args) -> None:
     from lottery.journal import ARCHIVED, load
     payload = analyze_game(args.game, progress=emit, full=False)
     data = load_game_data(get_game(args.game))
+    if payload["evaluation"].get("status") == "ok":
+        from lottery import history
+        emit({"type": "progress", "model": "«Порядок из хаоса»: прогнозы на весь архив"})
+        n = history.refresh_chaos(data)             # еженедельный анализ за период хаос больше не считает
+        if n is not None:
+            say(f"«Порядок из хаоса»: в истории прогнозов {n} тиражей")
     done = sorted({e["source"] for e in load(args.game)["entries"]
                    if e["source"] in ARCHIVED and e["status"] == "pending" and e["draw_no"] > data.draws[-1].no})
     emit({"type": "result", "sources": done})
@@ -530,6 +536,9 @@ def cmd_archive(args) -> None:
         say(f"Архивные методы не посчитаны: {payload['evaluation'].get('message', 'мало тиражей')}")
     else:
         say("Архивные методы посчитаны, прогноз в журнале: " + (", ".join(done) or "нет (игра неактивна)"))
+    if getattr(args, "notify", False):          # запуск кнопкой бота: числа — сообщением
+        from lottery import bot, notify
+        notify.send(bot.archive_done_message(args.game), "auto", force=True)
 
 
 def cmd_chaos(args) -> None:
@@ -666,6 +675,14 @@ def auto_once(args) -> dict:
             trust.build(forecast_slugs(), int(retro.load_status().get("days") or trust.load_trust().get("days") or 7))
         except Exception as exc:  # noqa: BLE001 — рейтинг не должен ронять цикл
             log(f"Доверие к методам не пересчитано: {type(exc).__name__}: {exc}")
+        # «находки» — заранее записанное правило (lottery/findings.py); о новой подтверждённой — в Telegram
+        try:
+            from lottery import findings, notify
+            found = findings.build(forecast_slugs())
+            if found["new"]:
+                notify.send(notify.finding_message(found), "drift")
+        except Exception as exc:  # noqa: BLE001
+            log(f"Находки не проверены: {type(exc).__name__}: {exc}")
         for slug, r in fetched.items():
             status["games"].setdefault(slug, {}).update(
                 {"fetch": r.get("status"), "added": r.get("added", 0), "journal_checked": r.get("journal_checked", 0)})
@@ -1723,6 +1740,7 @@ def main() -> None:
     p.add_argument("--game", required=True)
     p = sub.add_parser("archive", help="разовый запуск архивных методов (Л, З, Х): прогноз в журнал")
     p.add_argument("--game", required=True)
+    p.add_argument("--notify", action="store_true", help="прислать числа в Telegram (так запускает бот)")
     p = sub.add_parser("godmode")
     p.add_argument("--game", required=True)
     p.add_argument("--budget", type=float, default=480.0,

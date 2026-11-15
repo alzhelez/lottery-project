@@ -140,11 +140,16 @@ def test_daily_backup_rotation_and_restore(data_dir):
     (data_dir / "journal" / "5x36.json").write_text('{"entries": [1]}', encoding="utf-8")
     data = _game()
     mytickets.add(data, [[1, 2, 3, 4, 5]], price=80)
+    # история возврата тиражей и настройки бота заново не скачать — тоже в копию; прочее из data — нет
+    (data_dir / "nextdraw_history.json").write_text('{"5x36": []}', encoding="utf-8")
+    (data_dir / "telegram_settings.json").write_text('{"muted": ["auto"]}', encoding="utf-8")
+    (data_dir / "trust.json").write_text("{}", encoding="utf-8")
     day = datetime(2026, 10, 1, 3, 0)
     first = backup.daily(now=day)
     assert first and backup.backup_dir() == data_dir.parent / "backup"
     with zipfile.ZipFile(first["path"]) as z:
-        assert sorted(z.namelist()) == ["journal/5x36.json", "my_tickets/5x36.json"]
+        assert sorted(z.namelist()) == ["journal/5x36.json", "my_tickets/5x36.json", "nextdraw_history.json",
+                                        "telegram_settings.json"]
     assert backup.daily(now=day + timedelta(hours=5)) is None          # раз в сутки
     for i in range(1, backup.KEEP + 3):
         backup.daily(now=day + timedelta(days=i))
@@ -154,8 +159,11 @@ def test_daily_backup_rotation_and_restore(data_dir):
     assert info["count"] == backup.KEEP and info["last"]["name"] == "lottery-backup-2026-11-02.zip"
     # восстановление: журнал испорчен — возвращаем из архива, текущее состояние тоже сохраняется
     (data_dir / "journal" / "5x36.json").write_text('{"entries": []}', encoding="utf-8")
+    (data_dir / "telegram_settings.json").unlink()
     res = backup.restore("lottery-backup-2026-11-02.zip")
-    assert sorted(res["restored"]) == ["journal/5x36.json", "my_tickets/5x36.json"]
+    assert sorted(res["restored"]) == ["journal/5x36.json", "my_tickets/5x36.json", "nextdraw_history.json",
+                                       "telegram_settings.json"]
+    assert json.loads((data_dir / "telegram_settings.json").read_text(encoding="utf-8")) == {"muted": ["auto"]}
     assert json.loads((data_dir / "journal" / "5x36.json").read_text(encoding="utf-8")) == {"entries": [1]}
     assert (backup.backup_dir() / res["before"]).exists()
     with pytest.raises(ValueError):

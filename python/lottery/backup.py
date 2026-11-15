@@ -1,13 +1,16 @@
 """Резервная копия того, что нельзя скачать заново, и уборка файлов убранных игр.
 
 Тиражи, таблицы призов и правила всегда можно заново загрузить со Столото, а журнал
-прогнозов (data/journal) и «Мои билеты» (data/my_tickets) — нет: это история, накопленная
-на этом компьютере. Раз в сутки автозапуск складывает их в архив
+прогнозов (data/journal), «Мои билеты» (data/my_tickets), история ожидаемого возврата
+ближайших тиражей (data/nextdraw_history.json — по ней считается «максимум за полгода») и
+настройки кнопок бота (data/telegram_settings.json; токена в них нет — он в .env) — нет:
+это история, накопленная на этом компьютере. История прогнозов на весь архив (data/history) в
+копию не входит: она пересчитывается кнопкой «Пересчитать предсказания». Раз в сутки автозапуск складывает их в архив
 backup/lottery-backup-ГГГГ-ММ-ДД.zip — папка рядом с data (или LOTTERY_BACKUP_DIR), чтобы
 копия не пропала вместе с папкой data. Хранятся последние KEEP архивов.
 
 Восстановление: `lp.bat backup restore <архив>` — перед этим текущее состояние тоже
-сохраняется в архив, а из архива берутся только файлы журнала и билетов.
+сохраняется в архив, а из архива берутся только перечисленные файлы.
 
 Уборка: у игр, убранных из программы (поле excluded в config/games.json), удаляются
 тиражи, таблицы призов, правила и результаты анализа. Журнал и билеты этих игр сначала
@@ -27,7 +30,8 @@ from .games import _registry, data_dir
 KEEP = 30
 DAILY_RE = re.compile(r"^lottery-backup-(\d{4}-\d{2}-\d{2})\.zip$")
 PARTS = ("journal", "my_tickets")          # что входит в архив: папки внутри data
-MEMBER_RE = re.compile(r"^(journal|my_tickets)/[a-z0-9_-]+\.json$")
+FILES = ("nextdraw_history.json", "telegram_settings.json")     # и отдельные файлы из data
+MEMBER_RE = re.compile(r"^((journal|my_tickets)/[a-z0-9_-]+\.json|nextdraw_history\.json|telegram_settings\.json)$")
 
 
 def backup_dir() -> Path:
@@ -44,6 +48,8 @@ def _files(slugs: set[str] | None = None) -> list[tuple[Path, str]]:
         for p in sorted(folder.glob("*.json")):
             if slugs is None or p.stem in slugs:
                 out.append((p, f"{part}/{p.name}"))
+    if slugs is None:                       # общие файлы — только в полную копию, не в архив убранной игры
+        out += [(data_dir() / name, name) for name in FILES if (data_dir() / name).exists()]
     return out
 
 
@@ -112,7 +118,8 @@ def info() -> dict:
 
 
 def restore(name: str) -> dict:
-    """Возвращает журнал и билеты из архива. Перед этим сохраняет текущее состояние."""
+    """Возвращает журнал, билеты, историю возврата и настройки бота из архива. Перед этим сохраняет
+    текущее состояние."""
     if "/" in name or "\\" in name or not name.endswith(".zip"):
         raise ValueError("укажите имя архива из папки резервных копий")
     src = backup_dir() / name
@@ -123,7 +130,7 @@ def restore(name: str) -> dict:
     with zipfile.ZipFile(src) as z:
         for m in z.namelist():
             if not MEMBER_RE.match(m):
-                continue        # только файлы журнала и билетов, без путей вида ../
+                continue        # только файлы из списка, без путей вида ../
             target = data_dir() / m
             target.parent.mkdir(parents=True, exist_ok=True)
             from .fsutil import write_text

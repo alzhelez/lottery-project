@@ -325,7 +325,7 @@ test('автоанализ тиражей, «Пересчитать предск
   expect(await draws.count()).toBeGreaterThan(5)
   await draws.nth(4).click()
   await expect(page.getByTestId('journal-source-row').filter({ hasText: 'Лучший метод анализа' })).toContainText('восстановлен анализом за период')
-  expect(await page.getByTestId('journal-source-row').count()).toBeGreaterThanOrEqual(6)   // все методы, кроме режима Бога
+  expect(await page.getByTestId('journal-source-row').count()).toBeGreaterThanOrEqual(5)   // Ф, Л, К, З, Н: режима Бога в тестах нет, «Порядок из хаоса» анализ за период не считает
   await page.getByTestId('digital-period').selectOption('0')
   await expect(page.getByTestId('digital-export')).toHaveAttribute('href', '/api/games/4x20/digital?days=0')
   const res = await request.get('/api/games/4x20/digital?days=0')
@@ -479,6 +479,14 @@ test('автозапуск: цикл из приложения', async ({ page }
   for (const title of ['Лучший метод анализа', 'Золотая середина', 'Порядок из хаоса']) {
     await expect(page.getByTestId('journal-source-row').filter({ hasText: title })).toHaveCount(0)
   }
+  // «Находки»: цикл проверил заранее записанное правило — на тестовых данных подтверждённых нет
+  await page.goto('/stats')
+  await expect(page.getByTestId('findings-status')).toHaveText('подтверждённых нет')
+  await expect(page.getByTestId('findings')).toContainText('не меньше 5 000 прогнозов')
+  // журнал хранится в компактном виде: описание полей — один раз в шапке файла
+  const stored = JSON.parse(fs.readFileSync(path.join(__dirname, '.data', 'journal', '4x20.json'), 'utf8'))
+  expect(stored.format).toBe(2)
+  expect(stored.entries.every((e: { blocks: unknown }) => typeof e.blocks === 'number')).toBe(true)
 })
 
 test('устаревшая игра: анализ есть, в журнал не пишется', async ({ page }) => {

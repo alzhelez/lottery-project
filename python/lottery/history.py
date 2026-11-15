@@ -211,13 +211,21 @@ def save(data: GameData, rows: Rows, details: dict[str, str], acc: dict, scorer:
 
 
 def build(data: GameData, godmode: list[dict] | None = None, godmode_title: str = "",
-          now: datetime | None = None) -> tuple[dict, dict]:
+          now: datetime | None = None, chaos: bool = False) -> tuple[dict, dict]:
     """Полная сборка истории игры. godmode — прогнозы «лидера за всю историю» режима Бога
-    ([{no, predicted}], godmode.auto_run c retro_from_no). Возвращает (история, сведения)."""
+    ([{no, predicted}], godmode.auto_run c retro_from_no). Возвращает (история, сведения).
+
+    «Порядок из хаоса» — в архиве методов и считается отдельно (chaos=True; кнопка «Запустить
+    архивные методы» — refresh_chaos): обычная сборка переносит его прогнозы из прежней истории."""
     rows, details, info = eval_rows(data)
     if not rows:
         return {}, info
-    ch, ch_title = chaos_rows(data)
+    if chaos:
+        ch, ch_title = chaos_rows(data)
+    else:
+        old = load(data.game.slug)
+        ch = rows_of(old).get("chaos") if old else None
+        ch_title = ((old or {}).get("sources", {}).get("chaos") or {}).get("detail", "")
     if ch:
         rows["chaos"], details["chaos"] = ch, ch_title
     if godmode:
@@ -228,6 +236,26 @@ def build(data: GameData, godmode: list[dict] | None = None, godmode_title: str 
     add_final(rows, scorer, acc, sorted({no for r in rows.values() for no in r}))
     details["final"] = "голосование по доверию, накопленному к этому тиражу"
     return save(data, rows, details, acc, scorer, now=now), info
+
+
+def refresh_chaos(data: GameData) -> int | None:
+    """Пересчитывает в готовой истории прогнозы «Порядка из хаоса» на весь архив (кнопка «Запустить
+    архивные методы»). Остальные методы и «Ф» не трогает: архивные методы в «Ф» не голосуют.
+    Возвращает число тиражей с прогнозом; None — истории ещё нет."""
+    if load(data.game.slug) is None:
+        return None
+    fill(data)                              # сначала новые тиражи: save ниже сдвигает last_no на конец архива
+    h = load(data.game.slug)
+    rows = rows_of(h)
+    details = {s: v.get("detail", "") for s, v in h["sources"].items()}
+    ch, ch_title = chaos_rows(data)
+    if ch:
+        rows["chaos"], details["chaos"] = ch, ch_title
+    scorer = Scorer(data)
+    for no, text in zip(h["draws"]["nos"], h["draws"]["actual"]):    # тиражи — как записаны
+        scorer._actual[no] = [tuple(b) for b in dec(text)]
+    save(data, rows, details, h.get("final_acc") or {}, scorer, made_at=h.get("made_at"))
+    return len(ch)
 
 
 def journal_checked(slug: str) -> Rows:

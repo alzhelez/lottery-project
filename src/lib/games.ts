@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import registry from '../../config/games.json'
+import { SOURCES as JOURNAL_SOURCES } from './journalStats'
 import { dataDir, drawsFile, isValidSlug, resultsFile } from './paths'
 
 export interface Activity {
@@ -134,8 +135,23 @@ export function readResult(slug: string, kind: 'analysis' | 'godmode') {
   return readJson(resultsFile(slug, `${kind}.json`))
 }
 
+/** Файл журнала (data/journal, data/journal_retro) в прежнем виде записей. В формате 2
+ * (python/lottery/journal.py) описание полей хранится один раз в шапке, у записи — его номер,
+ * название источника не пишется; здесь это разворачивается обратно. Формат 1 читается как есть. */
+export function readJournalFile<T = Record<string, unknown>>(file: string): { entries: T[] } | null {
+  const j = readJson<{ blocks?: unknown[]; entries?: Array<Record<string, unknown>> }>(file)
+  if (!j) return null
+  const shared = j.blocks
+  for (const e of j.entries ?? []) {
+    if (shared && typeof e.blocks === 'number') e.blocks = shared[e.blocks]
+    if (e.source_title == null) e.source_title = JOURNAL_SOURCES[e.source as string] ?? e.source
+    if (e.detail == null) e.detail = ''
+  }
+  return { entries: (j.entries ?? []) as T[] }
+}
+
 export function readJournal(slug: string) {
-  return readJson<{ entries: Array<Record<string, unknown>> }>(path.join(dataDir(), 'journal', `${slug}.json`))
+  return readJournalFile(path.join(dataDir(), 'journal', `${slug}.json`))
 }
 
 export function readScan() {

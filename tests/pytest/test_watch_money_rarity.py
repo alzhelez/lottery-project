@@ -87,3 +87,66 @@ def test_archived_methods_do_not_vote_or_show_in_telegram():
     assert set(journal.ACTIVE) == {"analysis_consensus", "godmode", "least", "final"}
     from lottery import botstats
     assert not set(botstats.ORDER) & journal.ARCHIVED
+
+
+def test_findings_rule_needs_volume_and_bonferroni(data_dir):
+    """«Находка»: не меньше 5000 прогнозов журнала и z с поправкой на число пар «игра + метод»."""
+    from lottery import findings
+    made = datetime(2026, 11, 1, 12, 0)
+
+    def entries(source, n, rate):
+        return [{"id": f"{source}{i}", "source": source, "draw_no": i, "status": "checked", "made_at": made.isoformat(),
+                 "numbers": [[1, 2, 3, 4, 5]], "hits": 1 if i % 100 < rate else 0, "expected": 0.5, "variance": 0.25}
+                for i in range(n)]
+    # К: 5000 прогнозов, 53 % при 50 % — z ≈ 4,2: подтверждено; Б: тот же отрыв на 1000 — z ≈ 1,9: ниже порога;
+    # Ф: 600 прогнозов, 60 % — порог пройден, но прогнозов мало: кандидат; Н: выпадает меньше (46 %) — подтверждено
+    journal.save("5x36", {"game": "5x36", "entries": entries("analysis_consensus", 5000, 53) + entries("godmode", 1000, 53)
+                          + entries("final", 600, 60) + entries("least", 6000, 46)})
+    journal.save("5x36", {"game": "5x36", "retro": True, "entries": entries("golden", 9000, 70)}, retro=True)   # не журнал
+    f = findings.build(["5x36"], now=made)
+    assert f["rule"] == {"n_min": 5000, "alpha": 0.05, "pairs": 4, "z_crit": 2.24}
+    assert [r["source"] for r in f["confirmed"]] == ["least", "analysis_consensus"] and f["new"] == f["confirmed"]
+    assert [r["source"] for r in f["candidates"]] == ["final"]
+    assert [(r["source"], r["need"]) for r in f["closest"]] == [("godmode", 5000)]
+    assert "5 из 36 — Консенсус методов (+6,0 %, 5000 прогнозов)" in findings.summary()
+    msg = notify.finding_message(f)
+    assert "Подтверждённая находка" in msg and "z ≥ 2,24" in msg and "поправка на 4 пар" in msg
+    again = findings.build(["5x36"], now=made + timedelta(days=1))
+    assert again["new"] == [] and again["confirmed"][0]["since"] == f["confirmed"][0]["since"]      # сообщение — один раз
+    journal.save("5x36", {"game": "5x36", "entries": entries("godmode", 300, 50)})
+    assert "Подтверждённых находок нет" in findings.summary(findings.build(["5x36"]))
+
+
+def test_bot_next_draw_block_and_archive_button(monkeypatch):
+    import lp
+    from lottery import bot
+    from lottery.games import results_dir
+    data, now = _fast_game()
+    monkeypatch.setattr(lp, "game_activity", lambda d: {"active": True})
+    monkeypatch.setattr(lp, "FORECAST_HORIZON_MIN", 0.0)
+    monkeypatch.setattr(journal, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: now)}))
+    lp.journal_record(data, "analysis_consensus", [[3, 9, 17, 26, 35]], "", ordered=False)
+    assert "Есть у каждого метода" not in bot.next_draw_block("5x36", now)          # пока метод один — нечего сравнивать
+    lp.journal_record(data, "godmode", [[3, 9, 18, 27, 36]], "", ordered=False)
+    results_dir().mkdir(parents=True, exist_ok=True)
+    (results_dir() / "nextdraw.json").write_text(json.dumps({"games": {"5x36": {
+        "number": 402, "return": 0.512, "usual_return": 0.4, "peak": {"days": 30, "max": 0.45, "is_max": True}}}}), encoding="utf-8")
+    block = bot.next_draw_block("5x36", now)
+    assert "<b>Ближайший тираж №402</b>" in block
+    assert "Ожидаемый возврат: 0,51 на рубль (обычно 0,40) — максимум за 30 дн. наблюдений" in block
+    assert "Есть у каждого метода (Ф, К, Б): <code>3 9</code>" in block and "Редкая комбинация" in block
+    text, kb = bot.game_menu("5x36")
+    assert "<b>Ближайший тираж №402</b>" in text and "Есть у каждого метода (Ф, К, Б): <code>3 9</code>" in text
+    assert kb["inline_keyboard"][-2] == [{"text": "Запустить архивные методы (Л, З, Х)", "callback_data": "arch:5x36"}]
+    # кнопка запускает lp.py archive --notify отдельным процессом
+    calls = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "Popen", lambda cmd, **kw: calls.append(cmd))
+    reply, _ = bot.route("arch:5x36")
+    assert "Архивные методы «5 из 36» запущены" in reply and calls[0][-4:] == ["archive", "--game", "5x36", "--notify"]
+    # после расчёта — сообщение с числами архивных методов
+    monkeypatch.setattr(lp, "ARCHIVE_RUN", True)
+    lp.journal_record(data, "golden", [[1, 2, 3, 4, 5]], "", ordered=False)
+    done = bot.archive_done_message("5x36", now)
+    assert "архивные методы, тираж №402" in done and "З Золотая середина: <code>1 2 3 4 5</code>" in done
+    assert "Есть у каждого метода (Ф, К, Б): <code>3 9</code>" in bot.next_draw_block("5x36", now)     # архив не влияет
