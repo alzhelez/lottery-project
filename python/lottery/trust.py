@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 
 from .fsutil import write_text
 from .games import data_dir
-from .journal import LOWER, SOURCES, load
+from .journal import ARCHIVED, LOWER, SOURCES, load
 
 PERIODS = (1, 3, 7, 14, 30)       # дней — выбор на вкладке «Статистика»
 SHRINK_N = 30
@@ -40,6 +40,9 @@ def trust_path():
 
 def _phi(z: float) -> float:
     return 0.5 * math.erfc(-z / math.sqrt(2))
+
+
+Z_SIGNIFICANT = 1.96
 
 
 def level(trust: float) -> str:
@@ -73,7 +76,13 @@ def score(entries: list[dict], lower: bool) -> dict:
     z = (hits - expected) / math.sqrt(variance) if variance > 0 else 0.0
     good = -z if lower else z
     trust = round(100 * _phi(good * math.sqrt(n / (n + SHRINK_N))), 1) if n else 50.0
-    return {"n": n, "hits": hits, "expected": round(expected, 3),
+    # честная рамка: mde_pct — отрыв от случайного выбора (в %), который на таком числе прогнозов уже
+    # отличим от случайности (z = 1,96); need — сколько прогнозов нужно, чтобы отличить нынешний
+    # отрыв, если он сохранится (None — отрыва в нужную сторону нет)
+    mde = round(100 * Z_SIGNIFICANT * math.sqrt(variance) / expected, 2) if expected and variance > 0 else None
+    need = math.ceil(n * (Z_SIGNIFICANT / good) ** 2) if good > 0 and n else None
+    return {"n": n, "hits": hits, "expected": round(expected, 3), "mde_pct": mde, "need": need,
+            "proven": good >= Z_SIGNIFICANT,
             "excess_pct": round(100 * (hits - expected) / expected, 2) if expected else 0.0,
             "z": round(z, 3), "trust": trust, "level": level(trust) if n >= SHRINK_N else "мало данных",
             "few": n < SHRINK_N}
@@ -133,10 +142,14 @@ def final_numbers(by_source: dict[str, list[list[int]]], blocks: list[dict], w: 
     """Числа финального предсказания по прогнозам источников на один тираж. Источник отдаёт вес
     каждому своему числу, «наименее вероятные» — такой же штраф; при равенстве — число без штрафа,
     затем меньшее.
-    None — источников (кроме «наименее вероятных») меньше двух."""
+    Голосуют активные методы (без архивных). Один голосующий — Ф повторяет его числа;
+    None — голосующих нет."""
+    by_source = {s: v for s, v in by_source.items() if s not in ARCHIVED}       # архивные методы не голосуют
     voters = [s for s in by_source if s != FINAL and s not in LOWER]
-    if len(voters) < 2:
+    if not voters:
         return None
+    if len(voters) == 1:                    # голосует один метод (режима Бога на тираж нет) — Ф повторяет его
+        return [sorted(b) for b in by_source[voters[0]]]
     out = []
     for b, spec in enumerate(blocks):
         score = {n: 0.0 for n in range(spec["lo"], spec["hi"] + 1)}
@@ -159,5 +172,5 @@ def final_numbers(by_source: dict[str, list[list[int]]], blocks: list[dict], w: 
 def final_detail(by_source: dict[str, list], w: dict[str, float], trust_rows: dict) -> str:
     from .notify import SHORT
     parts = [f"{SHORT.get(s, s)} {trust_rows[s]['trust']:.0f}" if s in trust_rows else f"{SHORT.get(s, s)} —"
-             for s in SOURCES if s in by_source and s != FINAL]
+             for s in SOURCES if s in by_source and s != FINAL and s not in ARCHIVED]
     return "голосование по доверию: " + ", ".join(parts)

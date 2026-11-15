@@ -22,9 +22,9 @@ from .trust import SHRINK_N, _when, score
 
 MONTH_DAYS = 30
 HALF_YEAR_MONTHS = 6
-ORDER = ("final", "analysis_best", "analysis_consensus", "golden", "godmode", "chaos", "least")
-LEGEND = ("Ф — финальное предсказание, Л — лучший метод, К — консенсус, З — золотая середина, "
-          "Б — режим Бога, Х — порядок из хаоса, Н — наименее вероятные (у них меньше — лучше)")
+ORDER = ("final", "analysis_consensus", "godmode", "least")          # активные методы; архивные — на сайте
+LEGEND = ("Ф — финальное предсказание, К — консенсус, Б — режим Бога, "
+          "Н — наименее вероятные (у них меньше — лучше)")
 
 _cache: dict[str, tuple[tuple, dict]] = {}
 

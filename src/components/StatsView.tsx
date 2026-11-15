@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
+import { HonestFrame } from './NextDrawCard'
 import { nf, num, pval } from './format'
 import { useJob } from './useJob'
 
@@ -21,6 +22,7 @@ interface Watch {
 interface TrustRow {
   source: string; title: string; n: number; hits: number; expected: number; excess_pct: number
   trust: number; level: string; few: boolean; rank: number
+  mde_pct?: number | null; need?: number | null; proven?: boolean
 }
 interface TrustGame { slug: string; title: string; rows: TrustRow[] }
 interface Stats {
@@ -33,6 +35,9 @@ interface Stats {
 const MIN_RELIABLE = 30
 const PERIODS: Array<[number, string]> = [[1, 'сутки'], [3, '3 дня'], [7, 'неделю'], [14, '2 недели'], [30, 'месяц']]
 const LOWER = 'least'
+const ARCHIVED = new Set(['analysis_best', 'golden', 'chaos'])
+const archiveTag = (source: string) => ARCHIVED.has(source)
+  ? <span className="status-tag st-skipped" style={{ marginLeft: 8 }} title="метод в архиве: считается только по кнопке «Запустить архивные методы»">архив</span> : null
 const when = (s?: string | null) => (s ? s.replace('T', ' ').slice(0, 16) : '')
 
 function share(v: number | null | undefined): string {
@@ -71,7 +76,7 @@ function TrustTable({ rows }: { rows: TrustRow[] }) {
           {rows.map((r) => (
             <tr key={r.source} data-testid="trust-row">
               <td className="r num">{r.rank}</td>
-              <td>{r.title}{r.source === LOWER && <span className="sub">чем меньше выпало его чисел, тем выше доверие</span>}</td>
+              <td>{r.title}{archiveTag(r.source)}{r.source === LOWER && <span className="sub">чем меньше выпало его чисел, тем выше доверие</span>}</td>
               <td className="r num"><b>{num(r.trust, 0)}</b></td>
               <td>
                 <span className={`status-tag ${r.few ? '' : trustClass(r.trust)}`}>{r.level}</span>
@@ -80,7 +85,7 @@ function TrustTable({ rows }: { rows: TrustRow[] }) {
               <td className="r num">{nf.format(r.n)}</td>
               <td className="r num">{nf.format(r.hits)}</td>
               <td className="r num">{num(r.expected, 1)}</td>
-              <td className="r num">{signed(r.excess_pct)}</td>
+              <td className="r num">{signed(r.excess_pct)}<HonestFrame r={r} fewer={r.source === LOWER} /></td>
             </tr>
           ))}
         </tbody>
@@ -108,7 +113,7 @@ function MethodsTable({ g, testid }: { g: Game; testid: string }) {
             return (
               <tr key={r.source} data-testid={`${testid}-row`} className={r.goal ? 'muted' : ''}>
                 <td>
-                  {r.title}
+                  {r.title}{archiveTag(r.source)}
                   {mark && <span className={`status-tag ${mark === 'лучший' ? 'st-done' : 'st-error'}`} style={{ marginLeft: 8 }}>{mark}</span>}
                   {r.goal && <span className="sub">цель — выпасть реже, в лучшие и худшие не входит</span>}
                 </td>
@@ -190,7 +195,7 @@ export function StatsView({ slug }: { slug?: string } = {}) {
   for (const g of [...all.games, ...(all.period?.games ?? []), ...(all.trust?.games ?? [])]) titles.set(g.slug, g.title)
   // сверху — игры, где у метода самое высокое доверие (оценки по малому числу прогнозов — ниже)
   const topTrust = (s: string) => {
-    const r = trustBy.get(s)?.rows[0]
+    const r = trustBy.get(s)?.rows.find((x) => !ARCHIVED.has(x.source))
     return r ? (r.few ? 0 : 1000) + r.trust : -1
   }
   const slugs = [...titles.keys()].filter((s) => !slug || s === slug)
@@ -206,7 +211,9 @@ export function StatsView({ slug }: { slug?: string } = {}) {
         «наименее вероятных» наоборот). <b>По методам</b> — сколько раз прогноз угадал половину своих чисел или больше и
         сколько таких раз дал бы случайный выбор. Оба раздела считаются за период анализа: все методы на каждом тираже
         периода (только по тиражам до него) плюс настоящие прогнозы журнала за то же время. По доверию строится
-        «Финальное предсказание». Доверие — не шанс выиграть: оно показывает, кому в этот период везло больше.
+        «Финальное предсказание» (голосуют активные методы — «Консенсус» и «Режим Бога»; методы с пометкой «архив»
+        считаются только по кнопке в автоанализе игры). Доверие — не шанс выиграть: оно показывает, кому в этот период
+        везло больше. Под «Разницей» — честная рамка: сколько прогнозов нужно, чтобы такой отрыв отличить от случайности.
         {slug && <> Все игры — в разделе <Link href="/stats">Статистика</Link> боковой панели.</>}
       </p>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -241,7 +248,7 @@ export function StatsView({ slug }: { slug?: string } = {}) {
         const t = trustBy.get(s)
         const p = periodBy.get(s)
         const j = journalBy.get(s)
-        const top = t?.rows[0]
+        const top = t?.rows.find((x) => !ARCHIVED.has(x.source))     // лидер — среди активных методов
         return (
           <details key={s} className="card" {...(slug ? { open: true } : {})} data-testid="stats-game" style={{ marginTop: 12 }}>
             <summary style={{ cursor: 'pointer' }}>

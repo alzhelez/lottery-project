@@ -200,6 +200,8 @@ def godmode_target(data, res: dict) -> None:
 # если цикл задержится; следующий цикл заменит ещё не сыгранные прогнозы свежими
 FORECAST_HORIZON_MIN = float(os.environ.get("LOTTERY_FORECAST_HORIZON_MIN", "130") or 0)
 FORECAST_MAX_AHEAD = 30
+# архивные методы (journal.ARCHIVED) пишутся в журнал только при ручном запуске: lp.py archive / chaos
+ARCHIVE_RUN = False
 
 
 def forecast_targets(data, draw_no: int | None = None, mechanism: str | None = None) -> list[dict]:
@@ -221,8 +223,10 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
     """Прогноз в журнал — только для активной игры (иначе тираж не наступит). Номер тиража —
     ближайший будущий (journal.target_draw), если не задан, и следующие до горизонта
     (forecast_targets); числа — в предсказанном порядке выпадения."""
-    from lottery.journal import record_many
+    from lottery.journal import ARCHIVED, record_many
     if not (data.draws and game_activity(data)["active"]):
+        return
+    if source in ARCHIVED and not ARCHIVE_RUN:
         return
     items = []
     for t in forecast_targets(data, draw_no, mechanism):
@@ -231,11 +235,16 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
     record_many(data, source, items, detail, ordered=ordered)
     if source != "final":
         record_final(data)
+        try:
+            from lottery import rarity
+            rarity.build(data)                      # пометки популярности и «редкая комбинация» для «Обзора»
+        except Exception:  # noqa: BLE001 — подсказка, не повод не записать прогноз
+            pass
 
 
 def record_final(data) -> dict[int, list[list[int]]]:
-    """«Финальное предсказание» на каждый будущий тираж, где уже есть прогнозы хотя бы двух
-    источников: голосование с весами по доверию (lottery/trust.py). Пересчитывается после
+    """«Финальное предсказание» на каждый будущий тираж, где уже есть прогноз активного метода:
+    голосование К и Б с весами по доверию, со штрафом Н (lottery/trust.py). Пересчитывается после
     каждого нового прогноза — к концу цикла в нём участвуют все источники.
 
     Уже записанный финальный прогноз переписывается, только если тираж ещё впереди (не раньше
@@ -457,7 +466,13 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
                 if progress:
                     progress({"type": "progress", "stage": "mechanisms", "done": 0, "total": 1})
                 evaluation["by_mechanism"] = mechanics.evaluate_by_mechanism(data)
-    chaos_res = run_chaos(data, progress, target, reuse=(cache or {}).get("chaos"))
+    if full or ARCHIVE_RUN:
+        chaos_res = run_chaos(data, progress, target, reuse=(cache or {}).get("chaos"))
+    else:
+        # «Порядок из хаоса» — в архиве: в циклах автозапуска не пересчитывается; в отчёте остаются
+        # прошлые проверки, без прогноза (он относился бы к давно сыгранному тиражу)
+        prev_chaos = (cache or _read_json(results_dir(slug) / "analysis.json") or {}).get("chaos")
+        chaos_res = {**{k: v for k, v in (prev_chaos or {}).items() if k != "next"}, "archived": True} if prev_chaos else None
     from lottery import order
     if cache and cache.get("order_check") is not None:
         order_check = cache["order_check"]
@@ -501,7 +516,25 @@ def run_chaos(data, progress=None, target: dict | None = None, reuse: dict | Non
     return res
 
 
+def cmd_archive(args) -> None:
+    """Разовый запуск архивных методов (Л, З, Х) для игры: прогноз на ближайшие тиражи — в журнал."""
+    global ARCHIVE_RUN
+    ARCHIVE_RUN = True
+    from lottery.journal import ARCHIVED, load
+    payload = analyze_game(args.game, progress=emit, full=False)
+    data = load_game_data(get_game(args.game))
+    done = sorted({e["source"] for e in load(args.game)["entries"]
+                   if e["source"] in ARCHIVED and e["status"] == "pending" and e["draw_no"] > data.draws[-1].no})
+    emit({"type": "result", "sources": done})
+    if payload["evaluation"].get("status") != "ok":
+        say(f"Архивные методы не посчитаны: {payload['evaluation'].get('message', 'мало тиражей')}")
+    else:
+        say("Архивные методы посчитаны, прогноз в журнале: " + (", ".join(done) or "нет (игра неактивна)"))
+
+
 def cmd_chaos(args) -> None:
+    global ARCHIVE_RUN
+    ARCHIVE_RUN = True                  # ручной запуск раздела — прогноз идёт в журнал
     """Только «порядок из хаоса» (быстрее полного анализа); результат дописывается в analysis.json."""
     data = load_game_data(get_game(args.game))
     if not data.fmt.supported:
@@ -691,8 +724,6 @@ def auto_once(args) -> dict:
                 predictions[slug] = {"title": data.game.title, "next_no": g["next_no"],
                                      "numbers": ev["next_prediction"]["numbers"],
                                      "consensus": ev["next_consensus"]}
-                if ev.get("next_golden"):
-                    predictions[slug]["golden"] = ev["next_golden"]
                 if (ev.get("least") or {}).get("status") == "ok":
                     predictions[slug]["least"] = sorted_blocks(ev["least"]["next_prediction"]["numbers"])
                 ch = (payload.get("chaos") or {}).get("next") or {}
@@ -1015,8 +1046,13 @@ def cmd_auto(args) -> None:
 
 
 def cmd_scan_quiet() -> None:
-    from lottery.scan import run_scan
-    run_scan()
+    """Проверка игр на случайность + сторож аномалий: сообщение в Telegram, только когда у игры
+    появилось значимое отклонение (с поправкой на число игр) или оно исчезло."""
+    from lottery import notify
+    from lottery.scan import run_scan, watch
+    changes = watch(run_scan())
+    if changes:
+        notify.send(notify.anomaly_message(changes), "drift")
 
 
 # ── Шансы, билеты, экспорт ─────────────────────────────────────────────────
@@ -1685,6 +1721,8 @@ def main() -> None:
     p.add_argument("--game", required=True)
     p = sub.add_parser("chaos", help="порядок из хаоса: динамика тиражей отдельно по лототрону и ГСЧ")
     p.add_argument("--game", required=True)
+    p = sub.add_parser("archive", help="разовый запуск архивных методов (Л, З, Х): прогноз в журнал")
+    p.add_argument("--game", required=True)
     p = sub.add_parser("godmode")
     p.add_argument("--game", required=True)
     p.add_argument("--budget", type=float, default=480.0,
@@ -1754,7 +1792,7 @@ def main() -> None:
     handlers = {"fetch": cmd_fetch, "scan": cmd_scan, "analyze": cmd_analyze, "godmode": cmd_godmode,
                 "info": cmd_info, "journal": cmd_journal, "auto": cmd_auto, "odds": cmd_odds,
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
-                "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos,
+                "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos, "archive": cmd_archive,
                 "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup,
                 "godmode-all": cmd_godmode_all, "retro": cmd_retro, "bot": cmd_bot}
     try:

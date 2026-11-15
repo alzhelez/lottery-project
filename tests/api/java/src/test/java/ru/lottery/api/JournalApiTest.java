@@ -35,8 +35,10 @@ public class JournalApiTest extends BaseApiTest {
                 .collect(Collectors.toList());
         // Источники этих прогнозов.
         assertThat(upcoming.stream().map(e -> e.get("source")).collect(Collectors.toSet()))
-                // Анализ пишет прогноз лучшего метода и консенсус.
-                .contains("analysis_best", "analysis_consensus");
+                // Анализ пишет прогнозы активных методов: консенсус, наименее вероятные и финальное предсказание.
+                .contains("analysis_consensus", "least", "final")
+                // Архивные методы (лучший метод, золотая середина, порядок из хаоса) анализ в журнал не пишет.
+                .doesNotContain("analysis_best", "golden", "chaos");
         // Тираж ещё не сыгран — все записи ждут сверки.
         assertThat(upcoming).allMatch(e -> "pending".equals(e.get("status")));
     }

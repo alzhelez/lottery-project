@@ -75,7 +75,7 @@ def test_proven_source_ignores_least(data_dir):
 
 def test_telegram_least_line_not_in_totals():
     e = {**_entry(1), "source_title": "Наименее вероятные"}
-    best = {**_entry(3, source="analysis_best"), "source_title": "Лучший метод анализа", "won": 50.0}
+    best = {**_entry(3, source="analysis_consensus"), "source_title": "Консенсус методов", "won": 50.0}
     msg = notify.journal_digest([("4 из 20", [best, e])])
     assert "Н: выпало 1 из 8 (меньше — лучше)" in msg
     assert "1 шт., угадано 3" in msg

@@ -10,7 +10,7 @@ from __future__ import annotations
 from . import history
 from .drawfile import load_game_draws
 from .games import get_game
-from .journal import load
+from .journal import ARCHIVED, load
 
 METHODS = [("final", "ФП"), ("analysis_best", "ЛМА"), ("analysis_consensus", "КМ"), ("chaos", "ПиХ"),
            ("godmode", "РБ"), ("golden", "ЗС"), ("least", "НВ")]
@@ -23,7 +23,7 @@ def analysis_days() -> int:
     return days if days in (1, 3, 7, 14, 30) else 7
 
 
-ALWAYS = {"final", "analysis_best", "analysis_consensus", "golden", "least"}    # считают каждый тираж истории
+ALWAYS = {"final", "analysis_consensus", "least"}    # активные методы, считающие каждый тираж истории
 
 
 def coverage(slug: str) -> dict:
@@ -39,7 +39,7 @@ def coverage(slug: str) -> dict:
     last, first = h["last_no"], h.get("first_no") or 0
     missing = {}
     for source, short in METHODS:
-        if source not in h["sources"]:
+        if source not in h["sources"] or source in ARCHIVED:      # у архивных методов пропусков не бывает
             continue
         got = have.get(source, set()) | set(h["sources"][source]["nos"])
         missing[short] = sum(1 for no in nos if no not in got and (no > last or (source in ALWAYS and no >= first)))

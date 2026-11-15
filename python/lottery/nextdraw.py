@@ -117,6 +117,45 @@ def verdict(r: dict) -> str:
               f"возвращается меньше рубля.")
 
 
+PEAK_DAYS = 180          # «максимум за полгода»
+PEAK_MIN_DAYS = 14       # раньше наблюдений слишком мало, чтобы говорить о максимуме
+PEAK_KEEP_DAYS = 200
+PEAK_QUIET_DAYS = 7      # о новом максимуме одной игры — не чаще раза в неделю (серия растущих суперпризов)
+
+
+def history_path():
+    return data_dir() / "nextdraw_history.json"
+
+
+def load_history() -> dict:
+    try:
+        return json.loads(history_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def track(results: dict, now: datetime | None = None) -> dict:
+    """Запоминает возврат ближайших тиражей (data/nextdraw_history.json) и дописывает каждому
+    результату peak: {days — сколько дней наблюдений, max — прежний максимум возврата за полгода,
+    is_max — нынешний возврат выше него}. История копится с версии 42.11.0."""
+    from .fsutil import write_text
+    now = now or datetime.now()
+    hist = load_history()
+    for slug, r in results.items():
+        rows = [x for x in hist.get(slug, []) if (now - datetime.fromisoformat(x["at"])).days <= PEAK_KEEP_DAYS]
+        prev = [x for x in rows if x["no"] != r.get("number") and (now - datetime.fromisoformat(x["at"])).days <= PEAK_DAYS]
+        days = (now - min(datetime.fromisoformat(x["at"]) for x in rows)).days if rows else 0
+        top = max((x["return"] for x in prev), default=None)
+        r["peak"] = {"days": days, "max": top,
+                     "is_max": bool(top is not None and days >= PEAK_MIN_DAYS and r["return"] > top * 1.0001)}
+        rows = [x for x in rows if x["no"] != r.get("number")]
+        rows.append({"no": r.get("number"), "at": now.isoformat(timespec="minutes"), "return": round(r["return"], 4),
+                     "super_prize": r.get("super_prize")})
+        hist[slug] = rows
+    write_text(history_path(), json.dumps(hist, ensure_ascii=False, separators=(",", ":")))
+    return results
+
+
 def compute_all(slugs: list[str], loader) -> dict:
     """Ближайший тираж по всем играм → results/nextdraw.json. loader(slug) → GameData."""
     out = {}
@@ -128,6 +167,7 @@ def compute_all(slugs: list[str], loader) -> dict:
             r = None
         if r:
             out[slug] = r
+    track(out)
     from .fsutil import write_text
     path = results_dir() / "nextdraw.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -136,16 +176,37 @@ def compute_all(slugs: list[str], loader) -> dict:
     return out
 
 
-def to_notify(results: dict) -> list[dict]:
-    """Тиражи, где возврат выше порога и о которых ещё не сообщали."""
+def to_notify(results: dict, now: datetime | None = None) -> list[dict]:
+    """Тиражи, о которых стоит сообщить и ещё не сообщали: возврат выше порога или выше прежнего
+    максимума за полгода (о максимуме одной игры — не чаще раза в PEAK_QUIET_DAYS дней)."""
+    now = now or datetime.now()
     path = results_dir() / "nextdraw_notified.json"
     try:
         sent = set(json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         sent = set()
-    out = [r for r in results.values() if r["return"] >= threshold() and f"{r['slug']}:{r['number']}" not in sent]
+    peaks = {}
+    for key in sent:
+        if key.startswith("peak:"):
+            _, slug, day = key.split(":", 2)
+            peaks[slug] = max(peaks.get(slug, ""), day)
+
+    def peak_due(r: dict) -> bool:
+        if not (r.get("peak") or {}).get("is_max"):
+            return False
+        last = peaks.get(r["slug"])
+        return last is None or (now - datetime.fromisoformat(last)).days >= PEAK_QUIET_DAYS
+
+    out, add = [], set()
+    for r in results.values():
+        fresh = f"{r['slug']}:{r['number']}" not in sent
+        if fresh and (r["return"] >= threshold() or peak_due(r)):
+            out.append(r)
+            add.add(f"{r['slug']}:{r['number']}")
+            if (r.get("peak") or {}).get("is_max"):
+                add.add(f"peak:{r['slug']}:{now:%Y-%m-%d}")
     if out:
         from .fsutil import write_text
-        sent |= {f"{r['slug']}:{r['number']}" for r in out}
-        write_text(path, json.dumps(sorted(sent)[-500:], ensure_ascii=False))
+        sent |= add
+        write_text(path, json.dumps(sorted(sent)[-800:], ensure_ascii=False))
     return out

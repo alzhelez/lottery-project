@@ -231,9 +231,13 @@ func TestAPI07JournalAfterAnalysis(t *testing.T) {
 		// Запоминаем источник.
 		sources[entry["source"].(string)] = true
 	}
-	// Анализ пишет прогноз лучшего метода и консенсус.
-	if !sources["analysis_best"] || !sources["analysis_consensus"] {
+	// Анализ пишет прогнозы активных методов: консенсус, наименее вероятные и финальное предсказание.
+	if !sources["analysis_consensus"] || !sources["least"] || !sources["final"] {
 		t.Errorf("в журнале нет прогнозов анализа: %v", sources)
+	}
+	// Архивные методы (лучший метод, золотая середина, порядок из хаоса) анализ в журнал не пишет.
+	if sources["analysis_best"] || sources["golden"] || sources["chaos"] {
+		t.Errorf("в журнале есть прогнозы архивных методов: %v", sources)
 	}
 }
 

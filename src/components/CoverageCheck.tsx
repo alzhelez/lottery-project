@@ -6,7 +6,7 @@ import { useJob } from './useJob'
 interface Coverage {
   built: boolean; days: number; draws: number; first_no: number | null; last_no: number | null
   with_predictions: number; complete: boolean
-  methods: Array<{ source: string; short: string; title: string; have: number; missing: number; na: number; restored: number }>
+  methods: Array<{ source: string; short: string; title: string; archived: boolean; have: number; missing: number; na: number; restored: number }>
   missing_total: number; restored_total: number
 }
 
@@ -18,6 +18,8 @@ export function CoverageCheck({ slug }: { slug: string }) {
     fetch(`/api/games/${slug}/coverage`, { cache: 'no-store' }).then((r) => r.json()).then(setC).catch(() => {})
   }, [slug])
   const job = useJob('retro', slug, () => load())
+  // архивные методы (Л, З, Х): разовый расчёт прогноза на ближайшие тиражи — в журнал и в блок «Архив» обзора
+  const archive = useJob('archive', slug, () => { load(); window.dispatchEvent(new Event('lottery:forecast')) })
   useEffect(() => { load() }, [load])
   if (!c || c.draws === 0) return null
   const gaps = c.methods.filter((m) => m.missing > 0)
@@ -44,6 +46,29 @@ export function CoverageCheck({ slug }: { slug: string }) {
       {job.error && <span className="error">{job.error}</span>}
     </div>
   )
+  const archived = c.methods.filter((m) => m.archived)
+  const archiveBar = (
+    <div data-testid="coverage-archive" style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line-soft)' }}>
+      <b>Архив методов</b>
+      <p className="muted small" style={{ margin: '.3rem 0' }}>
+        {archived.map((m) => `${m.short} — ${m.title}`).join(', ')}. В циклах автозапуска не считаются, в «Финальном
+        предсказании» и в Telegram не участвуют. Кнопка считает их один раз: прогноз на ближайшие тиражи появится в
+        блоке «Архив» карточки тиража и в журнале, после тиража — в статистике.
+      </p>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button type="button" className="btn btn-ghost" data-testid="archive-run" disabled={archive.running || job.running}
+          onClick={() => archive.start()}>
+          {archive.running ? 'Считаю архивные методы…' : 'Запустить архивные методы'}
+        </button>
+        <span className="muted small" data-testid="archive-status">
+          {archive.running ? (archive.job?.progress?.model ?? archive.job?.log?.slice(-1)[0] ?? 'сравнение методов и «Порядок из хаоса»')
+            : archive.job?.status === 'done' ? 'посчитаны — прогноз в блоке «Архив» карточки тиража'
+              : `в истории: ${archived.map((m) => `${m.short} — ${nf.format(m.have)}`).join(', ')}`}
+        </span>
+        {(archive.error || archive.job?.status === 'error') && <span className="error">{archive.error ?? archive.job?.error}</span>}
+      </div>
+    </div>
+  )
   return (
     <section className="card" data-testid="coverage" style={{ marginTop: 12 }}>
       <b>Автоанализ: предсказания по всем тиражам</b>
@@ -64,9 +89,8 @@ export function CoverageCheck({ slug }: { slug: string }) {
             <span className="sub" data-testid="coverage-na">
               У самых ранних {nf.format(without)} {plural(without, 'тиража', 'тиражей', 'тиражей')} предсказаний нет и быть не
               может: методам нужна история до тиража (разгон), а в длинных архивах анализ берёт последние 60 000 тиражей.
-              «Режим Бога» и «Порядок из хаоса» по первой части архива отбирают
-              методы, поэтому честные предсказания у них — только на остальную часть:{' '}
-              {c.methods.map((m) => `${m.short} — ${nf.format(m.have)}`).join(', ')}.
+              «Режим Бога» по первой части архива отбирает методы, поэтому честные предсказания у него — только на
+              остальную часть: {c.methods.filter((m) => !m.archived).map((m) => `${m.short} — ${nf.format(m.have)}`).join(', ')}.
             </span>
           )}
           {origin}
@@ -75,7 +99,7 @@ export function CoverageCheck({ slug }: { slug: string }) {
         <>
           <p className="small" data-testid="coverage-gaps">
             <span className="status-tag st-error">есть пропуски</span>{' '}
-            {head}, предсказания есть у {nf.format(c.with_predictions)}. Не хватает предсказаний:{' '}
+            {head}, предсказания есть у {nf.format(c.with_predictions)}. Не хватает предсказаний активных методов:{' '}
             {gaps.map((m) => `${m.short} (${m.title}) — ${nf.format(m.missing)}`).join(', ')}.
             <span className="sub">Пропуски закрывает ближайший цикл автозапуска — или кнопка ниже.</span>
             {origin}
@@ -83,6 +107,7 @@ export function CoverageCheck({ slug }: { slug: string }) {
           {fix}
         </>
       )}
+      {archiveBar}
     </section>
   )
 }

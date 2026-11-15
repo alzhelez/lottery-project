@@ -134,14 +134,16 @@ export interface Coverage {
   /** have — тиражей с предсказанием, missing — пропуски, na — тиражи, где предсказания быть не
    * может (разгон; первая часть архива у «Режима Бога» и «Порядка из хаоса»); restored — из have
    * посчитаны задним числом, а не записаны в журнал до тиража. have + missing + na = draws. */
-  methods: Array<{ source: string; short: string; title: string; have: number; missing: number; na: number; restored: number }>
+  methods: Array<{ source: string; short: string; title: string; archived: boolean; have: number; missing: number; na: number; restored: number }>
   missing_total: number
   restored_total: number
 }
 
 /** Считают каждый тираж истории; у остальных («Режим Бога», «Порядок из хаоса») честный прогноз
  * есть только на части архива, поэтому «дырой» внутри истории их отсутствие не считается. */
-const ALWAYS = new Set(['final', 'analysis_best', 'analysis_consensus', 'golden', 'least'])
+const ALWAYS = new Set(['final', 'analysis_consensus', 'least'])
+/** Архивные методы считаются только по кнопке — пропусков у них не бывает (journalStats.ARCHIVED). */
+const ARCHIVED = new Set(['analysis_best', 'golden', 'chaos'])
 
 /** Автоанализ: у каждого ли тиража архива есть предсказание каждого метода. Пропуск — тираж, на
  * который метод мог дать прогноз, а его нет: новый тираж, ещё не попавший в историю, или «дыра» у
@@ -168,7 +170,7 @@ export function coverage(slug: string): Coverage {
   const methods = METHODS.map((m) => {
     const got = have.get(m.source) ?? new Set<number>()
     const rec = recorded.get(m.source) ?? new Set<number>()
-    const inHistory = h != null && m.source in h.sources
+    const inHistory = h != null && m.source in h.sources && !ARCHIVED.has(m.source)
     let n = 0, missing = 0, restored = 0
     for (const no of nos) {
       if (got.has(no)) {
@@ -177,7 +179,7 @@ export function coverage(slug: string): Coverage {
         if (!rec.has(no)) restored++
       } else if (inHistory && (no > last || (ALWAYS.has(m.source) && no >= first))) missing++
     }
-    return { ...m, have: n, missing, na: nos.length - n - missing, restored }
+    return { ...m, archived: ARCHIVED.has(m.source), have: n, missing, na: nos.length - n - missing, restored }
   })
   const missing = methods.reduce((a, m) => a + m.missing, 0)
   return {

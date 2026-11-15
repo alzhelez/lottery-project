@@ -24,6 +24,7 @@ import numpy as np
 from .drawfile import GameData, block_values
 from .fsutil import write_text
 from .games import data_dir
+from .journal import ARCHIVED
 from .stats import hypergeom_moments
 
 HISTORY_VERSION = 1
@@ -253,7 +254,8 @@ def fill(data: GameData, log=None) -> dict:
     details = {s: v.get("detail", "") for s, v in h["sources"].items()}
     jr = journal_checked(slug)
     wanted = [s for s in rows if s != "final"]
-    need = {s: {no for no in new if no not in jr.get(s, {})} for s in wanted}
+    # задним числом восстанавливаются только активные методы; архивные — если их запускали (журнал)
+    need = {s: ({no for no in new if no not in jr.get(s, {})} if s not in ARCHIVED else set()) for s in wanted}
     restored = 0
     if any(need[s] for s in EVAL_SOURCES if s in need):
         calc, _, _ = eval_rows(data, set().union(*(need[s] for s in EVAL_SOURCES if s in need)))
@@ -266,7 +268,7 @@ def fill(data: GameData, log=None) -> dict:
     for s in wanted:
         for no in new:
             text = jr.get(s, {}).get(no)
-            if text is None:
+            if text is None and s not in ARCHIVED:
                 text = calc.get(s, {}).get(no)
                 restored += text is not None
             if text is not None:

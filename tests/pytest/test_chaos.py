@@ -149,6 +149,7 @@ def test_single_mechanism_and_journal(monkeypatch):
     write_lotto_file(draws_path("5x36"), [random_lotto(700, 36, 5, seed=1)])
     data = load_game_data(get_game("5x36"))
     monkeypatch.setattr(lp, "game_activity", lambda d: {"active": True})
+    monkeypatch.setattr(lp, "ARCHIVE_RUN", True)        # «Порядок из хаоса» — в архиве: в журнал пишется при ручном запуске
     res = lp.run_chaos(data)
     assert list(res["groups"]) == ["all"] and res["next"]["numbers"]
     entry = next(e for e in journal.load("5x36")["entries"] if e["source"] == "chaos")

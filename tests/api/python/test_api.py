@@ -146,8 +146,10 @@ def test_journal_after_analysis(api, analysis):
     journal = api.get("/api/games/4x20/journal").json()
     # Берём записи на следующий тираж.
     upcoming = [e for e in journal["entries"] if e["draw_no"] == analysis["last_draw_no"] + 1]
-    # Анализ пишет два прогноза: лучшего метода и консенсуса.
-    assert {"analysis_best", "analysis_consensus"} <= {e["source"] for e in upcoming}
+    # Анализ пишет прогнозы активных методов: консенсус, наименее вероятные и финальное предсказание.
+    assert {"analysis_consensus", "least", "final"} <= {e["source"] for e in upcoming}
+    # Архивные методы (лучший метод, золотая середина, порядок из хаоса) анализ в журнал не пишет.
+    assert not {"analysis_best", "golden", "chaos"} & {e["source"] for e in upcoming}
     # Тираж ещё не сыгран — записи ждут сверки.
     assert all(e["status"] == "pending" for e in upcoming)
 

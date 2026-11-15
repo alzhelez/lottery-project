@@ -255,13 +255,12 @@ SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godm
          "golden": "З", "least": "Н", "final": "Ф"}
 
 
-LEGEND = ("Ф — финальное предсказание (все методы с весами по доверию), "
-          "Л — лучший метод, К — консенсус, Б — режим Бога, "
-          "З — золотая середина (Л без наименее вероятных), "
+LEGEND = ("Ф — финальное предсказание (К и Б с весами по доверию, без Н), "
+          "К — консенсус методов, Б — режим Бога, "
           "Н — наименее вероятные (их лучше не брать)")
-ORDER = ("final", "analysis_best", "analysis_consensus", "godmode", "golden", "least")
-# «порядок из хаоса» остаётся в журнале и статистике, но в Telegram не показывается (42.7.0)
-TELEGRAM_HIDDEN = {"chaos", "experiment"}
+ORDER = ("final", "analysis_consensus", "godmode", "least")
+# архивные методы (Л, З, Х) остаются в журнале и статистике, но в Telegram не показываются
+TELEGRAM_HIDDEN = {"analysis_best", "golden", "chaos", "experiment"}
 
 
 def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
@@ -342,8 +341,7 @@ def journal_message(title: str, entries: list[dict]) -> str | None:
 
 
 def auto_message(status: dict, predictions: dict[str, dict]) -> str:
-    """Итог автозапуска: по каждой игре и тиражу — подпункты Л, К, Х, Б, Э, З, Н с числами
-    (Л и К с одинаковыми числами — одной строкой «Л = К»)."""
+    """Итог автозапуска: по каждой игре — активные методы Ф, К, Б, Н с числами на ближайший тираж."""
     games = status.get("games", {})
     added = sum(g.get("added", 0) or 0 for g in games.values())
     checked = sum(g.get("journal_checked", 0) or 0 for g in games.values())
@@ -359,14 +357,9 @@ def auto_message(status: dict, predictions: dict[str, dict]) -> str:
     parts = ["\n".join(head)]
     for p in predictions.values():
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
-        same = _same_numbers(p.get("numbers"), p.get("consensus"))
-        # есть «Ф» — оно уже учитывает Л и К с весами по доверию: их строки не повторяем
-        final = p.get("final")
-        for label, nums in (("Ф", final),
-                            ("Л = К" if same else "Л", None if final else p.get("numbers")),
-                            ("К", None if final or same else p.get("consensus")),
+        for label, nums in (("Ф", p.get("final")), ("К", p.get("consensus")),
                             (f"Б (на №{p['godmode_no']})" if p.get("godmode_no") else "Б", p.get("godmode")),
-                            ("З", p.get("golden")), ("Н (не брать)", p.get("least"))):
+                            ("Н (не брать)", p.get("least"))):
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))
@@ -423,15 +416,31 @@ def drift_message(title: str, alarms: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def anomaly_message(changes: list[dict]) -> str:
+    """Сторож аномалий: у каких игр проверка на случайность изменила вывод."""
+    from .scan import LEVELS
+    lines = ["<b>Сторож аномалий</b> — проверка тиражей на случайность изменила вывод"]
+    for c in changes[:10]:
+        q = f", q = {c['q_value']:.4f}".replace(".", ",") if c.get("q_value") is not None else ""
+        lines.append(f"• <b>{esc(c['title'])}</b>: {esc(LEVELS[c['level']])} (было: {esc(LEVELS.get(c['before'], c['before']))}){q}")
+        if c.get("tests") and c["level"] != "random":
+            lines.append(f"  тесты: {esc(', '.join(c['tests'][:6]).lower())}")
+    lines.append("Значимость — с поправкой на число игр. Отклонение — повод посмотреть игру, а не прогноз: "
+                 "оно засчитывается, если держится в следующих тиражах.")
+    return "\n".join(lines)
+
+
 def ev_message(items: list[dict]) -> str:
     """Тиражи с высоким ожидаемым возвратом; у каждого — непопулярная комбинация (если игра
     позволяет её подобрать): при выигрыше суперприз реже придётся делить."""
-    lines = ["<b>Ближайшие тиражи с возвратом выше порога</b>"]
+    lines = ["<b>Ближайшие тиражи с высоким ожидаемым возвратом</b>"]
     for r in items:
         when = (r.get("date") or "").replace("T", " ")[:16]
         sp = f"{r['super_prize']:,.0f}".replace(",", " ")
+        peak = (r.get("peak") or {})
         lines.append(f"• {esc(r['title'])} №{r['number']} ({esc(when)}): возврат {r['return']:.2f} "
-                     f"на рубль, суперприз {sp} ₽".replace(".", ",", 1))
+                     f"на рубль, суперприз {sp} ₽".replace(".", ",", 1)
+                     + (f" — максимум за {peak['days']} дн. наблюдений" if peak.get("is_max") else ""))
         if r.get("unpopular"):
             lines.append(f"  непопулярная комбинация: <code>{esc(fmt_blocks(r['unpopular']))}</code>")
     lines.append("Ожидание в среднем по очень большому числу билетов; почти все билеты проигрывают. "

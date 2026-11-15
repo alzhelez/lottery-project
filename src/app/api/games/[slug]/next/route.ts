@@ -7,13 +7,30 @@ import { dataDir, isValidSlug } from '@/lib/paths'
 export const dynamic = 'force-dynamic'
 
 type Entry = JournalEntry & { numbers: number[][]; detail?: string; source_title?: string; id: string }
-// «порядок из хаоса» остаётся в журнале и статистике, в карточке «Обзор» не показывается
-const ORDER = ['final', 'analysis_best', 'analysis_consensus', 'godmode', 'golden']
+// активные методы; «наименее вероятные» — отдельным блоком
+const ORDER = ['final', 'analysis_consensus', 'godmode']
+// архивные: показываются, только если их запускали («Запустить архивные методы») и прогноз на тираж есть
+const ARCHIVE = ['analysis_best', 'golden', 'chaos']
+
+interface Rarity {
+  applicable?: boolean; reason?: string; based_on?: number
+  draws?: Record<string, Record<string, { score: number; flags: string[] }>>
+  rare?: { numbers: number[][]; notes: string[] }
+}
+
+/** Числа, которые есть в прогнозе каждого метода (по полям): для подсветки в «Обзоре». Нужны хотя
+ * бы два метода — у одного «общими» были бы все его числа. */
+function commonNumbers(all: number[][][]): number[][] {
+  if (all.length < 2) return []
+  return all[0].map((block, b) => block.filter((n) => all.every((numbers) => numbers[b]?.includes(n))).sort((x, y) => x - y))
+}
 
 /**
- * Ближайший тираж игры: прогнозы всех источников, записанные в журнал на этот тираж (те же
- * числа, что будут сверены), время тиража для таймера, итог каждого источника по журналу и
- * наименее вероятные числа.
+ * Ближайший тираж игры: прогнозы активных методов, записанные в журнал на этот тираж (те же
+ * числа, что будут сверены), время тиража для таймера, итог каждого метода по журналу, наименее
+ * вероятные числа; common — числа, общие для всех активных методов (кроме наименее вероятных);
+ * rarity — пометки популярности и «редкая комбинация» (python/lottery/rarity.py); archive —
+ * прогнозы архивных методов, если их запускали.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -48,20 +65,27 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     .sort((a, b) => b.made_at.localeCompare(a.made_at))[0]
 
   const record = Object.fromEntries(summarize(entries).map((r) => [r.source as string, r]))
-  const sources = ORDER.map((source) => {
+  // ожидаемый возврат ближайшего тиража и его место в истории наблюдений (python/lottery/nextdraw.py)
+  const money = readJson<{ games?: Record<string, Record<string, any>> }>(path.join(dataDir(), 'results', 'nextdraw.json'))?.games?.[slug]
+  const rarity = readJson<Rarity>(path.join(dataDir(), 'results', slug, 'rarity.json'))
+  const rated = rarity?.based_on === lastNo ? rarity.draws?.[String(drawNo)] ?? {} : {}
+  const row = (source: string, fallback: boolean) => {
     const e = latest(source)
     let numbers = e?.numbers ?? null
     let detail = e?.detail ?? ''
     // журнал пишется только для активной игры — иначе показываем прогноз из последнего анализа
-    if (!numbers && ev.target?.no === drawNo) {
-      if (source === 'analysis_best') { numbers = ev.next_prediction?.numbers ?? null; detail = ev.next_prediction?.model ?? '' }
+    if (fallback && !numbers && ev.target?.no === drawNo) {
       if (source === 'analysis_consensus') numbers = ev.next_consensus ?? null
-      if (source === 'chaos' && analysis?.chaos?.next?.draw_no === drawNo) { numbers = analysis.chaos.next.numbers; detail = analysis.chaos.next.model ?? '' }
       if (source === 'godmode' && godmode?.next?.no === drawNo) { numbers = godmode.next.numbers; detail = godmode.next.strategy ?? '' }
-      if (source === 'golden') { numbers = ev.next_golden ?? null; detail = ev.golden?.detail ?? '' }
     }
-    return { source, title: SOURCES[source], detail, numbers, made_at: e?.made_at ?? null, record: record[source] ?? null }
-  }).filter((s) => s.numbers)
+    return { source, title: SOURCES[source], detail, numbers, made_at: e?.made_at ?? null, record: record[source] ?? null,
+      rarity: e ? rated[source] ?? null : null }
+  }
+  const sources = ORDER.map((s) => row(s, true)).filter((s) => s.numbers)
+  const archive = ARCHIVE.map((s) => row(s, false)).filter((s) => s.numbers)
+  // «Ф» строится из остальных методов: пока сам метод один, «общими» оказались бы все его числа
+  const common = sources.filter((s) => s.source !== 'final').length >= 2
+    ? commonNumbers(sources.map((s) => s.numbers as number[][])) : []
 
   const le = latest('least')
   const least = ev.least?.status === 'ok' || le ? {
@@ -76,6 +100,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     draw_no: drawNo, date, how: ev.target?.no === drawNo ? ev.target?.how ?? null : null,
     last_no: lastNo, active: info.activity.active, analysis_at: analysis?.generated_at ?? null,
     super_prize: nd?.number === drawNo ? nd?.super_prize ?? null : null,
-    sources, least,
+    money: money && money.number === drawNo ? {
+      return: money.return, usual_return: money.usual_return ?? null, price: money.price ?? null,
+      peak: money.peak ?? null,
+    } : null,
+    sources, least, common, archive,
+    archive_titles: ARCHIVE.map((s) => SOURCES[s]),
+    rare: rarity?.based_on === lastNo && rarity.applicable ? rarity.rare ?? null : null,
   })
 }

@@ -24,7 +24,7 @@ import requests
 from . import notify
 from .fsutil import write_text
 from .games import data_dir, get_game
-from .journal import LOWER, SOURCES, load
+from .journal import ARCHIVED, LOWER, SOURCES, load
 
 MUTABLE = {"journal": "Сверка прогнозов", "auto": "Автозапуск"}
 POLL_S = 25
@@ -208,9 +208,10 @@ def analysis_done_message(days: int, trust_table: dict) -> str:
     """Итог анализа для Telegram: по каждой игре — метод с самым высоким доверием."""
     lines = [f"<b>Анализ за {PERIODS.get(days, f'{days} дн.')} завершён</b>", "Выше всех доверие:"]
     for slug, g in sorted((trust_table.get("games") or {}).items(), key=lambda x: get_game(x[0]).title if get_game(x[0]) else x[0]):
-        if not g.get("ranking") or get_game(slug) is None:
+        ranking = [s for s in g.get("ranking") or [] if s not in ARCHIVED]      # лидер — среди активных методов
+        if not ranking or get_game(slug) is None:
             continue
-        top = g["ranking"][0]
+        top = ranking[0]
         r = g["sources"][top]
         lines.append(f"{notify.esc(get_game(slug).title)}: {notify.SHORT.get(top, '')} {notify.esc(SOURCES.get(top, top))} — "
                      f"{r['trust']:.0f}" + (" (мало данных)" if r.get("few") else ""))

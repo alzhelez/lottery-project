@@ -100,9 +100,19 @@ test('анализ: тесты случайности и сравнение ме
   const next = page.getByTestId('next-card')
   await expect(next).toContainText('Ближайший тираж №13896')
   await expect(page.getByTestId('countdown')).toContainText(':')
-  await expect(page.getByTestId('next-analysis_best')).toContainText('Лучший метод анализа')
+  // активные методы: Ф, К (Б появится после режима Бога); архивные Л, З, Х в карточке не показываются
+  await expect(page.getByTestId('next-analysis_consensus')).toContainText('Консенсус методов')
   await expect(page.getByTestId('next-final')).toContainText('Финальное предсказание')
-  await expect(page.getByTestId('next-chaos')).toHaveCount(0)        // «порядок из хаоса» — только в журнале и статистике
+  for (const id of ['next-analysis_best', 'next-golden', 'next-chaos', 'next-archive']) await expect(page.getByTestId(id)).toHaveCount(0)
+  // пока метод один, общих чисел не выделяем: «Ф» повторяет «К»
+  await expect(page.getByTestId('next-common')).toHaveCount(0)
+  await expect(next.locator('[data-common]')).toHaveCount(0)
+  // пометка популярности у прогноза и «редкая комбинация» без признаков популярного выбора
+  await expect(page.getByTestId('next-analysis_consensus').locator('[data-testid^="rarity-"]')).toHaveCount(1)
+  await expect(page.getByTestId('next-rare')).toContainText('не прогноз')
+  await expect(page.getByTestId('next-rare').locator('.ball')).toHaveCount(8)
+  // деньги: ожидаемый возврат ближайшего тиража
+  await expect(page.getByTestId('next-money')).toContainText('на рубль ставки')
   await expect(page.getByTestId('next-least')).toContainText('Наименее вероятно выпадут')
   await expect(next).toContainText('по журналу: ещё нет сверенных прогнозов')
   await expect(page.getByTestId('next-experiment')).toHaveCount(0)   // «эхо ±3» убрано
@@ -172,7 +182,34 @@ test('журнал прогнозов: запись до тиража и све�
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   const entries = page.getByTestId('journal-entries')
-  // «Все»: одна строка на тираж, по нажатию — прогнозы семи источников (с экспериментом, золотой серединой, наименее вероятными и финальным предсказанием)
+  // в журнале — активные методы: Ф, К, Б, Н
+  await expect(entries).toContainText('4 источника')
+  // «Обзор»: числа, которые есть у каждого метода (Ф, К, Б), обведены; Н в сравнении не участвует
+  await page.getByTestId('tab-overview').click()
+  const card = page.getByTestId('next-card')
+  await expect(page.getByTestId('next-godmode')).toContainText('Режим Бога')
+  await expect(page.getByTestId('next-common')).toContainText('(Ф, К, Б)')
+  const nextData = await (await request.get('/api/games/4x20/next')).json()
+  const shared = nextData.common.flat().length
+  expect(nextData.sources.map((s: { source: string }) => s.source)).toEqual(['final', 'analysis_consensus', 'godmode'])
+  await expect(card.locator('.next-sources [data-common]')).toHaveCount(shared * 3)
+  await expect(page.getByTestId('next-least').locator('[data-common]')).toHaveCount(0)
+  // архив: Л, З, Х считаются только по кнопке в автоанализе — прогноз появляется в блоке «Архив» и в журнале
+  const cov = page.getByTestId('coverage-archive')
+  await expect(cov).toContainText('ЛМА — Лучший метод анализа')
+  await cov.getByTestId('archive-run').click()
+  await expect(cov.getByTestId('archive-run')).toHaveText('Считаю архивные методы…')
+  await expect(page.getByTestId('next-archive')).toBeVisible({ timeout: 300_000 })
+  await expect(page.getByTestId('next-archive')).toContainText('Лучший метод анализа, Золотая середина, Порядок из хаоса')
+  await page.getByTestId('next-archive').locator('summary').click()
+  await expect(page.getByTestId('next-chaos')).toContainText('Порядок из хаоса')
+  // архивные методы на «Ф» и общие числа не влияют
+  const after = await (await request.get('/api/games/4x20/next')).json()
+  expect(after.common).toEqual(nextData.common)
+  expect(after.sources[0].numbers).toEqual(nextData.sources[0].numbers)
+  await page.screenshot({ path: 'tests/e2e/.data/overview-next.png', fullPage: true })
+  await page.getByTestId('tab-journal').click()
+  // «Все»: одна строка на тираж, по нажатию — прогнозы семи источников (четыре активных и три архивных)
   await expect(page.getByTestId('journal-draw')).toHaveCount(1)
   await expect(entries).toContainText('ждёт тиража')
   await expect(entries).toContainText('№13896')
@@ -233,6 +270,10 @@ test('статистика: анализ за период, доверие к м
   await expect(game.getByTestId('stats-top')).toContainText('выше всех доверие')
   await expect(game.getByTestId('trust-row').filter({ hasText: 'Наименее вероятные' })).toContainText('чем меньше выпало')
   await expect(game.getByTestId('trust-table')).toContainText('Золотая середина')
+  // архивные методы помечены; под «Разницей» — честная рамка
+  await expect(game.getByTestId('trust-row').filter({ hasText: 'Золотая середина' })).toContainText('архив')
+  await expect(game.getByTestId('trust-row').filter({ hasText: 'Консенсус методов' })).not.toContainText('архив')
+  await expect(game.getByTestId('trust-row').first().getByTestId('honest-frame')).toBeVisible()
   // … и «По методам» за тот же период: десятки тиражей вместо одного журнального прогноза
   await expect(game).toContainText('половина и больше — от 4 из 8')
   const periodRow = game.getByTestId('stats-row').filter({ hasText: 'Золотая середина' })
@@ -432,10 +473,12 @@ test('автозапуск: цикл из приложения', async ({ page }
   await page.goto('/games/4x20')
   await page.getByTestId('tab-journal').click()
   await expect(page.getByTestId('journal-entries')).toContainText('№13897')
-  // в автозапуске у игры есть прогнозы всех семи источников, включая режим Бога, эксперимент,
-  // золотую середину и наименее вероятные
+  // в автозапуске у игры есть прогнозы четырёх активных методов: Ф, К, Б, Н; архивные (Л, З, Х) цикл не считает
   await page.getByTestId('journal-draw').filter({ hasText: '№13897' }).click()
-  await expect(page.getByTestId('journal-source-row')).toHaveCount(7)
+  await expect(page.getByTestId('journal-source-row')).toHaveCount(4)
+  for (const title of ['Лучший метод анализа', 'Золотая середина', 'Порядок из хаоса']) {
+    await expect(page.getByTestId('journal-source-row').filter({ hasText: title })).toHaveCount(0)
+  }
 })
 
 test('устаревшая игра: анализ есть, в журнал не пишется', async ({ page }) => {

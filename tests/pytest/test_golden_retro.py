@@ -49,7 +49,7 @@ def test_journal_record_writes_all_draws_until_next_cycle(monkeypatch):
     monkeypatch.setattr(lp, "game_activity", lambda d: {"active": True})
     monkeypatch.setattr(journal, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: now)}))
     lp.journal_record(data, "analysis_consensus", [[1, 2, 3, 4, 5]], "", ordered=False)
-    nos = sorted(e["draw_no"] for e in journal.load("5x36")["entries"])
+    nos = sorted(e["draw_no"] for e in journal.load("5x36")["entries"] if e["source"] == "analysis_consensus")
     assert nos == list(range(402, 411))            # горизонт 130 минут — два цикла автозапуска
 
 
@@ -118,12 +118,13 @@ def test_digest_groups_many_draws_and_same_lk():
     def entry(source, no, hits):
         return {"source": source, "source_title": source, "status": "checked", "draw_no": no, "hits": hits,
                 "expected": 1.0, "numbers": [[1, 2, 3, 4, 5]], "actual": [[1, 2, 9, 10, 11]], "won": 100.0 if hits > 2 else 0}
-    many = [entry(s, no, h) for no in (10, 11, 12) for s, h in (("analysis_best", 2), ("golden", 3), ("least", 1))]
+    many = [entry(s, no, h) for no in (10, 11, 12) for s, h in (("analysis_consensus", 2), ("godmode", 3), ("least", 1), ("golden", 5))]
     text = notify.journal_digest([("Рапидо", many)])
-    assert "№10–12 (3 тиража" in text and "Л: 6 из 15" in text and "З: 9 из 15" in text and "Н: выпало 3 из 15" in text
+    assert "№10–12 (3 тиража" in text and "К: 6 из 15" in text and "Б: 9 из 15" in text and "Н: выпало 3 из 15" in text
+    assert "З: " not in text                          # архивные методы в Telegram не показываются
     assert text.count("Рапидо") == 1
-    one = notify.journal_digest([("6 из 45", [entry("analysis_best", 7, 2)])])
+    one = notify.journal_digest([("6 из 45", [entry("analysis_consensus", 7, 2)])])
     assert "№7 (выпало" in one
     msg = notify.auto_message({"games": {}}, {"g": {"title": "Игра", "next_no": 5, "numbers": [[3, 1, 2]],
                                                     "consensus": [[1, 2, 3]], "golden": [[1, 2, 4]]}})
-    assert "Л = К: " in msg and "  К:" not in msg and "З: " in msg
+    assert "  К: <code>1 2 3</code>" in msg and "Л" not in msg.split("Прогнозы")[1] and "З: " not in msg

@@ -15,6 +15,27 @@ export const SOURCES: Record<string, string> = {
 /** Источники, у которых цель — угадать МЕНЬШЕ случайного (числа, которые не выпадут). */
 export const LOWER = new Set(['least'])
 
+/** «Архив»: методы не считаются в циклах автозапуска, не голосуют в «Финальном предсказании» и не
+ * идут в Telegram; запускаются кнопкой «Запустить архивные методы» в автоанализе игры
+ * (python: journal.ARCHIVED). */
+export const ARCHIVED = new Set(['analysis_best', 'golden', 'chaos'])
+
+const Z_SIGNIFICANT = 1.96
+
+/** Честная рамка: по сумме угаданного, ожидаемого и дисперсии — отличим ли результат от случайности.
+ * mde_pct — отрыв от случайного выбора (в %), который на таком числе прогнозов уже отличим (z = 1,96);
+ * need — сколько прогнозов нужно, чтобы отличить нынешний отрыв, если он сохранится (null — отрыва
+ * в нужную сторону нет); proven — уже отличим. То же считает python (trust.score). */
+export function honest(n: number, hits: number, expected: number, variance: number, lower = false) {
+  const z = variance > 0 ? (hits - expected) / Math.sqrt(variance) : 0
+  const good = lower ? -z : z
+  return {
+    mde_pct: expected > 0 && variance > 0 ? (100 * Z_SIGNIFICANT * Math.sqrt(variance)) / expected : null,
+    need: good > 0 && n > 0 ? Math.ceil(n * (Z_SIGNIFICANT / good) ** 2) : null,
+    proven: good >= Z_SIGNIFICANT,
+  }
+}
+
 export interface JournalEntry {
   source: string
   status: string
@@ -79,6 +100,7 @@ export function summarize(entries: JournalEntry[]) {
         expected: exp / done.length,
         excess_pct: exp ? ((hits - exp) / exp) * 100 : 0,
         z,
+        ...honest(done.length, hits, exp, vr, sign < 0),
         // на малом числе прогнозов нормальное приближение врёт, а сам результат — шум
         p_better: done.length >= MIN_FOR_P ? 0.5 * erfc((sign * z) / Math.SQRT2) : null,
         p_sequential: done.length >= MIN_FOR_P ? alwaysValidP(sign * (hits - exp), vr, 1 / (500 * (vr / done.length))) : null,

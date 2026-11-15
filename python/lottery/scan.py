@@ -74,6 +74,36 @@ def workers() -> int:
     return max(1, min(4, (os.cpu_count() or 2) - 1))
 
 
+LEVELS = {"signal": "найдены отклонения, которые можно проверить методами", "weak": "частоты неравномерны, без устойчивости",
+          "random": "отклонений нет"}
+
+
+def watch(payload: dict) -> list[dict]:
+    """Сторож аномалий: игры, у которых уровень проверки на случайность изменился с прошлого раза
+    (data/results/scan_watch.json). Первый запуск только запоминает состояние — без сообщений
+    о давно известном; игра, появившаяся позже, сообщается, только если у неё есть отклонение."""
+    path = results_dir() / "scan_watch.json"
+    try:
+        old = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        old = None
+    now = {g["slug"]: g["level"] for g in payload.get("games", []) if g.get("level") in LEVELS}
+    changes = []
+    if old is not None:
+        for g in payload.get("games", []):
+            slug, level = g["slug"], g.get("level")
+            if level not in LEVELS:
+                continue
+            before = old.get(slug, "random")
+            if level != before:
+                changes.append({"slug": slug, "title": g.get("title", slug), "level": level, "before": before,
+                                "verdict": g.get("verdict", ""), "q_value": g.get("q_value"),
+                                "tests": sorted({t["title"] for t in g.get("tests", []) if t.get("significant")})})
+    if old != now:
+        write_text(path, json.dumps(now, ensure_ascii=False, indent=1))
+    return changes
+
+
 def run_scan(progress=None, parallel: bool = True) -> dict:
     path = results_dir() / "scan.json"
     try:

@@ -4,12 +4,25 @@ import { BlockBalls } from './Balls'
 import { nf, num, pval } from './format'
 import { useJob } from './useJob'
 
-interface Rec { checked: number; mean_hits?: number; expected?: number; p_sequential?: number | null; goal?: string }
-interface Source { source: string; title: string; detail: string; numbers: number[][]; made_at: string | null; record: Rec | null }
+interface Rec {
+  checked: number; mean_hits?: number; expected?: number; p_sequential?: number | null; goal?: string
+  excess_pct?: number; mde_pct?: number | null; need?: number | null; proven?: boolean
+}
+interface Rarity { score: number; flags: string[] }
+interface Source {
+  source: string; title: string; detail: string; numbers: number[][]; made_at: string | null; record: Rec | null
+  rarity?: Rarity | null
+}
 interface NextData {
   draw_no: number | null; date?: string | null; how?: string | null; last_no?: number; active: boolean; draws?: number
   analysis_at?: string | null; super_prize?: number | null
   sources: Source[]
+  common?: number[][]
+  archive?: Source[]
+  archive_titles?: string[]
+  rare?: { numbers: number[][]; notes: string[] } | null
+  money?: { return: number; usual_return: number | null; price: number | null
+    peak: { days: number; max: number | null; is_max: boolean } | null } | null
   least: { numbers: number[][] | null; model: string; consensus: number[][] | null; conclusion: string | null; record: Rec | null } | null
 }
 
@@ -25,15 +38,61 @@ function left(ms: number): string {
   return d ? `${d} д ${two(h)}:${two(m)}:${two(sec)}` : `${two(h)}:${two(m)}:${two(sec)}`
 }
 
+/** Честная рамка: насколько результат метода отличим от случайности и сколько прогнозов для этого нужно. */
+export function HonestFrame({ r, fewer }: { r: { checked?: number; n?: number; mde_pct?: number | null; need?: number | null; proven?: boolean }; fewer?: boolean }) {
+  const n = r.checked ?? r.n ?? 0
+  if (!n || r.mde_pct == null) return null
+  const side = fewer ? 'реже' : 'лучше'
+  return (
+    <span className="sub" data-testid="honest-frame">
+      {r.proven
+        ? <>отрыв уже отличим от случайности (обычный порог, без поправки на число методов и игр)</>
+        : r.need != null
+          ? <>чтобы отличить такой отрыв от случайности, нужно ≈ {nf.format(r.need)} прогнозов — сейчас {nf.format(n)}{r.need > n * 20 ? ': пока это шум' : ''}</>
+          : <>отрыва в сторону «{side} случайного» нет; на {nf.format(n)} прогнозах заметен был бы отрыв от ±{num(r.mde_pct, r.mde_pct < 10 ? 1 : 0)}%</>}
+    </span>
+  )
+}
+
 function RecordLine({ r, fewer }: { r: Rec | null; fewer?: boolean }) {
   if (!r || !r.checked) return <span className="sub">по журналу: ещё нет сверенных прогнозов</span>
   const proven = r.p_sequential != null && r.p_sequential < 0.05
   return (
-    <span className="sub">
-      по журналу: {nf.format(r.checked)} сверено, {fewer ? 'выпало' : 'угадано'} в среднем {num(r.mean_hits, 2)} при {num(r.expected, 2)} у случайного выбора
-      {r.p_sequential != null && <>, последовательное p {pval(r.p_sequential)}</>}
-      {' — '}{proven ? <b className="hit-text">{fewer ? 'устойчиво реже случайного' : 'устойчиво лучше случайного'}</b> : fewer ? 'пока не реже случайных чисел' : 'пока не лучше случайного выбора'}
+    <>
+      <span className="sub">
+        по журналу: {nf.format(r.checked)} сверено, {fewer ? 'выпало' : 'угадано'} в среднем {num(r.mean_hits, 2)} при {num(r.expected, 2)} у случайного выбора
+        {r.p_sequential != null && <>, последовательное p {pval(r.p_sequential)}</>}
+        {' — '}{proven ? <b className="hit-text">{fewer ? 'устойчиво реже случайного' : 'устойчиво лучше случайного'}</b> : fewer ? 'пока не реже случайных чисел' : 'пока не лучше случайного выбора'}
+      </span>
+      <HonestFrame r={r} fewer={fewer} />
+    </>
+  )
+}
+
+/** Пометка популярности комбинации: шанс выигрыша она не меняет, только то, со сколькими придётся делить приз. */
+function RarityTag({ r }: { r?: Rarity | null }) {
+  if (!r) return null
+  return r.score > 0 ? (
+    <span className="sub" data-testid="rarity-popular">
+      <span className="status-tag st-error">популярная комбинация</span>{' '}
+      {r.flags.join('; ')}. В категориях, где приз делится, его придётся делить с большим числом людей.
     </span>
+  ) : (
+    <span className="sub" data-testid="rarity-rare"><span className="status-tag st-done">редкая комбинация</span> признаков популярного выбора нет</span>
+  )
+}
+
+function SourceRow({ s, common, size }: { s: Source; common?: number[][]; size: 'lg' | 'md' | 'sm' }) {
+  return (
+    <div className="next-source" data-testid={`next-${s.source}`}>
+      <span className="src-chip" title={s.title}>{SHORT[s.source]}</span>
+      <div>
+        <div className="src-title">{s.title}{s.detail && <span className="muted">: {s.detail}</span>}</div>
+        <BlockBalls blocks={s.numbers} marked={common} size={size} />
+        <RarityTag r={s.rarity} />
+        <RecordLine r={s.record} />
+      </div>
+    </div>
   )
 }
 
@@ -51,6 +110,11 @@ export function NextDrawCard({ slug, stamp, onAnalyzed }: { slug: string; stamp?
   const fetchJob = useJob('fetch', slug, () => { analyze.start() })
   // перечитать после любого пересчёта анализа (stamp — время отчёта)
   useEffect(() => { load() }, [load, stamp])
+  // архивные методы посчитаны кнопкой в автоанализе — перечитать карточку
+  useEffect(() => {
+    window.addEventListener('lottery:forecast', load)
+    return () => window.removeEventListener('lottery:forecast', load)
+  }, [load])
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
@@ -87,6 +151,17 @@ export function NextDrawCard({ slug, stamp, onAnalyzed }: { slug: string; stamp?
             {data.how ? ` — ${data.how}` : ''}
             {data.super_prize ? `; суперприз ${nf.format(data.super_prize)} ₽` : ''}
           </p>
+          {data.money && (
+            <p className="muted small" data-testid="next-money">
+              Ожидаемый возврат: <b>{num(data.money.return, 2)}</b> на рубль ставки
+              {data.money.usual_return != null && <> (обычно {num(data.money.usual_return, 2)})</>}
+              {data.money.peak?.is_max
+                ? <> — <span className="status-tag st-done" data-testid="next-money-peak">максимум за {data.money.peak.days} дн. наблюдений</span></>
+                : data.money.peak?.max != null && data.money.peak.days >= 14
+                  ? <>; максимум за {Math.min(data.money.peak.days, 180)} дн. наблюдений — {num(data.money.peak.max, 2)}</> : null}
+              . {data.money.return >= 1 ? 'Больше рубля — редкий случай; почти все билеты всё равно проигрывают.' : 'Меньше рубля: в среднем ставка возвращается не полностью.'}
+            </p>
+          )}
         </div>
         {at != null && !passed && (
           <div className="countdown" data-testid="countdown" aria-live="off">
@@ -106,16 +181,42 @@ export function NextDrawCard({ slug, stamp, onAnalyzed }: { slug: string; stamp?
         <>
           <div className="next-sources">
             {data.sources.map((s) => (
-              <div key={s.source} className="next-source" data-testid={`next-${s.source}`}>
-                <span className="src-chip" title={s.title}>{SHORT[s.source]}</span>
-                <div>
-                  <div className="src-title">{s.title}{s.detail && <span className="muted">: {s.detail}</span>}</div>
-                  <BlockBalls blocks={s.numbers} size={s.source === 'analysis_best' ? 'lg' : 'md'} />
-                  <RecordLine r={s.record} />
-                </div>
-              </div>
+              <SourceRow key={s.source} s={s} common={data.common} size={s.source === 'final' ? 'lg' : 'md'} />
             ))}
           </div>
+          {data.sources.filter((s) => s.source !== 'final').length >= 2 && (
+            <p className="muted small" data-testid="next-common">
+              {data.common?.some((b) => b.length) ? (
+                <>
+                  <span className="ball ball-predict ball-common" style={{ width: '1.1rem', height: '1.1rem', marginRight: 8, verticalAlign: 'middle' }} aria-hidden />
+                  Обводкой отмечены числа, которые есть в прогнозе каждого метода ({data.sources.map((s) => SHORT[s.source]).join(', ')}):{' '}
+                  <b>{data.common.map((b) => b.join(' ') || '—').join(' | ')}</b>. «Наименее вероятные» в сравнении не участвуют.
+                </>
+              ) : <>Чисел, которые есть в прогнозе каждого метода ({data.sources.map((s) => SHORT[s.source]).join(', ')}), на этот тираж нет.</>}
+            </p>
+          )}
+          {data.rare && (
+            <div className="next-source" data-testid="next-rare">
+              <span className="src-chip" title="Редкая комбинация">Р</span>
+              <div>
+                <div className="src-title">Редкая комбинация<span className="muted">: не прогноз — числа, которые редко ставят</span></div>
+                <BlockBalls blocks={data.rare.numbers} tone="plain" size="md" />
+                <span className="sub">
+                  {data.rare.notes.join('; ')}. Шанс выигрыша такой же, как у любой другой комбинации; смысл есть только там, где
+                  приз делится между победителями (суперприз): делить его придётся с меньшим числом людей. В журнал не пишется.
+                </span>
+              </div>
+            </div>
+          )}
+          {!!data.archive?.length && (
+            <details className="next-archive" data-testid="next-archive" style={{ margin: '.6rem 0' }}>
+              <summary style={{ cursor: 'pointer' }}><b>Архив</b> <span className="muted small">— методы, запущенные вручную: {data.archive.map((s) => s.title).join(', ')}</span></summary>
+              <div className="next-sources">
+                {data.archive.map((s) => <SourceRow key={s.source} s={s} size="sm" />)}
+              </div>
+              <p className="muted small">Архивные методы в «Финальном предсказании» и в подсветке общих чисел не участвуют; их прогноз записан в журнал и будет сверен.</p>
+            </details>
+          )}
           {data.least?.numbers && (
             <div className="next-least" data-testid="next-least">
               <h3>Наименее вероятно выпадут</h3>

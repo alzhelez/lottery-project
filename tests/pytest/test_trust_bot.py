@@ -66,11 +66,15 @@ def test_trust_build_merges_journal_and_retro(data_dir):
 
 def test_final_numbers_follow_trust_and_avoid_least():
     blocks = [{"lo": 1, "hi": 10}]
-    by = {"analysis_best": [[1, 2, 3]], "chaos": [[4, 5, 6]], "analysis_consensus": [[1, 4, 7]], "least": [[1, 9, 10]]}
-    w = {"analysis_best": 1.0, "chaos": 0.1, "analysis_consensus": 0.1, "least": 0.5}
-    # 1: 1,0+0,1−0,5 = 0,6; 2 и 3: 1,0; 4: 0,2; остальные ≤ 0,1
+    # голосуют активные методы — К и Б; архивные (Л, З, Х) в счёт не идут, даже с большим весом
+    by = {"godmode": [[1, 2, 3]], "analysis_consensus": [[1, 4, 7]], "least": [[1, 9, 10]],
+          "analysis_best": [[8, 9, 10]], "chaos": [[8, 9, 10]], "golden": [[8, 9, 10]]}
+    w = {"godmode": 1.0, "analysis_consensus": 0.1, "least": 0.5, "analysis_best": 5.0, "chaos": 5.0, "golden": 5.0}
+    # 1: 1,0+0,1−0,5 = 0,6; 2 и 3: 1,0; 4 и 7: 0,1
     assert trust.final_numbers(by, blocks, w) == [[1, 2, 3]]
-    assert trust.final_numbers(by, blocks, {**w, "least": 1.0}) == [[2, 3, 4]]       # сильный штраф выбивает 1
+    assert trust.final_numbers(by, blocks, {**w, "least": 1.2}) == [[2, 3, 4]]       # сильный штраф выбивает 1
+    # голосует один метод — Ф повторяет его; голосующих нет — прогноза нет
+    assert trust.final_numbers({"analysis_consensus": [[3, 1, 2]], "least": [[1, 5, 6]]}, blocks, w) == [[1, 2, 3]]
     assert trust.final_numbers({"analysis_best": [[1, 2, 3]], "least": [[4, 5, 6]]}, blocks, w) is None
 
 
@@ -80,9 +84,10 @@ def test_final_is_recorded_after_two_sources(monkeypatch):
     monkeypatch.setattr(lp, "game_activity", lambda d: {"active": True})
     monkeypatch.setattr(lp, "FORECAST_HORIZON_MIN", 0.0)
     monkeypatch.setattr(journal, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: now)}))
-    lp.journal_record(data, "analysis_best", [[1, 2, 3, 4, 5]], "", ordered=False)
-    assert not [e for e in journal.load("5x36")["entries"] if e["source"] == "final"]
-    lp.journal_record(data, "chaos", [[1, 2, 3, 4, 6]], "", ordered=False)
+    lp.journal_record(data, "analysis_best", [[9, 10, 11, 12, 13]], "", ordered=False)      # архивный — не пишется
+    assert not journal.load("5x36")["entries"]
+    lp.journal_record(data, "analysis_consensus", [[1, 2, 3, 4, 5]], "", ordered=False)
+    lp.journal_record(data, "godmode", [[1, 2, 3, 4, 6]], "", ordered=False)
     final = [e for e in journal.load("5x36")["entries"] if e["source"] == "final"]
     assert len(final) == 1 and final[0]["numbers"] == [[1, 2, 3, 4, 5]] and "доверию" in final[0]["detail"]
     lp.journal_record(data, "least", [[1, 20, 21, 22, 23]], "", ordered=False)      # пересчитывается, не дублируется
@@ -101,7 +106,7 @@ def test_final_keeps_record_time_for_started_draw(monkeypatch):
     monkeypatch.setattr(lp, "game_activity", lambda d: {"active": True})
     monkeypatch.setattr(lp, "FORECAST_HORIZON_MIN", 40.0)
     monkeypatch.setattr(journal, "datetime", type("D", (datetime,), {"now": classmethod(lambda cls: clock["now"])}))
-    lp.journal_record(data, "analysis_best", [[1, 2, 3, 4, 5]], "", ordered=False)
+    lp.journal_record(data, "godmode", [[1, 2, 3, 4, 5]], "", ordered=False)
     lp.journal_record(data, "analysis_consensus", [[1, 2, 3, 4, 6]], "", ordered=False)
     first = {e["draw_no"]: e for e in journal.load("5x36")["entries"] if e["source"] == "final"}
     assert len(first) >= 2
@@ -111,17 +116,19 @@ def test_final_keeps_record_time_for_started_draw(monkeypatch):
     assert {e["id"] for e in journal.load("5x36")["entries"] if e["source"] == "final"} == {e["id"] for e in first.values()}
     # прошло 20 минут: ближайший тираж уже сыгран, архив ещё не обновлён; «Режим Бога» дописывает прогноз
     clock["now"] = now + timedelta(minutes=20)
-    lp.journal_record(data, "godmode", [[30, 31, 32, 33, 34]], "", ordered=False)
-    lp.journal_record(data, "least", [[1, 2, 20, 21, 22]], "", ordered=False)
+    lp.journal_record(data, "godmode", [[1, 2, 3, 4, 5]], "пересчитан", ordered=False)
+    lp.journal_record(data, "least", [[1, 2, 3, 21, 22]], "", ordered=False)
     after = {e["draw_no"]: e for e in journal.load("5x36")["entries"] if e["source"] == "final"}
     assert after[near]["id"] == first[near]["id"] and after[near]["made_at"] == first[near]["made_at"]
-    assert after[far]["id"] != first[far]["id"] and 1 not in after[far]["numbers"][0]      # будущий — пересчитан
+    assert after[far]["id"] != first[far]["id"] and after[far]["numbers"] == [[1, 2, 4, 5, 6]]      # будущий — пересчитан
 
 
-def test_auto_message_final_replaces_best_and_consensus():
+def test_auto_message_shows_active_methods_only():
     msg = notify.auto_message({"games": {}}, {"g": {"title": "Игра", "next_no": 5, "numbers": [[1, 2, 3]],
-                                                    "consensus": [[1, 2, 4]], "final": [[1, 2, 9]], "golden": [[1, 2, 5]]}})
-    assert "  Ф: <code>1 2 9</code>\n  З: <code>1 2 5</code>" in msg and "Л: " not in msg and "К: " not in msg
+                                                    "consensus": [[1, 2, 4]], "final": [[1, 2, 9]], "golden": [[1, 2, 5]],
+                                                    "godmode": [[1, 2, 6]], "least": [[7, 8, 9]]}})
+    assert ("  Ф: <code>1 2 9</code>\n  К: <code>1 2 4</code>\n  Б: <code>1 2 6</code>\n  Н (не брать): <code>7 8 9</code>" in msg
+            and "Л: " not in msg and "З: " not in msg)
 
 
 def test_retro_final_uses_only_earlier_draws():
@@ -133,12 +140,12 @@ def test_retro_final_uses_only_earlier_draws():
         return {"source": source, "draw_no": no, "numbers": [numbers], "hits": hits, "expected": 0.7, "variance": 0.5}
     base = []
     for no in range(300, 340):
-        base += [e("analysis_best", no, [1, 2, 3, 4, 5], 3), e("chaos", no, [6, 7, 8, 9, 10], 0),
+        base += [e("godmode", no, [1, 2, 3, 4, 5], 3), e("chaos", no, [6, 7, 8, 9, 10], 5),
                  e("analysis_consensus", no, [1, 2, 3, 11, 12], 1)]
     rows = dict((no, nums) for no, nums, _ in retro.final_rows(data, base))
     assert rows[300] == [[1, 2, 3, 4, 5]] or len(rows[300][0]) == 5        # первый тираж — равные веса
     assert rows[339] == [[1, 2, 3, 4, 5]]                                   # дальше ведёт метод с лучшим счётом
-    changed = [dict(x, hits=0) if x["draw_no"] >= 320 and x["source"] == "analysis_best" else x for x in base]
+    changed = [dict(x, hits=0) if x["draw_no"] >= 320 and x["source"] == "godmode" else x for x in base]
     again = dict((no, nums) for no, nums, _ in retro.final_rows(data, changed))
     assert all(again[no] == rows[no] for no in range(300, 321))             # прошлое и сам тираж 320 не изменились
 
@@ -153,8 +160,9 @@ def test_bot_analysis_button(monkeypatch):
     assert "Анализ за 2 недели запущен" in text and started[0][-4:] == ["retro", "--days", "14", "--notify"]
     bot.route("run:5")                                                      # нет такого периода — просто меню
     assert len(started) == 1
-    done = bot.analysis_done_message(14, {"games": {"5x36": {"ranking": ["golden"], "sources": {"golden": {"trust": 71.0, "few": False}}}}})
-    assert "Анализ за 2 недели завершён" in done and "5 из 36: З Золотая середина — 71" in done
+    done = bot.analysis_done_message(14, {"games": {"5x36": {"ranking": ["golden", "godmode"], "sources": {"golden": {"trust": 99.0, "few": False},
+                                                                                                   "godmode": {"trust": 71.0, "few": False}}}}})
+    assert "Анализ за 2 недели завершён" in done and "5 из 36: Б Режим Бога — 71" in done      # архивный З — не лидер
 
 
 # ── бот ───────────────────────────────────────────────────────────────────
@@ -209,33 +217,38 @@ def test_bot_status_reports_unavailable_app(monkeypatch):
 def test_bot_game_stats_and_method_forecast():
     data, now = _fast_game()
     made = now - timedelta(days=1)
-    journal.record_many(data, "analysis_best", [(402, [[1, 2, 3, 4, 5]])], "Горячие, окно 50", now=now)
+    journal.record_many(data, "analysis_consensus", [(402, [[1, 2, 3, 4, 5]])], "Горячие, окно 50", now=now)
     j = journal.load("5x36")
-    j["entries"] += [_checked("analysis_best", 300 + i, 2, made) for i in range(40)]
+    j["entries"] += [_checked("analysis_consensus", 300 + i, 2, made) for i in range(40)]
     j["entries"] += [{**_checked("least", 300 + i, 0, made), "source": "least"} for i in range(40)]
-    j["entries"].append(_checked("chaos", 100, 5, now - timedelta(days=40)))     # старше двух недель — не в счёт
+    j["entries"].append(_checked("godmode", 100, 5, now - timedelta(days=40)))     # старше двух недель — не в счёт
     journal.save("5x36", j)
     assert ("5x36", "5 из 36") in bot.games()
     text, has = bot.game_stats("5x36", now)
     # таблица за месяц: метод, тиражей, угадано, ожидалось, разница, доверие; Н — последней строкой
     month = text.split("<pre>")[1].split("</pre>")[0].splitlines()
     assert month[0].split() == ["М", "Тир", "Угад", "Ожид", "±%", "Дов"]
-    assert month[1].split() == ["Л", "40", "80", "40", "+100,0", "100"] and month[2].split() == ["Н", "40", "0", "40", "−100,0", "100"]
+    assert month[1].split() == ["К", "40", "80", "40", "+100,0", "100"] and month[2].split() == ["Н", "40", "0", "40", "−100,0", "100"]
     assert len(month) == 3 and all(len(line) <= 32 for line in month)          # хаос 40 дней назад — не за месяц
     # лидеры за полгода: шесть 30-дневных отрезков; хаос — лидер отрезка 40 дней назад (один тираж — «~»)
     half = text.split("<pre>")[2].split("</pre>")[0].splitlines()
     assert len(half) == 7 and all(len(line) <= 30 for line in half)
-    assert half[-1].split()[1:] == ["Л", "+100,0", "100"] and half[-2].split()[1:] == ["~Х", "+400,0", "79"]
+    assert half[-1].split()[1:] == ["К", "+100,0", "100"] and half[-2].split()[1:] == ["~Б", "+400,0", "79"]
     assert half[1].split()[1:] == ["—", "—", "—"]
-    assert "За все полгода: <b>Л Лучший метод анализа</b> — 40 тиражей" in text
+    assert "За все полгода: <b>К Консенсус методов</b> — 40 тиражей" in text
     assert "ещё не посчитаны" in text and "~ — меньше 30 тиражей" in text
-    assert has == ["analysis_best"]
+    assert has == ["analysis_consensus"]
     _, kb = bot.game_menu("5x36")
     # первая кнопка — «Пересчитать предсказания» (истории прогнозов ещё нет), дальше — методы
-    assert [r[0]["callback_data"] for r in kb["inline_keyboard"][:2]] == ["fix:5x36", "m:5x36:analysis_best"]
-    fc = bot.method_forecast("5x36", "analysis_best", now)
+    assert [r[0]["callback_data"] for r in kb["inline_keyboard"][:2]] == ["fix:5x36", "m:5x36:analysis_consensus"]
+    fc = bot.method_forecast("5x36", "analysis_consensus", now)
     assert "Ближайший тираж №402 — через " in fc and "Числа на №402: <code>1 2 3 4 5</code>" in fc
     assert "Прогноза этого метода на ближайший тираж нет" in bot.method_forecast("5x36", "godmode", now)
+    # архивные методы в таблицы бота не попадают
+    j = journal.load("5x36")
+    j["entries"] += [_checked("analysis_best", 300 + i, 5, made) for i in range(40)]
+    journal.save("5x36", j)
+    assert "\n Л " not in bot.game_stats("5x36", now)[0]
 
 
 def test_coverage_finds_draws_without_predictions_and_bot_offers_fix(monkeypatch):
@@ -267,14 +280,16 @@ def test_coverage_finds_draws_without_predictions_and_bot_offers_fix(monkeypatch
     write_draws(draws_path("5x36"), list(data.draws) + more)
     journal.save("5x36", {"game": "5x36", "entries": [_checked("analysis_consensus", 402, 1, now)]})
     c = coverage.coverage("5x36")
-    assert not c["complete"] and c["missing"]["КМ"] == 2 and c["missing"]["ЛМА"] == 3
+    assert not c["complete"] and c["missing"]["КМ"] == 2 and c["missing"]["НВ"] == 3 and "ЛМА" not in c["missing"]
     res = history.fill(load_game_data(get_game("5x36")))
     assert res["added"] == 3 and res["restored"] > 0
     h = history.load("5x36")
     assert h["last_no"] == 403 and coverage.coverage("5x36")["complete"]
     rows = history.rows_of(h)
     assert rows["analysis_consensus"][402] == "1,2,3,4,5"          # прогноз журнала — как записан
-    assert all(403 in rows[s] for s in ("analysis_best", "analysis_consensus", "least", "golden", "chaos", "final"))
+    assert all(403 in rows[s] for s in ("analysis_consensus", "least", "final"))
+    # архивные методы задним числом не восстанавливаются: в истории остаётся посчитанное при сборке
+    assert all(403 not in rows[s] and 400 in rows[s] for s in ("analysis_best", "golden", "chaos"))
     assert history.fill(load_game_data(get_game("5x36")))["status"] == "up_to_date"
 
 
