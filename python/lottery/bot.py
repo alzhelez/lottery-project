@@ -73,6 +73,8 @@ def app_status() -> str:
     try:
         from . import findings
         lines.append(notify.esc(findings.summary()))
+        from . import v2compare
+        lines.append(notify.esc(v2compare.summary()))
     except Exception:  # noqa: BLE001 — строка о находках не должна ломать ответ
         pass
     lines.append(f"Проверено {datetime.now():%d.%m %H:%M}")
@@ -251,6 +253,11 @@ def game_menu(slug: str) -> tuple[str, dict]:
         block = ""
     if block:
         text = f"{text}\n\n{block}"
+    try:
+        from . import v2compare
+        text = f"{text}\n\n{v2compare.summary(slug=slug)}"
+    except Exception:  # noqa: BLE001
+        pass
     try:
         check, need_fix = summary(slug)
     except (ValueError, OSError):

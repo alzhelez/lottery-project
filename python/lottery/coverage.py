@@ -13,7 +13,8 @@ from .games import get_game
 from .journal import ARCHIVED, load
 
 METHODS = [("final", "ФП"), ("analysis_best", "ЛМА"), ("analysis_consensus", "КМ"), ("chaos", "ПиХ"),
-           ("godmode", "РБ"), ("golden", "ЗС"), ("least", "НВ")]
+           ("godmode", "РБ"), ("golden", "ЗС"), ("least", "НВ"),
+           ("final_v2", "ФП2"), ("consensus_v2", "КМ2"), ("godmode_v2", "РБ2"), ("least_v2", "НВ2")]
 
 
 def analysis_days() -> int:
@@ -23,7 +24,7 @@ def analysis_days() -> int:
     return days if days in (1, 3, 7, 14, 30) else 7
 
 
-ALWAYS = {"final", "analysis_consensus", "least"}    # активные методы, считающие каждый тираж истории
+ALWAYS = {"final", "analysis_consensus", "least", "final_v2", "consensus_v2", "godmode_v2", "least_v2"}    # активные методы, считающие каждый тираж истории
 
 
 def coverage(slug: str) -> dict:

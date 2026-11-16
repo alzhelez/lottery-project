@@ -556,7 +556,7 @@ func TestAPI17DigitalExport(t *testing.T) {
 	// GET /api/games/4x20/coverage — автоанализ: семь методов, счётчики сходятся с числом тиражей.
 	cov := get(t, "/api/games/4x20/coverage").JSON(t)
 	methods := cov["methods"].([]any)
-	if len(methods) != 7 {
+	if len(methods) != 11 {
 		t.Fatalf("методов %d", len(methods))
 	}
 	// У каждого метода «есть» + «пропуски» + «быть не может» = число тиражей архива.

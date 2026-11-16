@@ -42,7 +42,7 @@ public class DigitalExportApiTest extends BaseApiTest {
         // GET /api/games/4x20/coverage — автоанализ: семь методов, счётчики сходятся.
         Response cov = get("/api/games/4x20/coverage");
         List<Map<String, Object>> methods = cov.jsonPath().getList("methods");
-        assertThat(methods).hasSize(7);
+        assertThat(methods).hasSize(11);
         // У каждого метода «есть» + «пропуски» + «быть не может» = число тиражей архива.
         double draws = num(cov.jsonPath().get("draws"));
         for (Map<String, Object> m : methods) {

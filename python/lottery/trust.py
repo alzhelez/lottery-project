@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 
 from .fsutil import write_text
 from .games import data_dir
-from .journal import ARCHIVED, LOWER, SOURCES, load
+from .journal import FAMILIES, LOWER, SOURCES, load
 
 PERIODS = (1, 3, 7, 14, 30)       # дней — выбор на вкладке «Статистика»
 SHRINK_N = 30
@@ -135,17 +135,19 @@ def load_trust() -> dict:
 def weights(slug: str, trust: dict | None = None) -> dict[str, float]:
     """Вес источника в финальном голосовании: 0,1 + max(0, доверие − 50)/50 (нет данных — 0,1)."""
     rows = ((trust if trust is not None else load_trust()).get("games") or {}).get(slug, {}).get("sources", {})
-    return {s: BASE_WEIGHT + max(0.0, rows.get(s, {}).get("trust", 50.0) - 50.0) / 50.0 for s in SOURCES if s != FINAL}
+    return {s: BASE_WEIGHT + max(0.0, rows.get(s, {}).get("trust", 50.0) - 50.0) / 50.0 for s in SOURCES if s not in FAMILIES}
 
 
-def final_numbers(by_source: dict[str, list[list[int]]], blocks: list[dict], w: dict[str, float]) -> list[list[int]] | None:
+def final_numbers(by_source: dict[str, list[list[int]]], blocks: list[dict], w: dict[str, float],
+                  final: str = FINAL) -> list[list[int]] | None:
     """Числа финального предсказания по прогнозам источников на один тираж. Источник отдаёт вес
     каждому своему числу, «наименее вероятные» — такой же штраф; при равенстве — число без штрафа,
     затем меньшее.
-    Голосуют активные методы (без архивных). Один голосующий — Ф повторяет его числа;
-    None — голосующих нет."""
-    by_source = {s: v for s, v in by_source.items() if s not in ARCHIVED}       # архивные методы не голосуют
-    voters = [s for s in by_source if s != FINAL and s not in LOWER]
+    Голосуют только источники своей версии (journal.FAMILIES[final]: для «Ф» — К и Б со штрафом Н,
+    для «Ф2» — К2 и Б2 со штрафом Н2); архивные и чужие не в счёт. Один голосующий — итог повторяет
+    его числа; None — голосующих нет."""
+    by_source = {s: v for s, v in by_source.items() if s in FAMILIES[final]}
+    voters = [s for s in by_source if s not in LOWER]
     if not voters:
         return None
     if len(voters) == 1:                    # голосует один метод (режима Бога на тираж нет) — Ф повторяет его
@@ -155,7 +157,7 @@ def final_numbers(by_source: dict[str, list[list[int]]], blocks: list[dict], w: 
         score = {n: 0.0 for n in range(spec["lo"], spec["hi"] + 1)}
         penalized = set()
         for s, numbers in by_source.items():
-            if s == FINAL or b >= len(numbers):
+            if b >= len(numbers):
                 continue
             sign = -1.0 if s in LOWER else 1.0
             for n in numbers[b]:
@@ -169,8 +171,8 @@ def final_numbers(by_source: dict[str, list[list[int]]], blocks: list[dict], w: 
     return out
 
 
-def final_detail(by_source: dict[str, list], w: dict[str, float], trust_rows: dict) -> str:
+def final_detail(by_source: dict[str, list], w: dict[str, float], trust_rows: dict, final: str = FINAL) -> str:
     from .notify import SHORT
     parts = [f"{SHORT.get(s, s)} {trust_rows[s]['trust']:.0f}" if s in trust_rows else f"{SHORT.get(s, s)} —"
-             for s in SOURCES if s in by_source and s != FINAL and s not in ARCHIVED]
+             for s in FAMILIES[final] if s in by_source]
     return "голосование по доверию: " + ", ".join(parts)

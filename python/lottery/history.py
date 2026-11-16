@@ -24,12 +24,13 @@ import numpy as np
 from .drawfile import GameData, block_values
 from .fsutil import write_text
 from .games import data_dir
-from .journal import ARCHIVED
+from .journal import ARCHIVED, FAMILIES
 from .stats import hypergeom_moments
 
 HISTORY_VERSION = 1
-EVAL_SOURCES = ("analysis_best", "analysis_consensus", "least", "golden")
-ORDER = ("analysis_best", "analysis_consensus", "least", "golden", "chaos", "godmode", "final")
+EVAL_SOURCES = ("analysis_best", "analysis_consensus", "least", "golden", "consensus_v2", "godmode_v2", "least_v2")
+ORDER = ("analysis_best", "analysis_consensus", "least", "golden", "chaos", "godmode", "final",
+         "consensus_v2", "godmode_v2", "least_v2", "final_v2")
 
 Rows = dict[str, dict[int, str]]          # источник → номер тиража → числа строкой
 
@@ -76,9 +77,10 @@ def eval_rows(data: GameData, nos: set[int] | None = None) -> tuple[Rows, dict[s
     if ev.get("status") != "ok":
         return {}, {}, {"skipped": ev.get("message", "мало тиражей")}
     picks = ev.pop("_picks")
+    from . import v2
     detail = {"analysis_best": ev["next_prediction"]["model"], "analysis_consensus": "",
               "least": (ev.get("least") or {}).get("next_prediction", {}).get("model", ""),
-              "golden": (ev.get("golden") or {}).get("detail", "")}
+              "golden": (ev.get("golden") or {}).get("detail", ""), **v2.TITLES}
     rows: Rows = {}
     ts = [t for t in range(picks["warm"], part.T) if nos is None or part.draws[t].no in nos]
     for source in EVAL_SOURCES:
@@ -167,24 +169,25 @@ class Scorer:
 
 
 def add_final(rows: Rows, scorer: Scorer, acc: dict[str, list[float]], nos: list[int],
-              keep: dict[int, str] | None = None) -> None:
+              keep: dict[str, dict[int, str]] | None = None) -> None:
     """«Финальное предсказание» на тиражи nos (по возрастанию): голосование источников с весами по
     доверию, накопленному к тиражу, — acc копит «угадано − ожидалось» только по уже пройденным.
-    keep — готовые Ф (из журнала): их числа не пересчитываются."""
+    keep — готовые Ф и Ф2 из журнала ({источник: {тираж: числа}}): их числа не пересчитываются."""
     from . import trust
     from .retro import final_weights
     blocks = [s.to_dict() for s in scorer.specs]
-    final = rows.setdefault("final", {})
     for no in nos:
-        by_source = {s: dec(r[no]) for s, r in rows.items() if s != "final" and no in r}
+        by_source = {s: dec(r[no]) for s, r in rows.items() if s not in FAMILIES and no in r}
         if not by_source:
             continue
-        if keep and no in keep:
-            final[no] = keep[no]
-        else:
-            numbers = trust.final_numbers(by_source, blocks, final_weights(acc))
-            if numbers:
-                final[no] = enc(numbers)
+        for final in FAMILIES:                        # «Ф» и «Ф2» — каждое по источникам своей версии
+            kept = (keep or {}).get(final, {})
+            if no in kept:
+                rows.setdefault(final, {})[no] = kept[no]
+            else:
+                numbers = trust.final_numbers(by_source, blocks, final_weights(acc), final)
+                if numbers:
+                    rows.setdefault(final, {})[no] = enc(numbers)
         for s, numbers in by_source.items():
             hits, mean, var = scorer.score(no, numbers)
             a = acc.setdefault(s, [0.0, 0.0, 0])
@@ -234,7 +237,7 @@ def build(data: GameData, godmode: list[dict] | None = None, godmode_title: str 
     scorer = Scorer(data)
     acc: dict[str, list[float]] = {}
     add_final(rows, scorer, acc, sorted({no for r in rows.values() for no in r}))
-    details["final"] = "голосование по доверию, накопленному к этому тиражу"
+    details["final"] = details["final_v2"] = "голосование по доверию, накопленному к этому тиражу"
     return save(data, rows, details, acc, scorer, now=now), info
 
 
@@ -281,7 +284,7 @@ def fill(data: GameData, log=None) -> dict:
     rows = rows_of(h)
     details = {s: v.get("detail", "") for s, v in h["sources"].items()}
     jr = journal_checked(slug)
-    wanted = [s for s in rows if s != "final"]
+    wanted = [s for s in rows if s not in FAMILIES]
     # задним числом восстанавливаются только активные методы; архивные — если их запускали (журнал)
     need = {s: ({no for no in new if no not in jr.get(s, {})} if s not in ARCHIVED else set()) for s in wanted}
     restored = 0
@@ -305,7 +308,7 @@ def fill(data: GameData, log=None) -> dict:
     for no, text in zip(h["draws"]["nos"], h["draws"]["actual"]):    # старые тиражи — как записаны
         scorer._actual[no] = [tuple(b) for b in dec(text)]
     acc = h.get("final_acc") or {}
-    add_final(rows, scorer, acc, new, keep=jr.get("final"))
+    add_final(rows, scorer, acc, new, keep={f: jr.get(f, {}) for f in FAMILIES})
     save(data, rows, details, acc, scorer, made_at=h.get("made_at"))
     if log and restored:
         log(f"{slug}: {len(new)} новых тиражей, восстановлено прогнозов задним числом — {restored}")

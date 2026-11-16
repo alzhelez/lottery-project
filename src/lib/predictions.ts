@@ -20,6 +20,10 @@ export const METHODS: Array<{ source: string; short: string; title: string }> = 
   { source: 'godmode', short: 'РБ', title: 'Режим Бога' },
   { source: 'golden', short: 'ЗС', title: 'Золотая середина' },
   { source: 'least', short: 'НВ', title: 'Наименее вероятные' },
+  { source: 'final_v2', short: 'ФП2', title: 'Финальное предсказание v2' },
+  { source: 'consensus_v2', short: 'КМ2', title: 'Консенсус v2' },
+  { source: 'godmode_v2', short: 'РБ2', title: 'Режим Бога v2' },
+  { source: 'least_v2', short: 'НВ2', title: 'Наименее вероятные v2' },
 ]
 
 export interface PEntry {
@@ -141,7 +145,7 @@ export interface Coverage {
 
 /** Считают каждый тираж истории; у остальных («Режим Бога», «Порядок из хаоса») честный прогноз
  * есть только на части архива, поэтому «дырой» внутри истории их отсутствие не считается. */
-const ALWAYS = new Set(['final', 'analysis_consensus', 'least'])
+const ALWAYS = new Set(['final', 'analysis_consensus', 'least', 'final_v2', 'consensus_v2', 'godmode_v2', 'least_v2'])
 /** Архивные методы считаются только по кнопке — пропусков у них не бывает (journalStats.ARCHIVED). */
 const ARCHIVED = new Set(['analysis_best', 'golden', 'chaos'])
 

@@ -47,12 +47,15 @@ interface Summary {
   goal?: 'fewer'
 }
 
-const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', golden: 'З', least: 'Н', final: 'Ф' }
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', golden: 'З', least: 'Н', final: 'Ф',
+  final_v2: 'Ф2', consensus_v2: 'К2', godmode_v2: 'Б2', least_v2: 'Н2' }
 const SOURCE_TITLE: Record<string, string> = {
   analysis_best: 'лучший метод', analysis_consensus: 'консенсус', chaos: 'порядок из хаоса', godmode: 'режим Бога',
   experiment: 'эксперимент «эхо ±3»', golden: 'золотая середина', final: 'финальное предсказание', least: 'наименее вероятные',
+  final_v2: 'финальное предсказание v2', consensus_v2: 'консенсус v2', godmode_v2: 'режим Бога v2', least_v2: 'наименее вероятные v2',
 }
-const ORDER = ['final', 'chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'experiment', 'golden', 'least']
+const ORDER = ['final', 'chaos', 'analysis_best', 'analysis_consensus', 'godmode', 'experiment', 'golden', 'least',
+  'final_v2', 'consensus_v2', 'godmode_v2', 'least_v2']
 
 const STATUS: Record<Entry['status'], string> = {
   pending: 'ждёт тиража',
@@ -203,7 +206,7 @@ export function JournalPanel({ info }: { info: Info }) {
                     const open = expanded.has(g.no)
                     const head = g.items[0]
                     const actual = g.items.find((e) => e.actual)?.actual
-                    const won = g.items.reduce((acc, e) => (e.won != null && e.source !== 'least' ? (acc ?? 0) + e.won : acc), null as number | null)
+                    const won = g.items.reduce((acc, e) => (e.won != null && !e.source.startsWith('least') ? (acc ?? 0) + e.won : acc), null as number | null)
                     const status = g.items.some((e) => e.status === 'pending') ? 'pending'
                       : g.items.some((e) => e.status === 'checked') ? 'checked' : head.status
                     const rows = [

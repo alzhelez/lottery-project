@@ -376,8 +376,8 @@ def test_digital_export_and_coverage(api):
     assert api.get("/api/games/6x45/digital", params={"days": 5}).status_code == 400
     # GET /api/games/4x20/coverage — автоанализ по всему архиву: чего не хватает по методам.
     cov = api.get("/api/games/4x20/coverage").json()
-    # В ответе все семь методов с сокращениями, а счётчики сходятся.
-    assert [m["short"] for m in cov["methods"]] == ["ФП", "ЛМА", "КМ", "ПиХ", "РБ", "ЗС", "НВ"]
+    # В ответе все методы с сокращениями — первая версия и вторая (с цифрой 2), а счётчики сходятся.
+    assert [m["short"] for m in cov["methods"]] == ["ФП", "ЛМА", "КМ", "ПиХ", "РБ", "ЗС", "НВ", "ФП2", "КМ2", "РБ2", "НВ2"]
     # «есть» + «пропуски» + «быть не может» (разгон и т. п.) = число тиражей архива.
     assert all(m["have"] + m["missing"] + m["na"] == cov["draws"] for m in cov["methods"])
     # «Всё на месте» — только когда история прогнозов на весь архив посчитана и пропусков нет.

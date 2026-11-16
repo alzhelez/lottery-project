@@ -111,6 +111,8 @@ export async function GET() {
     trust,
     // «находки» — заранее записанное правило (python/lottery/findings.py), пересчитывается каждый цикл
     findings: readJson<Record<string, unknown>>(path.join(dataDir(), 'findings.json')),
+    // версия 2 против первой на одних и тех же тиражах (python/lottery/v2compare.py)
+    v2: readJson<Record<string, unknown>>(path.join(dataDir(), 'v2_compare.json')),
     period,
     watch: watchList(games),
     retro: {

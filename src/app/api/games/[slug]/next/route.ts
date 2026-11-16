@@ -11,6 +11,8 @@ type Entry = JournalEntry & { numbers: number[][]; detail?: string; source_title
 const ORDER = ['final', 'analysis_consensus', 'godmode']
 // архивные: показываются, только если их запускали («Запустить архивные методы») и прогноз на тираж есть
 const ARCHIVE = ['analysis_best', 'golden', 'chaos']
+// версия 2 тех же методов — отдельным блоком; сравнение с первой — в «Статистике»
+const V2 = ['final_v2', 'consensus_v2', 'godmode_v2', 'least_v2']
 
 interface Rarity {
   applicable?: boolean; reason?: string; based_on?: number
@@ -83,6 +85,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   }
   const sources = ORDER.map((s) => row(s, true)).filter((s) => s.numbers)
   const archive = ARCHIVE.map((s) => row(s, false)).filter((s) => s.numbers)
+  const v2 = V2.map((s) => row(s, false)).filter((s) => s.numbers)
   // «Ф» строится из остальных методов: пока сам метод один, «общими» оказались бы все его числа
   const common = sources.filter((s) => s.source !== 'final').length >= 2
     ? commonNumbers(sources.map((s) => s.numbers as number[][])) : []
@@ -104,7 +107,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       return: money.return, usual_return: money.usual_return ?? null, price: money.price ?? null,
       peak: money.peak ?? null,
     } : null,
-    sources, least, common, archive,
+    sources, least, common, archive, v2,
     archive_titles: ARCHIVE.map((s) => SOURCES[s]),
     rare: rarity?.based_on === lastNo && rarity.applicable ? rarity.rare ?? null : null,
   })

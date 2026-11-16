@@ -223,7 +223,7 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
     """Прогноз в журнал — только для активной игры (иначе тираж не наступит). Номер тиража —
     ближайший будущий (journal.target_draw), если не задан, и следующие до горизонта
     (forecast_targets); числа — в предсказанном порядке выпадения."""
-    from lottery.journal import ARCHIVED, record_many
+    from lottery.journal import ARCHIVED, FAMILIES, record_many
     if not (data.draws and game_activity(data)["active"]):
         return
     if source in ARCHIVED and not ARCHIVE_RUN:
@@ -233,7 +233,7 @@ def journal_record(data, source: str, numbers, detail: str, draw_no: int | None 
         nums = ordered_prediction(data, numbers, t["no"], t["mechanism"]) if ordered else [sorted(b) for b in numbers]
         items.append((t["no"], nums))
     record_many(data, source, items, detail, ordered=ordered)
-    if source != "final":
+    if source not in FAMILIES:
         record_final(data)
         try:
             from lottery import rarity
@@ -253,7 +253,7 @@ def record_final(data) -> dict[int, list[list[int]]]:
     когда «Режим Бога» дописывает свой прогноз через несколько минут), — и сверка её не
     засчитывала («прогноз после тиража»): финальное предсказание теряло по тиражу за цикл."""
     from lottery import trust
-    from lottery.journal import load, record_many, target_draw
+    from lottery.journal import FAMILIES, load, record_many, target_draw
     pending: dict[int, dict[str, list]] = {}
     for e in load(data.game.slug)["entries"]:
         if e["status"] == "pending" and e["draw_no"] > data.draws[-1].no:
@@ -264,16 +264,20 @@ def record_final(data) -> dict[int, list[list[int]]]:
     blocks = [s.to_dict() for s in data.fmt.blocks]
     nearest = target_draw(data)["no"]
     out = {}
-    for no, by_source in pending.items():
-        had = by_source.get("final")
-        if had is not None and no < nearest:
-            continue                                  # тираж уже мог пройти — прежняя запись остаётся
-        numbers = trust.final_numbers(by_source, blocks, w)
-        if numbers and numbers != had:
-            out[no] = numbers
-    if out:
-        any_sources = max(pending.values(), key=len)
-        record_many(data, "final", sorted(out.items()), trust.final_detail(any_sources, w, rows), ordered=False)
+    for final in FAMILIES:                            # «Ф» — по К, Б, Н; «Ф2» — по К2, Б2, Н2
+        done = {}
+        for no, by_source in pending.items():
+            had = by_source.get(final)
+            if had is not None and no < nearest:
+                continue                              # тираж уже мог пройти — прежняя запись остаётся
+            numbers = trust.final_numbers(by_source, blocks, w, final)
+            if numbers and numbers != had:
+                done[no] = numbers
+        if done:
+            any_sources = max(pending.values(), key=len)
+            record_many(data, final, sorted(done.items()), trust.final_detail(any_sources, w, rows, final), ordered=False)
+        if final == "final":
+            out = done
     return out
 
 
@@ -445,6 +449,10 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
             # наименее вероятные: порядок выпадения для них смысла не имеет — числа по возрастанию
             journal_record(data, "least", least["next_prediction"]["numbers"], least["next_prediction"]["model"],
                            draw_no=target["no"], mechanism=mech_next, ordered=False)
+        # версия 2: К2, Б2, Н2 — те же модели с весами по результату на последних тиражах (lottery/v2.py)
+        for source, row in ((evaluation.get("v2") or {}).get("sources") or {}).items():
+            journal_record(data, source, row["next"], row["detail"], draw_no=target["no"], mechanism=mech_next,
+                           ordered=False)
         golden = evaluation.get("golden")
         if golden:
             golden["next"] = ordered_prediction(data, golden["next"], target["no"], mech_next)
@@ -683,6 +691,12 @@ def auto_once(args) -> dict:
                 notify.send(notify.finding_message(found), "drift")
         except Exception as exc:  # noqa: BLE001
             log(f"Находки не проверены: {type(exc).__name__}: {exc}")
+        # версия 2 против первой — на одних и тех же тиражах (lottery/v2compare.py)
+        try:
+            from lottery import v2compare
+            v2compare.build(forecast_slugs())
+        except Exception as exc:  # noqa: BLE001
+            log(f"Сравнение версий не пересчитано: {type(exc).__name__}: {exc}")
         for slug, r in fetched.items():
             status["games"].setdefault(slug, {}).update(
                 {"fetch": r.get("status"), "added": r.get("added", 0), "journal_checked": r.get("journal_checked", 0)})
@@ -761,8 +775,10 @@ def auto_once(args) -> dict:
         log("Автозапуск: готово")
         from lottery.journal import load as load_journal
         for slug, p in predictions.items():
-            p["final"] = next((e["numbers"] for e in load_journal(slug)["entries"]
-                               if e["source"] == "final" and e["status"] == "pending" and e["draw_no"] == p.get("next_no")), None)
+            entries = [e for e in load_journal(slug)["entries"] if e["status"] == "pending" and e["draw_no"] == p.get("next_no")]
+            p["final"] = next((e["numbers"] for e in entries if e["source"] == "final"), None)
+            # версия 2 — из журнала: те же числа, что будут сверены
+            p["v2"] = {e["source"]: e["numbers"] for e in entries if e["source"].endswith("_v2")}
         notify.send(notify.auto_message(status, predictions), "auto")
         # ретро-проверка за неделю — раз в неделю (и после изменения расчёта), после прогнозов цикла
         from lottery import retro
@@ -828,6 +844,11 @@ def run_retro(log, slugs: list[str] | None = None, days: int = 7, godmode_budget
         from lottery import trust
         # пересчёт одной игры («Пересчитать предсказания») не должен стирать доверие остальных
         trust.build(sorted(set(every) | set(slugs)), days)
+        try:                                        # история пересчитана — обновить сравнение версий
+            from lottery import v2compare
+            v2compare.build(sorted(set(every) | set(slugs)))
+        except Exception as exc:  # noqa: BLE001
+            log(f"Сравнение версий не пересчитано: {type(exc).__name__}: {exc}")
         n = sum(g.get("entries", 0) for g in res["games"].values())
         log(f"Ретро-проверка за {days} дн.: {n} прогнозов по {len(res['games'])} играм за {time.time() - t0:.0f} с")
         return res

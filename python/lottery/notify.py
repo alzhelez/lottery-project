@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 import requests
 
 from .games import data_dir
+from .journal import LOWER
 
 EVENTS = ("journal", "auto", "godmode", "errors", "drift", "ev", "tickets")
 TIMEOUT = (10, 20)          # соединение, ответ
@@ -252,13 +253,15 @@ def _dec(v: float, digits: int) -> str:
 
 
 SHORT = {"analysis_best": "Л", "analysis_consensus": "К", "chaos": "Х", "godmode": "Б",
-         "golden": "З", "least": "Н", "final": "Ф"}
+         "golden": "З", "least": "Н", "final": "Ф",
+         "final_v2": "Ф2", "consensus_v2": "К2", "godmode_v2": "Б2", "least_v2": "Н2"}
 
 
 LEGEND = ("Ф — финальное предсказание (К и Б с весами по доверию, без Н), "
           "К — консенсус методов, Б — режим Бога, "
-          "Н — наименее вероятные (их лучше не брать)")
-ORDER = ("final", "analysis_consensus", "godmode", "least")
+          "Н — наименее вероятные (их лучше не брать); "
+          "с цифрой 2 — вторая версия тех же методов: веса моделей по результату на последних тиражах")
+ORDER = ("final", "analysis_consensus", "godmode", "least", "final_v2", "consensus_v2", "godmode_v2", "least_v2")
 # архивные методы (Л, З, Х) остаются в журнале и статистике, но в Telegram не показываются
 TELEGRAM_HIDDEN = {"analysis_best", "golden", "chaos", "experiment"}
 
@@ -286,8 +289,8 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
                 label = SHORT.get(source, esc(es[0]["source_title"]))
                 # у метода прогноз не на все тиражи сводки — иначе его «из N» не сравнить с остальными
                 part = f" · по {len(es)} из {len(by_draw)} тир." if len(es) < len(by_draw) else ""
-                if source == "least":
-                    lines.append(f"  Н: выпало {h} из {total} (меньше — лучше){part}")
+                if source in LOWER:
+                    lines.append(f"  {label}: выпало {h} из {total} (меньше — лучше){part}")
                     continue
                 w = sum(e.get("won") or 0 for e in es)
                 lines.append(f"  {label}: {h} из {total} при ожидаемых {_dec(sum(e['expected'] for e in es), 1)}"
@@ -303,9 +306,9 @@ def journal_digest(games: list[tuple[str, list[dict]]]) -> str | None:
             lines = [f"<b>{esc(title)}</b> №{no} (выпало <code>{esc(fmt_blocks(group[0]['actual']))}</code>)"]
             for e in group:
                 total = sum(len(b) for b in e["numbers"])
-                if e["source"] == "least":
+                if e["source"] in LOWER:
                     # числа, которые не должны были выпасть: меньше — лучше, в итог не входят
-                    lines.append(f"  Н: выпало {e['hits']} из {total} (меньше — лучше)")
+                    lines.append(f"  {SHORT.get(e['source'], 'Н')}: выпало {e['hits']} из {total} (меньше — лучше)")
                     continue
                 w = f" — выигрыш {_rub(e['won'])} ₽" if e.get("won") else ""
                 lines.append(f"  {SHORT.get(e['source'], esc(e['source_title']))}: {e['hits']} из {total}{w}")
@@ -359,7 +362,9 @@ def auto_message(status: dict, predictions: dict[str, dict]) -> str:
         lines = [f"<b>{esc(p['title'])}</b> №{p['next_no']}"]
         for label, nums in (("Ф", p.get("final")), ("К", p.get("consensus")),
                             (f"Б (на №{p['godmode_no']})" if p.get("godmode_no") else "Б", p.get("godmode")),
-                            ("Н (не брать)", p.get("least"))):
+                            ("Н (не брать)", p.get("least")),
+                            *((SHORT[s] + (" (не брать)" if s in LOWER else ""), (p.get("v2") or {}).get(s))
+                              for s in ORDER if s.endswith("_v2"))):
             if nums:
                 lines.append(f"  {label}: <code>{esc(fmt_blocks(nums))}</code>")
         parts.append("\n".join(lines))

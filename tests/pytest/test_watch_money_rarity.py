@@ -84,7 +84,7 @@ def test_honest_frame_in_trust_score():
 
 def test_archived_methods_do_not_vote_or_show_in_telegram():
     assert journal.ARCHIVED == {"analysis_best", "golden", "chaos"} and journal.ARCHIVED <= notify.TELEGRAM_HIDDEN
-    assert set(journal.ACTIVE) == {"analysis_consensus", "godmode", "least", "final"}
+    assert set(journal.ACTIVE) == {"analysis_consensus", "godmode", "least", "final", "consensus_v2", "godmode_v2", "least_v2", "final_v2"}
     from lottery import botstats
     assert not set(botstats.ORDER) & journal.ARCHIVED
 

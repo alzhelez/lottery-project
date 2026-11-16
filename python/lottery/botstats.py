@@ -22,9 +22,10 @@ from .trust import SHRINK_N, _when, score
 
 MONTH_DAYS = 30
 HALF_YEAR_MONTHS = 6
-ORDER = ("final", "analysis_consensus", "godmode", "least")          # активные методы; архивные — на сайте
+# активные методы обеих версий; архивные — на сайте
+ORDER = ("final", "analysis_consensus", "godmode", "least", "final_v2", "consensus_v2", "godmode_v2", "least_v2")
 LEGEND = ("Ф — финальное предсказание, К — консенсус, Б — режим Бога, "
-          "Н — наименее вероятные (у них меньше — лучше)")
+          "Н — наименее вероятные (у них меньше — лучше); с цифрой 2 — вторая версия метода")
 
 _cache: dict[str, tuple[tuple, dict]] = {}
 
@@ -101,10 +102,10 @@ def _pct(v: float) -> str:
 
 def month_table(stats: dict[str, dict]) -> str:
     """Таблица методов: тиражей, угадано, ожидалось при случайном выборе, разница в %, доверие."""
-    lines = [" М   Тир  Угад  Ожид    ±%  Дов"]
+    lines = [" М    Тир  Угад  Ожид    ±%  Дов"]
     for source, r in sorted(stats.items(), key=lambda x: (x[0] in LOWER, -x[1]["trust"])):
         mark = "~" if r["few"] else " "
-        lines.append(f"{mark}{SHORT[source]} {r['n']:>5} {r['hits']:>5} {r['expected']:>5.0f} {_pct(r['excess_pct']):>6} {r['trust']:>4.0f}")
+        lines.append(f"{mark}{SHORT[source]:<2} {r['n']:>5} {r['hits']:>5} {r['expected']:>5.0f} {_pct(r['excess_pct']):>6} {r['trust']:>4.0f}")
     return "\n".join(lines)
 
 
@@ -125,7 +126,7 @@ def leaders_table(rows: dict, now: datetime) -> tuple[str, tuple[str, dict] | No
             lines.append(f"{span}    —     —    —")
         else:
             s, r = top
-            lines.append(f"{span}  {'~' if r['few'] else ' '}{SHORT[s]}  {_pct(r['excess_pct']):>6} {r['trust']:>4.0f}")
+            lines.append(f"{span}  {'~' if r['few'] else ' '}{SHORT[s]:<2} {_pct(r['excess_pct']):>6} {r['trust']:>4.0f}")
     whole = leader(window(rows, now - timedelta(days=MONTH_DAYS * HALF_YEAR_MONTHS), now + timedelta(days=1)))
     return "\n".join(lines), whole
 

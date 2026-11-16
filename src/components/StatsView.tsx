@@ -65,7 +65,73 @@ function FindingsBlock({ f, slug }: { f: Findings; slug?: string }) {
   )
 }
 
+interface V2Side { n: number; v1_hits: number; v2_hits: number; diff_per_draw: number; diff_pct: number; z: number }
+interface V2Pair { v1: string; v2: string; title: string; lower: boolean; history: V2Side; journal: V2Side | null; verdict: 'better' | 'worse' | 'same' | 'early' }
+interface V2Compare {
+  updated_at: string
+  rule: { alpha: number; tests: number; z_crit: number; min_draws: number }
+  tally: Record<'better' | 'worse' | 'same' | 'early', number>
+  games: Array<{ slug: string; title: string; pairs: V2Pair[] }>
+}
+const V2_VERDICT: Record<V2Pair['verdict'], [string, string]> = {
+  better: ['v2 лучше', 'st-done'], worse: ['v2 хуже', 'st-error'], same: ['не отличаются', 'st-skipped'], early: ['рано судить', 'st-skipped'],
+}
+
+/** «Версия 2 против первой»: парное сравнение на тиражах, где есть прогноз обеих версий. */
+function V2Block({ c, slug }: { c: V2Compare; slug?: string }) {
+  const games = slug ? c.games.filter((g) => g.slug === slug) : c.games
+  const t = c.tally
+  const table = (
+    <div className="table-wrap">
+      <table className="data compact" data-testid="v2-table">
+        <thead>
+          <tr>
+            {!slug && <th>Игра</th>}<th>Метод</th><th className="r">Тиражей</th><th className="r">v1</th><th className="r">v2</th>
+            <th className="r">Разница</th><th className="r">z</th><th>Вердикт</th><th className="r">По журналу</th>
+          </tr>
+        </thead>
+        <tbody>
+          {games.flatMap((g) => g.pairs.map((p) => (
+            <tr key={g.slug + p.v1} data-testid="v2-row">
+              {!slug && <td>{g.title}</td>}
+              <td>{p.title}{p.lower && <span className="sub">меньше выпало — лучше</span>}</td>
+              <td className="r num">{nf.format(p.history.n)}</td>
+              <td className="r num">{nf.format(p.history.v1_hits)}</td>
+              <td className="r num">{nf.format(p.history.v2_hits)}</td>
+              <td className="r num">{signed(p.history.diff_pct)}</td>
+              <td className="r num">{num(p.history.z, 2)}</td>
+              <td><span className={`status-tag ${V2_VERDICT[p.verdict][1]}`}>{V2_VERDICT[p.verdict][0]}</span></td>
+              <td className="r num">{p.journal ? `${nf.format(p.journal.n)} · z ${num(p.journal.z, 2)}` : '—'}</td>
+            </tr>
+          )))}
+        </tbody>
+      </table>
+    </div>
+  )
+  return (
+    <section className="card" data-testid="v2-compare" style={{ margin: '12px 0' }}>
+      <b>Версия 2 против первой</b>{' '}
+      {!slug && (
+        <span className="muted small" data-testid="v2-tally">
+          пар «игра + метод»: v2 лучше — {t.better}, хуже — {t.worse}, не отличаются — {t.same}{t.early ? `, рано судить — ${t.early}` : ''}
+        </span>
+      )}
+      {games.length === 0
+        ? <p className="muted small">По этой игре сравнения ещё нет — проведите анализ за период: он посчитает методы v2 на всём архиве.</p>
+        : slug ? table : <details><summary style={{ cursor: 'pointer' }} className="small">все пары</summary>{table}</details>}
+      <p className="muted small" style={{ marginBottom: 0 }}>
+        Сравниваются одни и те же тиражи: на каждом — сколько чисел угадала первая версия метода и сколько вторая (у
+        «наименее вероятных» — сколько выпало). «Тиражей», v1, v2 — по всему архиву (расчёт задним числом, только по тиражам
+        до каждого) и журналу; «По журналу» — только прогнозы, записанные до тиража. Вердикт — по порогу, записанному
+        заранее: |z| ≥ {num(c.rule.z_crit, 2)} (поправка на {c.rule.tests} сравнений), не меньше {c.rule.min_draws} общих тиражей.
+        Если тиражи случайны, обе версии дают одно и то же — «не отличаются» здесь ожидаемый результат, а не ошибка.
+      </p>
+    </section>
+  )
+}
+
 interface Stats {
+  v2?: V2Compare | null
   findings?: Findings | null
   games: Game[]; watch: Watch[]
   trust: { made_at?: string; days?: number; since?: string; games: TrustGame[] } | null
@@ -75,7 +141,7 @@ interface Stats {
 
 const MIN_RELIABLE = 30
 const PERIODS: Array<[number, string]> = [[1, 'сутки'], [3, '3 дня'], [7, 'неделю'], [14, '2 недели'], [30, 'месяц']]
-const LOWER = 'least'
+const LOWER = new Set(['least', 'least_v2'])
 const ARCHIVED = new Set(['analysis_best', 'golden', 'chaos'])
 const archiveTag = (source: string) => ARCHIVED.has(source)
   ? <span className="status-tag st-skipped" style={{ marginLeft: 8 }} title="метод в архиве: считается только по кнопке «Запустить архивные методы»">архив</span> : null
@@ -117,7 +183,7 @@ function TrustTable({ rows }: { rows: TrustRow[] }) {
           {rows.map((r) => (
             <tr key={r.source} data-testid="trust-row">
               <td className="r num">{r.rank}</td>
-              <td>{r.title}{archiveTag(r.source)}{r.source === LOWER && <span className="sub">чем меньше выпало его чисел, тем выше доверие</span>}</td>
+              <td>{r.title}{archiveTag(r.source)}{LOWER.has(r.source) && <span className="sub">чем меньше выпало его чисел, тем выше доверие</span>}</td>
               <td className="r num"><b>{num(r.trust, 0)}</b></td>
               <td>
                 <span className={`status-tag ${r.few ? '' : trustClass(r.trust)}`}>{r.level}</span>
@@ -126,7 +192,7 @@ function TrustTable({ rows }: { rows: TrustRow[] }) {
               <td className="r num">{nf.format(r.n)}</td>
               <td className="r num">{nf.format(r.hits)}</td>
               <td className="r num">{num(r.expected, 1)}</td>
-              <td className="r num">{signed(r.excess_pct)}<HonestFrame r={r} fewer={r.source === LOWER} /></td>
+              <td className="r num">{signed(r.excess_pct)}<HonestFrame r={r} fewer={LOWER.has(r.source)} /></td>
             </tr>
           ))}
         </tbody>
@@ -279,6 +345,7 @@ export function StatsView({ slug }: { slug?: string } = {}) {
       </p>
 
       {all.findings?.rule && <FindingsBlock f={all.findings} slug={slug} />}
+      {all.v2?.rule && <V2Block c={all.v2} slug={slug} />}
 
       {slugs.length === 0 && (
         <p className="empty" data-testid="trust-empty">Данных пока нет — проведите анализ за период или дождитесь первых сверенных прогнозов.</p>

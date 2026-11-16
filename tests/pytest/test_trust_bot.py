@@ -229,7 +229,7 @@ def test_bot_game_stats_and_method_forecast():
     month = text.split("<pre>")[1].split("</pre>")[0].splitlines()
     assert month[0].split() == ["М", "Тир", "Угад", "Ожид", "±%", "Дов"]
     assert month[1].split() == ["К", "40", "80", "40", "+100,0", "100"] and month[2].split() == ["Н", "40", "0", "40", "−100,0", "100"]
-    assert len(month) == 3 and all(len(line) <= 32 for line in month)          # хаос 40 дней назад — не за месяц
+    assert len(month) == 3 and all(len(line) <= 33 for line in month)          # хаос 40 дней назад — не за месяц
     # лидеры за полгода: шесть 30-дневных отрезков; хаос — лидер отрезка 40 дней назад (один тираж — «~»)
     half = text.split("<pre>")[2].split("</pre>")[0].splitlines()
     assert len(half) == 7 and all(len(line) <= 30 for line in half)

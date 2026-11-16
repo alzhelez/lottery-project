@@ -289,6 +289,28 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         least = {"status": "error", "message": f"{type(exc).__name__}: {exc}"}
     least_picks = least.pop("_best_picks", None)
     least_walk = least.pop("_walk_picks", None)
+    anti_picks = least.pop("_anti_picks", None)
+
+    # версия 2: веса моделей по результату на последних тиражах (v2.py); только стандартные методы
+    v2 = None
+    v2_picks: dict[str, list[np.ndarray]] = {}
+    if len(voters) >= 3:
+        from . import v2 as v2_mod
+        hits_of = {m.key: h for m, h in results}
+        title_of = {m.key: ru(m.title) for m, h in results}
+        try:
+            built = v2_mod.build(ev, [all_picks[k] for k in voters], [hits_of[k] for k in voters],
+                                 [title_of[k] for k in voters], anti_picks)
+            v2_picks = built["picks"]
+            v2 = {"half_life": v2_mod.HALF_LIFE, "sources": {}}
+            for source, p in v2_picks.items():
+                h2 = ev.hits(p)
+                met = least_mod.lower_metrics if source == "least_v2" else metrics
+                v2["sources"][source] = {"detail": built["detail"][source], "next": ev.numbers(p, t_total),
+                                         "all": met(h2[warm:], m0[warm:], v0[warm:]),
+                                         "holdout": met(h2[split:], m0[split:], v0[split:])}
+        except Exception as exc:  # noqa: BLE001 — версия 2 не должна ронять анализ
+            v2 = {"status": "error", "message": f"{type(exc).__name__}: {exc}"}
 
     golden = None
     gold = None
@@ -311,7 +333,8 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
                                            candidates.index(best))
         full = {"analysis_best": best_walk, "analysis_consensus": cons_picks, "least": least_walk,
                 "golden": (golden_picks(best_walk, least_walk, [all_picks[k] for k in voters], data.fmt.blocks)
-                           if least_walk is not None and gold is not None else None)}
+                           if least_walk is not None and gold is not None else None),
+                **v2_picks}        # v2 честны на каждом тираже: веса — только по тиражам до него
 
     pmf = baseline_pmf(data, slice(warm, None))
     best_h = next(h for m, h in results if m.key == best["key"])[warm:]
@@ -342,6 +365,7 @@ def evaluate_game(data: GameData, progress=None, models: list[Model] | None = No
         "distribution": {"observed": dist_obs.tolist(), "expected": (pmf * len(best_h)).round(1).tolist()},
         "least": least,
         "golden": golden,
+        "v2": v2,
         **({"_picks": {"analysis_best": best_picks, "analysis_consensus": cons_picks,
                        "least": least_picks, "golden": gold,
                        "split": split, "warm": warm, "full": full}} if keep_picks else {}),

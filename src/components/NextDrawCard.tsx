@@ -19,6 +19,7 @@ interface NextData {
   sources: Source[]
   common?: number[][]
   archive?: Source[]
+  v2?: Source[]
   archive_titles?: string[]
   rare?: { numbers: number[][]; notes: string[] } | null
   money?: { return: number; usual_return: number | null; price: number | null
@@ -26,7 +27,8 @@ interface NextData {
   least: { numbers: number[][] | null; model: string; consensus: number[][] | null; conclusion: string | null; record: Rec | null } | null
 }
 
-const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', golden: 'З', final: 'Ф' }
+const SHORT: Record<string, string> = { analysis_best: 'Л', analysis_consensus: 'К', chaos: 'Х', godmode: 'Б', experiment: 'Э', golden: 'З', final: 'Ф',
+  final_v2: 'Ф2', consensus_v2: 'К2', godmode_v2: 'Б2', least_v2: 'Н2' }
 
 function left(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000))
@@ -82,15 +84,15 @@ function RarityTag({ r }: { r?: Rarity | null }) {
   )
 }
 
-function SourceRow({ s, common, size }: { s: Source; common?: number[][]; size: 'lg' | 'md' | 'sm' }) {
+function SourceRow({ s, common, size, fewer }: { s: Source; common?: number[][]; size: 'lg' | 'md' | 'sm'; fewer?: boolean }) {
   return (
     <div className="next-source" data-testid={`next-${s.source}`}>
       <span className="src-chip" title={s.title}>{SHORT[s.source]}</span>
       <div>
         <div className="src-title">{s.title}{s.detail && <span className="muted">: {s.detail}</span>}</div>
-        <BlockBalls blocks={s.numbers} marked={common} size={size} />
+        <BlockBalls blocks={s.numbers} marked={common} size={size} tone={fewer ? 'cold' : undefined} />
         <RarityTag r={s.rarity} />
-        <RecordLine r={s.record} />
+        <RecordLine r={s.record} fewer={fewer} />
       </div>
     </div>
   )
@@ -216,6 +218,19 @@ export function NextDrawCard({ slug, stamp, onAnalyzed }: { slug: string; stamp?
               </div>
               <p className="muted small">Архивные методы в «Финальном предсказании» и в подсветке общих чисел не участвуют; их прогноз записан в журнал и будет сверен.</p>
             </details>
+          )}
+          {!!data.v2?.length && (
+            <div className="next-v2" data-testid="next-v2" style={{ margin: '.8rem 0' }}>
+              <h3>Версия 2</h3>
+              <p className="muted small">
+                Те же методы, но голос модели весит по её результату на последних тиражах (полураспад 150 тиражей), а не по
+                всей истории: если розыгрыш изменился, v2 перестраивается быстрее. Считается рядом с первой версией; кто из
+                них точнее на одних и тех же тиражах — в «Статистике», блок «Версия 2 против первой».
+              </p>
+              <div className="next-sources">
+                {data.v2.map((s) => <SourceRow key={s.source} s={s} size="md" fewer={s.source === 'least_v2'} />)}
+              </div>
+            </div>
           )}
           {data.least?.numbers && (
             <div className="next-least" data-testid="next-least">

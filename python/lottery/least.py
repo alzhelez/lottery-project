@@ -71,6 +71,7 @@ def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> 
     voters = [m for m in models if not m.control]
     control = next((m for m in models if m.control), None)
     rows: list[tuple[str, str, bool, list[np.ndarray]]] = []
+    anti: list[list[np.ndarray]] = []
     rank_sum = [np.zeros((t_total + 1, s.size), np.float32) for s in specs]
     for m in voters:
         picks = []
@@ -79,6 +80,7 @@ def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> 
             picks.append(bottom_k(sc, spec.count, seed=SEED + b))
             rank_sum[b] += _ranks(sc)
         rows.append((f"least_{m.key}", m.title, False, picks))
+        anti.append(picks)
     cons = [bottom_k(r, s.count, seed=SEED + 10 + b) for b, (r, s) in enumerate(zip(rank_sum, specs))]
     rows.append(("least_consensus", "Консенсус наименее вероятных", False, cons))
     if control is not None:
@@ -124,6 +126,8 @@ def evaluate(data: GameData, ev, models: list[Model], warm: int, split: int) -> 
         # оценки лучшего анти-метода по всем тиражам — для «Золотой середины» (evaluate.py);
         # не JSON — evaluate_game забирает их из результата
         "_best_picks": picks_by_key[best["key"]],
+        # прогнозы каждого анти-метода — для «Наименее вероятных v2» (v2.py)
+        "_anti_picks": anti,
         # то же, но до конца отбора анти-метод на каждый тираж выбран только по тиражам до него
         "_walk_picks": walk_forward([picks_by_key[r["key"]] for r in candidates],
                                     [ev.hits(picks_by_key[r["key"]]) for r in candidates],
