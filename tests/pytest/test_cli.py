@@ -34,3 +34,12 @@ def test_info_scan_analyze(data_dir):
 def test_bad_game_name_is_rejected(data_dir):
     rc, ev = run(["info", "--game", "../etc"], data_dir)
     assert rc == 1 and ev[-1]["type"] == "error"
+
+
+
+def test_cli_parser_initializes_before_registering_subcommands(data_dir):
+    # Every command, including fetch, is blocked if parser registration raises.
+    rc, _ = run(["--help"], data_dir)
+    assert rc == 0
+    rc, _ = run(["reset-game", "--help"], data_dir)
+    assert rc == 0

@@ -579,7 +579,7 @@ def cmd_archive(args) -> None:
     payload = analyze_game(args.game, progress=emit, full=False)
     """data = load_game_data(get_game(args.game))"""
     from lottery import change_points
-    data, _ = change_points.apply(load_game_data(get_game(slug)))
+    data, _ = change_points.apply(load_game_data(get_game(args.game)))
     if payload["evaluation"].get("status") == "ok":
         from lottery import history
         emit({"type": "progress", "model": "«Порядок из хаоса»: прогнозы на весь архив"})
@@ -604,7 +604,7 @@ def cmd_chaos(args) -> None:
     """Только «порядок из хаоса» (быстрее полного анализа); результат дописывается в analysis.json."""
     """data = load_game_data(get_game(args.game))"""
     from lottery import change_points
-    data, _ = change_points.apply(load_game_data(get_game(slug)))
+    data, _ = change_points.apply(load_game_data(get_game(args.game)))
     if not data.fmt.supported:
         raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
     res = run_chaos(data, emit)
@@ -1318,7 +1318,7 @@ def cmd_godmode(args) -> None:
     from lottery.godmode import run_godmode
     """data = load_game_data(get_game(args.game))"""
     from lottery import change_points
-    data, _ = change_points.apply(load_game_data(get_game(slug)))
+    data, _ = change_points.apply(load_game_data(get_game(args.game)))
     if not data.fmt.supported:
         raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
     budget = min(max(args.budget, 1.0), MAX_GODMODE_MIN)
@@ -1802,6 +1802,8 @@ def cmd_info(args) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Движок анализа лотерей")
+    sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser(
         "reset-game",
         help="точка отсчёта после изменения правил: пересчитать анализ, историю и доверие"
@@ -1811,8 +1813,6 @@ def main() -> None:
     p.add_argument("--use-last-change", action="store_true",
                    help="взять последнюю дату из config/game_changes.json")
     p.add_argument("--clear", action="store_true", help="снять точку отсчёта и вернуться к полному архиву")
-    parser = argparse.ArgumentParser(description="Движок анализа лотерей")
-    sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("fetch")
     p.add_argument("--game", action="append")
     p.add_argument("--workers", type=int, default=2)
