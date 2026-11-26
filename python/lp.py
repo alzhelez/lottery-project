@@ -1802,6 +1802,8 @@ def cmd_info(args) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Движок анализа лотерей")
+    sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser(
         "reset-game",
         help="точка отсчёта после изменения правил: пересчитать анализ, историю и доверие"
@@ -1811,8 +1813,6 @@ def main() -> None:
     p.add_argument("--use-last-change", action="store_true",
                    help="взять последнюю дату из config/game_changes.json")
     p.add_argument("--clear", action="store_true", help="снять точку отсчёта и вернуться к полному архиву")
-    parser = argparse.ArgumentParser(description="Движок анализа лотерей")
-    sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("fetch")
     p.add_argument("--game", action="append")
     p.add_argument("--workers", type=int, default=2)
