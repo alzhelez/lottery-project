@@ -4,8 +4,11 @@ import { isValidSlug } from '@/lib/paths'
 
 export const dynamic = 'force-dynamic'
 
-const KINDS: JobKind[] = ['fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules', 'chaos', 'godmode_all', 'retro', 'archive']
-const NEEDS_GAME: JobKind[] = ['analyze', 'godmode', 'chaos', 'archive']
+const KINDS: JobKind[] = [
+  'fetch', 'scan', 'analyze', 'godmode', 'auto', 'rules',
+  'chaos', 'godmode_all', 'retro', 'archive', 'reset'
+]
+const NEEDS_GAME: JobKind[] = ['analyze', 'godmode', 'chaos', 'archive', 'reset']
 
 function parse(kind: unknown, game: unknown): { kind: JobKind; game: string | null } | string {
   if (!KINDS.includes(kind as JobKind)) return 'Неизвестный тип задачи'
@@ -49,6 +52,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Период анализа — 1, 3, 7, 14 или 30 дней' }, { status: 400 })
     }
     params.days = days
+  }
+  if (p.kind === 'reset') {
+    if (body.clear === true) {
+      params.clear = true
+    } else if (body.use_last_change === true) {
+      params.use_last_change = true
+    } else {
+      const date = String(body.date ?? '')
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return NextResponse.json(
+            { error: 'Дата точки отсчёта должна быть в формате ГГГГ-ММ-ДД' },
+            { status: 400 }
+        )
+      }
+      params.date = date
+    }
   }
   return NextResponse.json({ job: startJob(p.kind, p.game, params) })
 }

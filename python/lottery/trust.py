@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 from .fsutil import write_text
 from .games import data_dir
 from .journal import FAMILIES, LOWER, SOURCES, load
+from . import change_points
 
 PERIODS = (1, 3, 7, 14, 30)       # дней — выбор на вкладке «Статистика»
 SHRINK_N = 30
@@ -90,6 +91,7 @@ def score(entries: list[dict], lower: bool) -> dict:
 
 def period_entries(slug: str, since: datetime) -> dict[str, list[dict]]:
     """Сверенные прогнозы игры за период по источникам: журнал + ретро, на тираж — одна запись."""
+    since = change_points.effective_since(slug, since)
     by: dict[str, dict[int, dict]] = {}
     for retro in (True, False):                      # журнальная запись перекрывает ретро
         for e in load(slug, retro=retro)["entries"]:
@@ -115,10 +117,13 @@ def build(slugs: list[str], days: int, now: datetime | None = None) -> dict:
     """Пересчитывает доверие по играм slugs за последние days дней и сохраняет data/trust.json."""
     now = now or datetime.now()
     since = now - timedelta(days=days)
+    raw_since = now - timedelta(days=days)
     out = {"made_at": now.isoformat(timespec="seconds"), "days": days, "since": since.isoformat(timespec="minutes"),
            "games": {}}
     for slug in slugs:
+        since = change_points.effective_since(slug, raw_since)
         g = game_trust(slug, since)
+        g["since"] = since.isoformat(timespec="minutes")
         if g["sources"]:
             out["games"][slug] = g
     write_text(trust_path(), json.dumps(out, ensure_ascii=False, indent=1))

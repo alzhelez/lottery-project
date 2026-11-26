@@ -1,0 +1,1389 @@
+{
+ "updated_at": "2026-11-25T00:08:08",
+ "rule": {
+  "alpha": 0.05,
+  "tests": 56,
+  "z_crit": 3.32,
+  "min_draws": 100
+ },
+ "tally": {
+  "better": 0,
+  "worse": 0,
+  "same": 56,
+  "early": 0
+ },
+ "games": [
+  {
+   "slug": "4x20",
+   "title": "4 из 20",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 16388,
+      "v1_hits": 26067,
+      "v2_hits": 26105,
+      "diff_per_draw": 0.0023,
+      "diff_pct": 0.15,
+      "z": 0.22
+     },
+     "journal": {
+      "n": 129,
+      "v1_hits": 194,
+      "v2_hits": 235,
+      "diff_per_draw": 0.3178,
+      "diff_pct": 21.13,
+      "z": 2.72
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 16388,
+      "v1_hits": 26127,
+      "v2_hits": 26085,
+      "diff_per_draw": -0.0026,
+      "diff_pct": -0.16,
+      "z": -0.29
+     },
+     "journal": {
+      "n": 129,
+      "v1_hits": 221,
+      "v2_hits": 234,
+      "diff_per_draw": 0.1008,
+      "diff_pct": 5.88,
+      "z": 1.09
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 8246,
+      "v1_hits": 13193,
+      "v2_hits": 13052,
+      "diff_per_draw": -0.0171,
+      "diff_pct": -1.07,
+      "z": -1.07
+     },
+     "journal": {
+      "n": 126,
+      "v1_hits": 200,
+      "v2_hits": 225,
+      "diff_per_draw": 0.1984,
+      "diff_pct": 12.5,
+      "z": 1.46
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 16388,
+      "v1_hits": 26168,
+      "v2_hits": 26183,
+      "diff_per_draw": -0.0009,
+      "diff_pct": 0.06,
+      "z": -0.09
+     },
+     "journal": {
+      "n": 129,
+      "v1_hits": 204,
+      "v2_hits": 179,
+      "diff_per_draw": 0.1938,
+      "diff_pct": -12.25,
+      "z": 1.73
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "4x20mini",
+   "title": "4 из 20 мини",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 5857,
+      "v1_hits": 9348,
+      "v2_hits": 9334,
+      "diff_per_draw": -0.0024,
+      "diff_pct": -0.15,
+      "z": -0.14
+     },
+     "journal": {
+      "n": 309,
+      "v1_hits": 496,
+      "v2_hits": 467,
+      "diff_per_draw": -0.0939,
+      "diff_pct": -5.85,
+      "z": -1.18
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 5857,
+      "v1_hits": 9399,
+      "v2_hits": 9378,
+      "diff_per_draw": -0.0036,
+      "diff_pct": -0.22,
+      "z": -0.24
+     },
+     "journal": {
+      "n": 309,
+      "v1_hits": 488,
+      "v2_hits": 466,
+      "diff_per_draw": -0.0712,
+      "diff_pct": -4.51,
+      "z": -1.13
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 3052,
+      "v1_hits": 4829,
+      "v2_hits": 4894,
+      "diff_per_draw": 0.0213,
+      "diff_pct": 1.35,
+      "z": 0.84
+     },
+     "journal": {
+      "n": 305,
+      "v1_hits": 490,
+      "v2_hits": 453,
+      "diff_per_draw": -0.1213,
+      "diff_pct": -7.55,
+      "z": -1.51
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 5857,
+      "v1_hits": 9177,
+      "v2_hits": 9315,
+      "diff_per_draw": -0.0236,
+      "diff_pct": 1.5,
+      "z": -1.42
+     },
+     "journal": {
+      "n": 309,
+      "v1_hits": 485,
+      "v2_hits": 497,
+      "diff_per_draw": -0.0388,
+      "diff_pct": 2.47,
+      "z": -0.66
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "5x36plus",
+   "title": "5 из 36 плюс",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 60102,
+      "v1_hits": 56915,
+      "v2_hits": 56715,
+      "diff_per_draw": -0.0033,
+      "diff_pct": -0.35,
+      "z": -0.77
+     },
+     "journal": {
+      "n": 386,
+      "v1_hits": 373,
+      "v2_hits": 380,
+      "diff_per_draw": 0.0181,
+      "diff_pct": 1.88,
+      "z": 0.31
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 60102,
+      "v1_hits": 56720,
+      "v2_hits": 56878,
+      "diff_per_draw": 0.0026,
+      "diff_pct": 0.28,
+      "z": 0.69
+     },
+     "journal": {
+      "n": 384,
+      "v1_hits": 364,
+      "v2_hits": 370,
+      "diff_per_draw": 0.0156,
+      "diff_pct": 1.65,
+      "z": 0.37
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 30202,
+      "v1_hits": 28785,
+      "v2_hits": 28447,
+      "diff_per_draw": -0.0112,
+      "diff_pct": -1.17,
+      "z": -1.65
+     },
+     "journal": {
+      "n": 379,
+      "v1_hits": 360,
+      "v2_hits": 347,
+      "diff_per_draw": -0.0343,
+      "diff_pct": -3.61,
+      "z": -0.58
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 60102,
+      "v1_hits": 56895,
+      "v2_hits": 56797,
+      "diff_per_draw": 0.0016,
+      "diff_pct": -0.17,
+      "z": 0.37
+     },
+     "journal": {
+      "n": 385,
+      "v1_hits": 368,
+      "v2_hits": 360,
+      "diff_per_draw": 0.0208,
+      "diff_pct": -2.17,
+      "z": 0.38
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "5x2",
+   "title": "5x2",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 3292,
+      "v1_hits": 2934,
+      "v2_hits": 3111,
+      "diff_per_draw": 0.0538,
+      "diff_pct": 6.03,
+      "z": 3.15
+     },
+     "journal": {
+      "n": 21,
+      "v1_hits": 15,
+      "v2_hits": 16,
+      "diff_per_draw": 0.0476,
+      "diff_pct": 6.67,
+      "z": 0.18
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 3292,
+      "v1_hits": 2966,
+      "v2_hits": 3121,
+      "diff_per_draw": 0.0471,
+      "diff_pct": 5.23,
+      "z": 2.77
+     },
+     "journal": {
+      "n": 21,
+      "v1_hits": 20,
+      "v2_hits": 16,
+      "diff_per_draw": -0.1905,
+      "diff_pct": -20.0,
+      "z": -1.16
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 1654,
+      "v1_hits": 1470,
+      "v2_hits": 1552,
+      "diff_per_draw": 0.0496,
+      "diff_pct": 5.58,
+      "z": 1.97
+     },
+     "journal": {
+      "n": 20,
+      "v1_hits": 9,
+      "v2_hits": 16,
+      "diff_per_draw": 0.35,
+      "diff_pct": 77.78,
+      "z": 1.51
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 3292,
+      "v1_hits": 2987,
+      "v2_hits": 3007,
+      "diff_per_draw": -0.0061,
+      "diff_pct": 0.67,
+      "z": -0.35
+     },
+     "journal": {
+      "n": 21,
+      "v1_hits": 21,
+      "v2_hits": 19,
+      "diff_per_draw": 0.0952,
+      "diff_pct": -9.52,
+      "z": 0.3
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "6x45",
+   "title": "6 из 45",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 19320,
+      "v1_hits": 15443,
+      "v2_hits": 15447,
+      "diff_per_draw": 0.0002,
+      "diff_pct": 0.03,
+      "z": 0.03
+     },
+     "journal": {
+      "n": 73,
+      "v1_hits": 63,
+      "v2_hits": 61,
+      "diff_per_draw": -0.0274,
+      "diff_pct": -3.17,
+      "z": -0.26
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 19320,
+      "v1_hits": 15332,
+      "v2_hits": 15461,
+      "diff_per_draw": 0.0067,
+      "diff_pct": 0.84,
+      "z": 1.07
+     },
+     "journal": {
+      "n": 73,
+      "v1_hits": 65,
+      "v2_hits": 65,
+      "diff_per_draw": 0.0,
+      "diff_pct": 0.0,
+      "z": 0.0
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 9689,
+      "v1_hits": 7767,
+      "v2_hits": 7738,
+      "diff_per_draw": -0.003,
+      "diff_pct": -0.37,
+      "z": -0.27
+     },
+     "journal": {
+      "n": 69,
+      "v1_hits": 57,
+      "v2_hits": 51,
+      "diff_per_draw": -0.087,
+      "diff_pct": -10.53,
+      "z": -0.76
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 19320,
+      "v1_hits": 15528,
+      "v2_hits": 15504,
+      "diff_per_draw": 0.0012,
+      "diff_pct": -0.15,
+      "z": 0.17
+     },
+     "journal": {
+      "n": 73,
+      "v1_hits": 66,
+      "v2_hits": 52,
+      "diff_per_draw": 0.1918,
+      "diff_pct": -21.21,
+      "z": 1.34
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "6x45plus",
+   "title": "6 из 45 плюс",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 10711,
+      "v1_hits": 11357,
+      "v2_hits": 11426,
+      "diff_per_draw": 0.0064,
+      "diff_pct": 0.61,
+      "z": 0.61
+     },
+     "journal": {
+      "n": 561,
+      "v1_hits": 575,
+      "v2_hits": 587,
+      "diff_per_draw": 0.0214,
+      "diff_pct": 2.09,
+      "z": 0.45
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 10711,
+      "v1_hits": 11380,
+      "v2_hits": 11414,
+      "diff_per_draw": 0.0032,
+      "diff_pct": 0.3,
+      "z": 0.32
+     },
+     "journal": {
+      "n": 561,
+      "v1_hits": 584,
+      "v2_hits": 595,
+      "diff_per_draw": 0.0196,
+      "diff_pct": 1.88,
+      "z": 0.45
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 5579,
+      "v1_hits": 5780,
+      "v2_hits": 5908,
+      "diff_per_draw": 0.0229,
+      "diff_pct": 2.21,
+      "z": 1.35
+     },
+     "journal": {
+      "n": 556,
+      "v1_hits": 559,
+      "v2_hits": 582,
+      "diff_per_draw": 0.0414,
+      "diff_pct": 4.11,
+      "z": 0.77
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 10711,
+      "v1_hits": 11093,
+      "v2_hits": 11276,
+      "diff_per_draw": -0.0171,
+      "diff_pct": 1.65,
+      "z": -1.61
+     },
+     "journal": {
+      "n": 561,
+      "v1_hits": 567,
+      "v2_hits": 602,
+      "diff_per_draw": -0.0624,
+      "diff_pct": 6.17,
+      "z": -1.24
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "vin",
+   "title": "Всё или ничего (повторяет «Забаву от Русского лото»)",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 10429,
+      "v1_hits": 62452,
+      "v2_hits": 62284,
+      "diff_per_draw": -0.0161,
+      "diff_pct": -0.27,
+      "z": -1.09
+     },
+     "journal": {
+      "n": 617,
+      "v1_hits": 3681,
+      "v2_hits": 3669,
+      "diff_per_draw": -0.0194,
+      "diff_pct": -0.33,
+      "z": -0.28
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 10429,
+      "v1_hits": 62384,
+      "v2_hits": 62250,
+      "diff_per_draw": -0.0128,
+      "diff_pct": -0.21,
+      "z": -1.01
+     },
+     "journal": {
+      "n": 617,
+      "v1_hits": 3647,
+      "v2_hits": 3664,
+      "diff_per_draw": 0.0276,
+      "diff_pct": 0.47,
+      "z": 0.52
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 5461,
+      "v1_hits": 32864,
+      "v2_hits": 32721,
+      "diff_per_draw": -0.0262,
+      "diff_pct": -0.44,
+      "z": -1.09
+     },
+     "journal": {
+      "n": 612,
+      "v1_hits": 3653,
+      "v2_hits": 3629,
+      "diff_per_draw": -0.0392,
+      "diff_pct": -0.66,
+      "z": -0.56
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 10429,
+      "v1_hits": 62793,
+      "v2_hits": 62813,
+      "diff_per_draw": -0.0019,
+      "diff_pct": 0.03,
+      "z": -0.12
+     },
+     "journal": {
+      "n": 617,
+      "v1_hits": 3727,
+      "v2_hits": 3736,
+      "diff_per_draw": -0.0146,
+      "diff_pct": 0.24,
+      "z": -0.23
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "keno2",
+   "title": "Кено 2.0",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 60138,
+      "v1_hits": 150296,
+      "v2_hits": 150433,
+      "diff_per_draw": 0.0023,
+      "diff_pct": 0.09,
+      "z": 0.33
+     },
+     "journal": {
+      "n": 428,
+      "v1_hits": 1121,
+      "v2_hits": 1072,
+      "diff_per_draw": -0.1145,
+      "diff_pct": -4.37,
+      "z": -1.39
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 60138,
+      "v1_hits": 150442,
+      "v2_hits": 150406,
+      "diff_per_draw": -0.0006,
+      "diff_pct": -0.02,
+      "z": -0.1
+     },
+     "journal": {
+      "n": 428,
+      "v1_hits": 1118,
+      "v2_hits": 1075,
+      "diff_per_draw": -0.1005,
+      "diff_pct": -3.85,
+      "z": -1.41
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 30238,
+      "v1_hits": 75837,
+      "v2_hits": 75726,
+      "diff_per_draw": -0.0037,
+      "diff_pct": -0.15,
+      "z": -0.35
+     },
+     "journal": {
+      "n": 424,
+      "v1_hits": 1094,
+      "v2_hits": 1071,
+      "diff_per_draw": -0.0542,
+      "diff_pct": -2.1,
+      "z": -0.64
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 60138,
+      "v1_hits": 150498,
+      "v2_hits": 149624,
+      "diff_per_draw": 0.0145,
+      "diff_pct": -0.58,
+      "z": 2.08
+     },
+     "journal": {
+      "n": 428,
+      "v1_hits": 1101,
+      "v2_hits": 1090,
+      "diff_per_draw": 0.0257,
+      "diff_pct": -1.0,
+      "z": 0.3
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "oxota",
+   "title": "Охота",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 48619,
+      "v1_hits": 77915,
+      "v2_hits": 77819,
+      "diff_per_draw": -0.002,
+      "diff_pct": -0.12,
+      "z": -0.36
+     },
+     "journal": {
+      "n": 405,
+      "v1_hits": 622,
+      "v2_hits": 611,
+      "diff_per_draw": -0.0272,
+      "diff_pct": -1.77,
+      "z": -0.45
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 48619,
+      "v1_hits": 77877,
+      "v2_hits": 77995,
+      "diff_per_draw": 0.0024,
+      "diff_pct": 0.15,
+      "z": 0.47
+     },
+     "journal": {
+      "n": 405,
+      "v1_hits": 608,
+      "v2_hits": 630,
+      "diff_per_draw": 0.0543,
+      "diff_pct": 3.62,
+      "z": 1.01
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 24470,
+      "v1_hits": 39271,
+      "v2_hits": 39387,
+      "diff_per_draw": 0.0047,
+      "diff_pct": 0.3,
+      "z": 0.51
+     },
+     "journal": {
+      "n": 402,
+      "v1_hits": 629,
+      "v2_hits": 622,
+      "diff_per_draw": -0.0174,
+      "diff_pct": -1.11,
+      "z": -0.25
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 48619,
+      "v1_hits": 77914,
+      "v2_hits": 77879,
+      "diff_per_draw": 0.0007,
+      "diff_pct": -0.04,
+      "z": 0.12
+     },
+     "journal": {
+      "n": 405,
+      "v1_hits": 637,
+      "v2_hits": 647,
+      "diff_per_draw": -0.0247,
+      "diff_pct": 1.57,
+      "z": -0.33
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "rapido2",
+   "title": "Рапидо 2.0",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 60031,
+      "v1_hits": 207037,
+      "v2_hits": 207183,
+      "diff_per_draw": 0.0024,
+      "diff_pct": 0.07,
+      "z": 0.4
+     },
+     "journal": {
+      "n": 291,
+      "v1_hits": 1035,
+      "v2_hits": 1062,
+      "diff_per_draw": 0.0928,
+      "diff_pct": 2.61,
+      "z": 1.07
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 60031,
+      "v1_hits": 206959,
+      "v2_hits": 206854,
+      "diff_per_draw": -0.0017,
+      "diff_pct": -0.05,
+      "z": -0.35
+     },
+     "journal": {
+      "n": 291,
+      "v1_hits": 1035,
+      "v2_hits": 1032,
+      "diff_per_draw": -0.0103,
+      "diff_pct": -0.29,
+      "z": -0.13
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 30131,
+      "v1_hits": 104019,
+      "v2_hits": 103947,
+      "diff_per_draw": -0.0024,
+      "diff_pct": -0.07,
+      "z": -0.25
+     },
+     "journal": {
+      "n": 290,
+      "v1_hits": 996,
+      "v2_hits": 1022,
+      "diff_per_draw": 0.0897,
+      "diff_pct": 2.61,
+      "z": 0.92
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 60031,
+      "v1_hits": 207211,
+      "v2_hits": 206746,
+      "diff_per_draw": 0.0077,
+      "diff_pct": -0.22,
+      "z": 1.21
+     },
+     "journal": {
+      "n": 291,
+      "v1_hits": 991,
+      "v2_hits": 976,
+      "diff_per_draw": 0.0515,
+      "diff_pct": -1.51,
+      "z": 0.52
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "rapidodrive",
+   "title": "Рапидо Драйв",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 6820,
+      "v1_hits": 23714,
+      "v2_hits": 23498,
+      "diff_per_draw": -0.0317,
+      "diff_pct": -0.91,
+      "z": -1.94
+     },
+     "journal": {
+      "n": 309,
+      "v1_hits": 1030,
+      "v2_hits": 1015,
+      "diff_per_draw": -0.0485,
+      "diff_pct": -1.46,
+      "z": -0.62
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 6820,
+      "v1_hits": 23697,
+      "v2_hits": 23568,
+      "diff_per_draw": -0.0189,
+      "diff_pct": -0.54,
+      "z": -1.27
+     },
+     "journal": {
+      "n": 309,
+      "v1_hits": 1049,
+      "v2_hits": 1043,
+      "diff_per_draw": -0.0194,
+      "diff_pct": -0.57,
+      "z": -0.31
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 3533,
+      "v1_hits": 12247,
+      "v2_hits": 12299,
+      "diff_per_draw": 0.0147,
+      "diff_pct": 0.42,
+      "z": 0.53
+     },
+     "journal": {
+      "n": 307,
+      "v1_hits": 1022,
+      "v2_hits": 1021,
+      "diff_per_draw": -0.0033,
+      "diff_pct": -0.1,
+      "z": -0.04
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 6820,
+      "v1_hits": 23595,
+      "v2_hits": 23435,
+      "diff_per_draw": 0.0235,
+      "diff_pct": -0.68,
+      "z": 1.41
+     },
+     "journal": {
+      "n": 309,
+      "v1_hits": 1075,
+      "v2_hits": 1071,
+      "diff_per_draw": 0.0129,
+      "diff_pct": -0.37,
+      "z": 0.31
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "rapidopro",
+   "title": "Рапидо Про",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 10523,
+      "v1_hits": 36308,
+      "v2_hits": 36353,
+      "diff_per_draw": 0.0043,
+      "diff_pct": 0.12,
+      "z": 0.29
+     },
+     "journal": {
+      "n": 617,
+      "v1_hits": 2064,
+      "v2_hits": 2052,
+      "diff_per_draw": -0.0194,
+      "diff_pct": -0.58,
+      "z": -0.29
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 10523,
+      "v1_hits": 36159,
+      "v2_hits": 36238,
+      "diff_per_draw": 0.0075,
+      "diff_pct": 0.22,
+      "z": 0.6
+     },
+     "journal": {
+      "n": 617,
+      "v1_hits": 2109,
+      "v2_hits": 2068,
+      "diff_per_draw": -0.0665,
+      "diff_pct": -1.94,
+      "z": -1.45
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 5508,
+      "v1_hits": 18898,
+      "v2_hits": 18956,
+      "diff_per_draw": 0.0105,
+      "diff_pct": 0.31,
+      "z": 0.48
+     },
+     "journal": {
+      "n": 613,
+      "v1_hits": 2055,
+      "v2_hits": 2063,
+      "diff_per_draw": 0.0131,
+      "diff_pct": 0.39,
+      "z": 0.19
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 10523,
+      "v1_hits": 36171,
+      "v2_hits": 36564,
+      "diff_per_draw": -0.0373,
+      "diff_pct": 1.09,
+      "z": -2.58
+     },
+     "journal": {
+      "n": 617,
+      "v1_hits": 2111,
+      "v2_hits": 2200,
+      "diff_per_draw": -0.1442,
+      "diff_pct": 4.22,
+      "z": -2.16
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "rapidoultra",
+   "title": "Рапидо Ультра",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 10907,
+      "v1_hits": 37785,
+      "v2_hits": 37764,
+      "diff_per_draw": -0.0019,
+      "diff_pct": -0.06,
+      "z": -0.15
+     },
+     "journal": {
+      "n": 616,
+      "v1_hits": 2141,
+      "v2_hits": 2129,
+      "diff_per_draw": -0.0195,
+      "diff_pct": -0.56,
+      "z": -0.32
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 10907,
+      "v1_hits": 37823,
+      "v2_hits": 37807,
+      "diff_per_draw": -0.0015,
+      "diff_pct": -0.04,
+      "z": -0.12
+     },
+     "journal": {
+      "n": 616,
+      "v1_hits": 2148,
+      "v2_hits": 2111,
+      "diff_per_draw": -0.0601,
+      "diff_pct": -1.72,
+      "z": -1.09
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 5700,
+      "v1_hits": 19776,
+      "v2_hits": 19671,
+      "diff_per_draw": -0.0184,
+      "diff_pct": -0.53,
+      "z": -0.84
+     },
+     "journal": {
+      "n": 611,
+      "v1_hits": 2122,
+      "v2_hits": 2113,
+      "diff_per_draw": -0.0147,
+      "diff_pct": -0.42,
+      "z": -0.23
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 10907,
+      "v1_hits": 37547,
+      "v2_hits": 37510,
+      "diff_per_draw": 0.0034,
+      "diff_pct": -0.1,
+      "z": 0.23
+     },
+     "journal": {
+      "n": 616,
+      "v1_hits": 2108,
+      "v2_hits": 2131,
+      "diff_per_draw": -0.0373,
+      "diff_pct": 1.09,
+      "z": -0.58
+     },
+     "verdict": "same"
+    }
+   ]
+  },
+  {
+   "slug": "top-3",
+   "title": "Топ-3",
+   "pairs": [
+    {
+     "v1": "final",
+     "v2": "final_v2",
+     "title": "Финальное предсказание",
+     "lower": false,
+     "history": {
+      "n": 3500,
+      "v1_hits": 4210,
+      "v2_hits": 4246,
+      "diff_per_draw": 0.0103,
+      "diff_pct": 0.86,
+      "z": 0.46
+     },
+     "journal": {
+      "n": 308,
+      "v1_hits": 366,
+      "v2_hits": 381,
+      "diff_per_draw": 0.0487,
+      "diff_pct": 4.1,
+      "z": 0.63
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "analysis_consensus",
+     "v2": "consensus_v2",
+     "title": "Консенсус методов",
+     "lower": false,
+     "history": {
+      "n": 3500,
+      "v1_hits": 4247,
+      "v2_hits": 4219,
+      "diff_per_draw": -0.008,
+      "diff_pct": -0.66,
+      "z": -0.39
+     },
+     "journal": {
+      "n": 308,
+      "v1_hits": 359,
+      "v2_hits": 378,
+      "diff_per_draw": 0.0617,
+      "diff_pct": 5.29,
+      "z": 0.87
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "godmode",
+     "v2": "godmode_v2",
+     "title": "Режим Бога",
+     "lower": false,
+     "history": {
+      "n": 1873,
+      "v1_hits": 2276,
+      "v2_hits": 2282,
+      "diff_per_draw": 0.0032,
+      "diff_pct": 0.26,
+      "z": 0.1
+     },
+     "journal": {
+      "n": 307,
+      "v1_hits": 382,
+      "v2_hits": 367,
+      "diff_per_draw": -0.0489,
+      "diff_pct": -3.93,
+      "z": -0.66
+     },
+     "verdict": "same"
+    },
+    {
+     "v1": "least",
+     "v2": "least_v2",
+     "title": "Наименее вероятные",
+     "lower": true,
+     "history": {
+      "n": 3500,
+      "v1_hits": 4127,
+      "v2_hits": 4190,
+      "diff_per_draw": -0.018,
+      "diff_pct": 1.53,
+      "z": -0.8
+     },
+     "journal": {
+      "n": 308,
+      "v1_hits": 347,
+      "v2_hits": 357,
+      "diff_per_draw": -0.0325,
+      "diff_pct": 2.88,
+      "z": -0.36
+     },
+     "verdict": "same"
+    }
+   ]
+  }
+ ]
+}

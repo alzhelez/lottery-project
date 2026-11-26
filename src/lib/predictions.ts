@@ -11,6 +11,23 @@ import path from 'node:path'
 import { readJournalFile, readJson } from './games'
 import { dataDir, drawsFile } from './paths'
 
+interface ResetsFile {
+  version?: number
+  games?: Record<string, { date?: string }>
+}
+
+function parseIsoDate(s: string | undefined): number {
+  if (!s) return 0
+  const t = Date.parse(s)
+  return Number.isNaN(t) ? 0 : t
+}
+
+/** Точка отсчёта игры в миллисекундах; 0 — считать весь архив. */
+export function resetTime(slug: string): number {
+  const payload = readJson<ResetsFile>(path.join(dataDir(), 'game_resets.json'))
+  return parseIsoDate(payload?.games?.[slug]?.date)
+}
+
 /** Методы, которые сейчас пишут прогнозы, и их сокращения для выгрузки. */
 export const METHODS: Array<{ source: string; short: string; title: string }> = [
   { source: 'final', short: 'ФП', title: 'Финальное предсказание' },
@@ -44,11 +61,15 @@ export function drawList(slug: string): Array<{ no: number; time: number; date: 
   } catch {
     return []
   }
+  const cut = resetTime(slug)
   const out: Array<{ no: number; time: number; date: string }> = []
   for (const line of text.split('\n')) {
     const parts = line.split('||')
     const no = Number(parts[1])
-    if (parts.length >= 3 && Number.isInteger(no)) out.push({ no, time: parseDate(parts[0]), date: parts[0] })
+    if (parts.length >= 3 && Number.isInteger(no)) {
+      const time = parseDate(parts[0])
+      if (time >= cut) out.push({ no, time, date: parts[0] })
+    }
   }
   return out.sort((a, b) => a.no - b.no)
 }
@@ -210,11 +231,15 @@ export function digitalExport(slug: string, title: string, days: number, now = D
   const by = checkedEntries(slug)
   const h = readHistory(slug)
   const times = new Map(drawList(slug).map((d) => [d.no, d.time]))
+  const cut = resetTime(slug)
   const since = days > 0 ? now - days * 86_400_000 : 0
   // время тиража — из архива; если тиража там нет, из самой записи
   const entryTime = new Map<number, number>()
   for (const e of by.values()) if (!entryTime.has(e.draw_no)) entryTime.set(e.draw_no, parseDate(e.draw_date))
-  const inPeriod = (no: number) => (times.get(no) ?? entryTime.get(no) ?? 0) >= since
+  const inPeriod = (no: number) => {
+    const time = times.get(no) ?? entryTime.get(no) ?? 0
+    return time >= since && time >= cut
+  }
   // код по «метод:тираж»: история, поверх неё — анализ за период и журнал
   const codes = new Map<string, string>()
   const all = new Set<number>()

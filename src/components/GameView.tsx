@@ -15,6 +15,7 @@ import { CoverageCheck } from './CoverageCheck'
 import { NextDrawCard } from './NextDrawCard'
 import { TicketsPanel } from './TicketsPanel'
 import { useJob } from './useJob'
+import { ResetPanel } from './ResetPanel'
 
 export interface Info {
   slug: string
@@ -138,7 +139,7 @@ export function GameView({ info }: { info: Info }) {
               Загрузите новые тиражи перед прогнозом: прогноз, сделанный после тиража, журнал не засчитает.
             </p>
           )}
-
+          <ResetPanel slug={info.slug} />
           <div className="tabs" role="tablist">
             {TABS.map((t) => (
               <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'tab on' : 'tab'}

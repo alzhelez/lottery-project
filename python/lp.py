@@ -79,6 +79,50 @@ _last_progress = {"key": None, "at": 0.0}
 GAME_STATUS = {"done": "готово", "no_data": "нет архива", "error": "ошибка"}
 
 
+def cmd_reset_game(args) -> None:
+    """Установить/снять точку отсчёта после изменения правил и пересчитать методы."""
+    from lottery import change_points, history, trust
+    from lottery.games import data_dir
+
+    if args.clear:
+        change_points.clear_reset(args.game)
+        say(f"{args.game}: точка отсчёта снята, следующий анализ будет считать весь архив")
+    else:
+        date = args.date
+        if args.use_last_change:
+            latest = change_points.latest_change(args.game)
+            date = latest.date().isoformat() if latest else None
+        if not date:
+            raise SystemExit(
+                "Не задана дата: используйте --date ГГГГ-ММ-ДД, --use-last-change "
+                "или добавьте игру в config/game_changes.json"
+            )
+        reason = ""
+        for row in reversed(change_points.changes(args.game)):
+            if change_points.parse_date(row["date"]).date().isoformat() <= date:
+                reason = row.get("reason", "")
+                break
+        scope = change_points.set_reset(args.game, date, reason)
+        say(f"{args.game}: новая точка отсчёта — {scope['from']}"
+            + (f" ({reason})" if reason else ""))
+
+    data = load_game_data(get_game(args.game))
+    scoped, scope = change_points.apply(data)
+
+    # прошлый промежуточный перебор относился к старому набору данных
+    (results_dir(args.game) / "godmode_all_state.npz").unlink(missing_ok=True)
+
+    analyze_game(args.game, full=True)
+    history.build(scoped)
+
+    trust_file = _read_json(data_dir() / "trust.json") or {}
+    trust_days = int(trust_file.get("days") or 7)
+    trust.build([args.game], trust_days)
+
+    emit({"type": "result", "reset": scope})
+    say(f"Пересчитано по {scope['draws']} тиражам, пропущено до точки отсчёта: {scope.get('skipped_draws', 0)}")
+
+
 def _pretty(event: dict) -> str | None:
     kind = event.get("type")
     if kind == "log":
@@ -401,13 +445,16 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
     from lottery.evaluate import evaluate_game
     from lottery.journal import reconcile
     from lottery.stats import descriptive, finalize_scan, game_randomness
+    from lottery import change_points
     data = load_game_data(get_game(slug))
+    data, scope = change_points.apply(data)
     if not data.fmt.supported:
         raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
     t0 = time.time()
     if progress:
         progress({"type": "progress", "stage": "tests", "done": 0, "total": 1})
-    cache = None if full else heavy_cache(slug, data)
+    # После смены точки отсчёта прошлый тяжёлый кэш относится к другому набору тиражей.
+    cache = None if full or scope.get("active") else heavy_cache(slug, data)
     from lottery import mechanics
     if cache:
         randomness = cache["randomness"]
@@ -499,7 +546,7 @@ def analyze_game(slug: str, progress=None, full: bool = True) -> dict:
             repeats_res = repeats.analyze(data)
         except Exception as exc:  # noqa: BLE001 — эксперимент не должен ронять анализ
             repeats_res = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
-    payload = {**meta(data), "seconds": round(time.time() - t0, 1), "randomness": randomness, "drift": drift,
+    payload = {**meta(data), "seconds": round(time.time() - t0, 1), "scope": scope, "randomness": randomness, "drift": drift,
                "descriptive": descriptive(data), "evaluation": evaluation, "popularity": popularity,
                "chaos": chaos_res, "order_check": order_check, "repeats": repeats_res, "heavy": heavy}
     save_json(results_dir(slug) / "analysis.json", payload)
@@ -530,7 +577,9 @@ def cmd_archive(args) -> None:
     ARCHIVE_RUN = True
     from lottery.journal import ARCHIVED, load
     payload = analyze_game(args.game, progress=emit, full=False)
-    data = load_game_data(get_game(args.game))
+    """data = load_game_data(get_game(args.game))"""
+    from lottery import change_points
+    data, _ = change_points.apply(load_game_data(get_game(slug)))
     if payload["evaluation"].get("status") == "ok":
         from lottery import history
         emit({"type": "progress", "model": "«Порядок из хаоса»: прогнозы на весь архив"})
@@ -553,7 +602,9 @@ def cmd_chaos(args) -> None:
     global ARCHIVE_RUN
     ARCHIVE_RUN = True                  # ручной запуск раздела — прогноз идёт в журнал
     """Только «порядок из хаоса» (быстрее полного анализа); результат дописывается в analysis.json."""
-    data = load_game_data(get_game(args.game))
+    """data = load_game_data(get_game(args.game))"""
+    from lottery import change_points
+    data, _ = change_points.apply(load_game_data(get_game(slug)))
     if not data.fmt.supported:
         raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
     res = run_chaos(data, emit)
@@ -1265,7 +1316,9 @@ MAX_GODMODE_MIN = 480.0     # режим Бога работает до исче
 
 def cmd_godmode(args) -> None:
     from lottery.godmode import run_godmode
-    data = load_game_data(get_game(args.game))
+    """data = load_game_data(get_game(args.game))"""
+    from lottery import change_points
+    data, _ = change_points.apply(load_game_data(get_game(slug)))
     if not data.fmt.supported:
         raise SystemExit(f"Формат игры не поддерживается: {data.fmt.reason}")
     budget = min(max(args.budget, 1.0), MAX_GODMODE_MIN)
@@ -1401,7 +1454,9 @@ def cmd_godmode_all(args) -> None:
                 emit({"type": "game", "game": slug, **g})
                 continue
             g.pop("error", None)
-            data = load_game_data(get_game(slug))
+            """data = load_game_data(get_game(args.game))"""
+            from lottery import change_points
+            data, _ = change_points.apply(load_game_data(get_game(slug)))
             eval_from = min(state["from"] - 1, data.T - 60)
             folder = results_dir(slug)
             folder.mkdir(parents=True, exist_ok=True)
@@ -1747,6 +1802,15 @@ def cmd_info(args) -> None:
 
 
 def main() -> None:
+    p = sub.add_parser(
+        "reset-game",
+        help="точка отсчёта после изменения правил: пересчитать анализ, историю и доверие"
+    )
+    p.add_argument("--game", required=True)
+    p.add_argument("--date", help="дата начала нового расчёта, ГГГГ-ММ-ДД")
+    p.add_argument("--use-last-change", action="store_true",
+                   help="взять последнюю дату из config/game_changes.json")
+    p.add_argument("--clear", action="store_true", help="снять точку отсчёта и вернуться к полному архиву")
     parser = argparse.ArgumentParser(description="Движок анализа лотерей")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("fetch")
@@ -1833,7 +1897,7 @@ def main() -> None:
                 "tickets": cmd_tickets, "export": cmd_export, "diagnose": cmd_diagnose, "telegram": cmd_telegram,
                 "rules": cmd_rules, "nextdraw": cmd_nextdraw, "chaos": cmd_chaos, "archive": cmd_archive,
                 "repeats": cmd_repeats, "mytickets": cmd_mytickets, "backup": cmd_backup,
-                "godmode-all": cmd_godmode_all, "retro": cmd_retro, "bot": cmd_bot}
+                "godmode-all": cmd_godmode_all, "retro": cmd_retro, "bot": cmd_bot, "reset-game": cmd_reset_game,}
     try:
         handlers[args.cmd](args)
     except SystemExit as exc:

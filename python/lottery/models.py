@@ -378,6 +378,12 @@ def expert_grid(level: int) -> list[Model]:
         out.append(Model(f"ewma_{h}", f"Экспоненциальная частота, полураспад {h}", "ewma", _ewma(h, f"g_ewma_{h}")))
         out.append(Model(f"ewmacold_{h}", f"Экспоненциально холодные, полураспад {h}", "ewma",
                          _ewma(h, f"g_ewmacold_{h}", -1.0)))
+    out.append(Model(
+        "momentum_20_100",
+        "Моментум частоты (20 против 100)",
+        "trend",
+        lambda f: f.ewma(20) - f.ewma(100),
+    ))
     if level == 1:
         out += [
             Model("overdue", "Давно не выпадавшие", "gap", lambda f: f.gap()),

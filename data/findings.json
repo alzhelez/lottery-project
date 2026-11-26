@@ -1,0 +1,78 @@
+{
+ "updated_at": "2026-11-25T00:07:55",
+ "rule": {
+  "n_min": 5000,
+  "alpha": 0.05,
+  "pairs": 154,
+  "z_crit": 3.41
+ },
+ "confirmed": [],
+ "candidates": [],
+ "closest": [
+  {
+   "slug": "rapido2",
+   "title": "Рапидо 2.0",
+   "source": "final_v2",
+   "source_title": "Финальное предсказание v2",
+   "archived": false,
+   "n": 291,
+   "hits": 1062,
+   "expected": 1003.95,
+   "excess_pct": 5.78,
+   "z": 2.88,
+   "need": 5000
+  },
+  {
+   "slug": "4x20",
+   "title": "4 из 20",
+   "source": "least",
+   "source_title": "Наименее вероятные",
+   "archived": false,
+   "n": 332,
+   "hits": 483,
+   "expected": 531.2,
+   "excess_pct": -9.07,
+   "z": 2.55,
+   "need": 5000
+  },
+  {
+   "slug": "4x20",
+   "title": "4 из 20",
+   "source": "final_v2",
+   "source_title": "Финальное предсказание v2",
+   "archived": false,
+   "n": 129,
+   "hits": 235,
+   "expected": 206.4,
+   "excess_pct": 13.86,
+   "z": 2.42,
+   "need": 5000
+  },
+  {
+   "slug": "4x20",
+   "title": "4 из 20",
+   "source": "consensus_v2",
+   "source_title": "Консенсус v2",
+   "archived": false,
+   "n": 129,
+   "hits": 234,
+   "expected": 206.4,
+   "excess_pct": 13.37,
+   "z": 2.34,
+   "need": 5000
+  },
+  {
+   "slug": "4x20",
+   "title": "4 из 20",
+   "source": "least_v2",
+   "source_title": "Наименее вероятные v2",
+   "archived": false,
+   "n": 129,
+   "hits": 179,
+   "expected": 206.4,
+   "excess_pct": -13.28,
+   "z": 2.32,
+   "need": 5000
+  }
+ ]
+}

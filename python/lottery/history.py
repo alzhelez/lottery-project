@@ -26,6 +26,7 @@ from .fsutil import write_text
 from .games import data_dir
 from .journal import ARCHIVED, FAMILIES
 from .stats import hypergeom_moments
+from . import change_points
 
 HISTORY_VERSION = 1
 EVAL_SOURCES = ("analysis_best", "analysis_consensus", "least", "golden", "consensus_v2", "godmode_v2", "least_v2")
@@ -69,7 +70,8 @@ def eval_part(data: GameData) -> GameData:
     return data if data.T <= EVAL_MAX else subset(data, np.arange(data.T - EVAL_MAX, data.T))
 
 
-def eval_rows(data: GameData, nos: set[int] | None = None) -> tuple[Rows, dict[str, str], dict]:
+def eval_rows(data: GameData, nos: set[int] | None = None):
+    data, _ = change_points.apply(data)
     """Л, К, Н, З на тиражи nos (None — на все после разгона) из одного сравнения методов."""
     from .evaluate import evaluate_game
     part = eval_part(data)
@@ -90,7 +92,8 @@ def eval_rows(data: GameData, nos: set[int] | None = None) -> tuple[Rows, dict[s
     return rows, detail, {"rows": len(ts), "best": detail["analysis_best"], "split_no": part.draws[picks["split"]].no}
 
 
-def chaos_rows(data: GameData, nos: set[int] | None = None) -> tuple[dict[int, str], str]:
+def chaos_rows(data: GameData, nos: set[int] | None = None):
+    data, _ = change_points.apply(data)
     """«Порядок из хаоса»: тираж прогнозирует лучший метод набора его способа розыгрыша — на
     контрольном отрезке набора (выбор метода этих тиражей не видел)."""
     from . import chaos
@@ -115,7 +118,8 @@ def chaos_rows(data: GameData, nos: set[int] | None = None) -> tuple[dict[int, s
     return out, "; ".join(titles)
 
 
-def leader_rows(data: GameData, nos: set[int]) -> tuple[dict[int, str], str]:
+def leader_rows(data: GameData, nos: set[int]):
+    data, _ = change_points.apply(data)
     """Режим Бога на новые тиражи без перебора: модель-лидер прошлого запуска (как в журнале
     между запусками) — на каждый тираж по тиражам до него."""
     from .evaluate import Evaluator
@@ -220,13 +224,14 @@ def build(data: GameData, godmode: list[dict] | None = None, godmode_title: str 
 
     «Порядок из хаоса» — в архиве методов и считается отдельно (chaos=True; кнопка «Запустить
     архивные методы» — refresh_chaos): обычная сборка переносит его прогнозы из прежней истории."""
+    data, scope = change_points.apply(data)
     rows, details, info = eval_rows(data)
     if not rows:
         return {}, info
     if chaos:
         ch, ch_title = chaos_rows(data)
     else:
-        old = load(data.game.slug)
+        old = None if scope.get("active") else load(data.game.slug)
         ch = rows_of(old).get("chaos") if old else None
         ch_title = ((old or {}).get("sources", {}).get("chaos") or {}).get("detail", "")
     if ch:
@@ -242,6 +247,7 @@ def build(data: GameData, godmode: list[dict] | None = None, godmode_title: str 
 
 
 def refresh_chaos(data: GameData) -> int | None:
+    data, _ = change_points.apply(data)
     """Пересчитывает в готовой истории прогнозы «Порядка из хаоса» на весь архив (кнопка «Запустить
     архивные методы»). Остальные методы и «Ф» не трогает: архивные методы в «Ф» не голосуют.
     Возвращает число тиражей с прогнозом; None — истории ещё нет."""
@@ -271,6 +277,7 @@ def journal_checked(slug: str) -> Rows:
 
 
 def fill(data: GameData, log=None) -> dict:
+    data, _ = change_points.apply(data)
     """Дописывает в историю тиражи, сыгранные после прошлого обновления: сверенный прогноз журнала,
     а где его нет — расчёт задним числом (сравнение методов запускается, только если есть что
     восстанавливать). Истории ещё нет — ничего не делает: её целиком собирает retro.run."""

@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dataDir, PROJECT_ROOT, resultsFile } from './paths'
 
-export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos' | 'godmode_all' | 'retro' | 'archive'
+export type JobKind = 'fetch' | 'scan' | 'analyze' | 'godmode' | 'auto' | 'rules' | 'chaos' | 'godmode_all' | 'retro' | 'archive' | 'reset'
 export type JobStatus = 'running' | 'done' | 'error' | 'cancelled'
 
 export interface Job {
@@ -140,6 +140,16 @@ function argsFor(kind: JobKind, game: string | null, params: Record<string, unkn
       const days = [1, 3, 7, 14, 30].includes(Number(params.days)) ? Number(params.days) : 7
       return ['retro', '--days', String(days), ...(game ? ['--game', game] : [])]
     }
+    case 'reset':
+      return [
+        'reset-game',
+        '--game', game!,
+        ...(params.clear
+            ? ['--clear']
+            : params.use_last_change
+                ? ['--use-last-change']
+                : ['--date', String(params.date ?? '')]),
+      ]
   }
 }
 

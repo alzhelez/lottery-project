@@ -161,6 +161,15 @@ def trend_scores(f: Features, short: int = 25, long: int = 200) -> np.ndarray:
     return (f.window_rate(short) - f.window_rate(long)).astype(np.float32)
 
 
+def momentum_scores(f: Features, short: int = 20, long: int = 100) -> np.ndarray:
+    """«Моментум частоты»: короткая экспоненциальная частота минус долгосрочная.
+
+    Положительное значение — число в последних тиражах выпадает чаще, чем в его долгосрочной
+    истории. В отличие от простых «горячих» чисел, метод оценивает ускорение, а не уровень.
+    """
+    return (f.ewma(short) - f.ewma(long)).astype(np.float32)
+
+
 def rhythm_scores(f: Features) -> np.ndarray:
     """«Ритм»: у каждого числа свой средний промежуток между выпадениями (по прошлым тиражам);
     выше оценка у чисел, которым «пора» — с последнего выпадения прошло около одного такого
@@ -187,6 +196,13 @@ def extra_models() -> list[Model]:
         Model("forest", "Случайный лес (переобучение по истории)", "ml", forest_batch),
         Model("trend_25_200", "Тренд: частота растёт (25 против 200 тиражей)", "trend",
               lambda f: trend_scores(f, 25, 200), params={"short": 25, "long": 200}),
+        Model(
+            "momentum_20_100",
+            "Моментум частоты: ускорение против долгосрочного (20/100)",
+            "trend",
+            lambda f: momentum_scores(f, 20, 100),
+            params={"short": 20, "long": 100},
+        ),
         Model("rhythm", "Ритм: числу пора по его среднему промежутку", "gap", rhythm_scores),
     ]
 
